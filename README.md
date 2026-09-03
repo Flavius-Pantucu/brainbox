@@ -2,13 +2,13 @@
 
 ## Introduction :snowflake:
 
-Welcome to GameHub! This platform is an open source application made with NextJS Framework, deployed on Vercel cloud service company. You can access it by clicking this [link](https://gamehub-flavius-pantucu.vercel.app/).
+Welcome to GameHub! This platform is an open source application made with the [Next.js](https://nextjs.org/) framework.
 
 ## Content :card_file_box:
 
-So far, GameHub it's backend-less. We plan in the future to develop that too!
+The application lives in a single Next.js project: the interface is rendered from `pages/` and `components/`, and the backend will be built inside `pages/api/`, which Next.js serves as server-side endpoints.
 
-The applications contains a series of logical games such as:
+The application contains a series of logical games such as:
 
 - [x] TicTacToe;
 - [x] Sudoku;
@@ -22,14 +22,25 @@ The applications contains a series of logical games such as:
 ### Sudoku
 ### Chess
 
-## Deployment :man_technologist:
+## Project structure :file_folder:
+
+```
+components/     UI components, one folder per game
+pages/          routes (index.js is the app itself)
+pages/api/      backend endpoints
+public/         images and sounds
+styles/         global stylesheet
+```
+
+## Running it :man_technologist:
 
 If you are a curious mind and you want to enhance the application capabilites of use, you can get your hands on it too.
 
 Steps:
 - clone this repository;
-- download and install latest node.js version from official website;
+- download and install the latest Node.js version from the official website;
 - open a new terminal via your preffered IDE (ex. Visual Studio Code) and type in `npm install` so that the application downloads all the dependencies it needs;
-- type `npm run dev` and wait until it shows you to access `localhost:3001`
+- type `npm run dev` and open `http://localhost:3000`;
 - enjoy!
 
+For a production build, run `npm run build` followed by `npm start`.
