@@ -319,13 +319,13 @@ export default function Sudoku({ onResult, onStatus }) {
 
           {status === "dealing" && (
             <div className="sud__veil">
-              <p className="stencil">Setting the grid</p>
+              <p className="label">Setting the grid</p>
             </div>
           )}
 
           {paused && status === "playing" && (
             <div className="sud__veil">
-              <p className="stencil">Paused</p>
+              <p className="label">Paused</p>
               <button type="button" className="key" onClick={() => setPaused(false)}>
                 <PlayMark size={14} />
                 Resume

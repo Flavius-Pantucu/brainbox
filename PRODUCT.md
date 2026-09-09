@@ -29,14 +29,14 @@ whether a personal best improved, and where they stand against others.
 
 ## Product Purpose
 
-GameHub is a portal for browser-based logic games. Success is: the player reaches a game
+BrainBox is a portal for browser-based logic games. Success is: the player reaches a game
 quickly, finishes a session, and has a visible reason to return — a streak, a daily
 challenge, a rank, or a personal best that is one attempt away from improving.
 
 ## Positioning
 
 Most single-game sites give a player one game and no memory of them; most large game portals
-bury quality logic games under ad-heavy catalogs. GameHub is a small, curated set of
+bury quality logic games under ad-heavy catalogs. BrainBox is a small, curated set of
 hand-built logic games that share one account, one progression surface, and one daily ritual —
 so the portal itself, not any individual game, is the thing the player returns to.
 
@@ -86,12 +86,18 @@ monetization, multiplayer.
 
 ## Brand Commitments
 
-- Name: **GameHub**.
-- Existing assets: `public/images/logo.png`, `public/images/favicon.ico`, chess piece SVGs
-  (`wK.svg`, `bQ.svg`, and the rest of the set), tic-tac-toe mark PNGs, move/capture/castle
-  sounds. The chess piece SVGs and sounds are binding — the games depend on them.
+- Name: **BrainBox** (renamed from GameHub, 2026-09-09). The name is the brief for the mark:
+  a brain, in a box.
+- Identity assets, all authored in this repository: the mark in `components/board/logo.js`
+  and the icons at `app/icon.svg` and `app/apple-icon.svg` — a soft-cornered box holding a
+  two-lobed brain. The old GameHub logo and favicon are deleted.
+- Binding game assets: the chess piece SVGs (`wK.svg`, `bQ.svg`, and the rest of the set) and
+  the move/capture/castle sounds in `public/sounds/` — chess depends on both.
 - Palette: **blue and grey** — a navy ground with steel mid-tones and a cobalt signal
   (confirmed 2026-09-09, replacing the board-green world shipped a day earlier).
+- Tone: **friendly, not shouted** (confirmed 2026-09-09). Rounded corners throughout, a curvy
+  display face, and weights held below the heavy end of the ramp. The condensed industrial
+  stencil voice that shipped first is retired.
 - No confirmed voice guide beyond that. `.impeccable/surfaces/app-page-js.md` carries the
   open dashboard revision the user deferred to the end of the current run of work.
 

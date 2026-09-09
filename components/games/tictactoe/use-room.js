@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
-const KEY = (code) => `gamehub.room.${code}`;
+const KEY = (code) => `brainbox.room.${code}`;
 
 function rememberToken(code, token) {
   try {

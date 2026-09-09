@@ -1,9 +1,9 @@
-# GameHub
+# BrainBox
 
 A portal for browser-based logic games — chess, sudoku and tic-tac-toe — built with
 [Next.js](https://nextjs.org/).
 
-The interface is a hand-operated club scoreboard, painted in navy and steel: today's challenge,
+The interface is a hand-operated club board, painted in navy and steel: today's challenge,
 your run, your bests and the standings all live on one board, and playing a game hangs a new
 plate. A game takes the whole window below the head rail.
 

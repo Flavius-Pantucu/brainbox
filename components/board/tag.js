@@ -1,6 +1,6 @@
 import { Check, Cross, Dash, Square } from "./icons";
 
-// A state is a stenciled word plus a form. Never paint colour on its own —
+// A state is a written word plus a form. Never paint colour on its own —
 // the word and the mark both carry it.
 const MARKS = {
   on: Check,

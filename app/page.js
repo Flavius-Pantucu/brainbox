@@ -1,7 +1,7 @@
 import { Deck } from "../components/board/deck";
 
 export const metadata = {
-  title: "GameHub — the club board",
+  title: "BrainBox — the club board",
 };
 
 export default function BoardPage() {

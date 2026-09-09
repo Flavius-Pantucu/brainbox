@@ -1,7 +1,7 @@
 {
   "schemaVersion": 2,
   "generatedAt": "2026-09-09T00:00:00Z",
-  "title": "Design System: GameHub",
+  "title": "Design System: BrainBox",
   "extensions": {
     "colorMeta": {
       "paint-navy": { "role": "neutral", "displayName": "Board Navy", "canonical": "#0c1725", "tonalRamp": ["#05090f", "#0c1725", "#152437", "#24384f", "#3c5470", "#5c7691", "#8fa2b8", "#e8edf4"] },
@@ -15,17 +15,17 @@
       "plate-face": { "role": "neutral", "displayName": "Enamel Plate Face", "canonical": "color-mix(in srgb, var(--paint-bone) 90%, var(--paint-steel))" }
     },
     "typographyMeta": {
-      "display": { "displayName": "Display", "purpose": "The day's game on the oversized dashboard plate. One per screen." },
+      "display": { "displayName": "Display", "purpose": "The day's game on the oversized dashboard plate. Fredoka, capped at 600. One per screen." },
       "headline": { "displayName": "Headline", "purpose": "Play title and the game-over verdict on a stage veil." },
-      "numeral-wide": { "displayName": "Numeral Wide", "purpose": "The streak count — the largest figure on the board." },
+      "numeral-wide": { "displayName": "Numeral Wide", "purpose": "The streak count on the dashboard." },
       "numeral": { "displayName": "Numeral", "purpose": "Personal-best values on plates." },
       "numeral-small": { "displayName": "Numeral Small", "purpose": "Number-pad digits and fixed readout figures." },
       "stage-title": { "displayName": "Stage Title", "purpose": "Game name in the stage bar; deliberately smaller than the dashboard display." },
-      "wordmark": { "displayName": "Wordmark", "purpose": "The rail mark only." },
+      "wordmark": { "displayName": "Wordmark", "purpose": "The rail mark only. Fredoka 500, mixed case, near-neutral tracking." },
       "title": { "displayName": "Title", "purpose": "Game names on slot plates and ladder names." },
-      "body": { "displayName": "Body", "purpose": "Document default, tabular figures." },
+      "body": { "displayName": "Body", "purpose": "Document default, Nunito, tabular figures." },
       "chalk": { "displayName": "Chalk", "purpose": "The annotation voice: one-liners, notes, empty-state explanation. 46-62ch measure." },
-      "label": { "displayName": "Label", "purpose": "Stencilled zone labels that open every region." },
+      "label": { "displayName": "Label", "purpose": "Zone labels: the body face uppercased and tracked via --font-label." },
       "micro": { "displayName": "Micro", "purpose": "Tags, table headers, foot, peg options, key faces, tools." },
       "nano": { "displayName": "Nano", "purpose": "Readout labels, field labels, room-code label, divider rules." },
       "cell": { "displayName": "Cell", "purpose": "Sudoku digits sized in cqmin against the board's own container." }
@@ -55,12 +55,20 @@
   },
   "components": [
     {
+      "name": "BrainBox Mark",
+      "kind": "custom",
+      "refersTo": null,
+      "description": "A brain in a box. Soft-cornered box in currentColor, brain in the signal paint, interior held to three strokes so it survives at 16px.",
+      "html": "<span class=\"ds-mark\"><svg viewBox=\"0 0 32 32\" width=\"30\" height=\"30\" fill=\"none\" aria-hidden=\"true\"><rect x=\"2.8\" y=\"2.8\" width=\"26.4\" height=\"26.4\" rx=\"8.6\" stroke=\"currentColor\" stroke-width=\"2.3\"/><g stroke=\"var(--signal, #4f8ce8)\" stroke-width=\"2.1\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M16 10.9v11.2\"/><path d=\"M16 11.7a4.1 4.1 0 0 0-6.8 2.7 3.4 3.4 0 0 0 .6 6.2 3.9 3.9 0 0 0 6.2 1.3\"/><path d=\"M16 11.7a4.1 4.1 0 0 1 6.8 2.7 3.4 3.4 0 0 1-.6 6.2 3.9 3.9 0 0 1-6.2 1.3\"/></g></svg><span class=\"ds-mark-word\">BrainBox</span></span>",
+      "css": ".ds-mark { display: inline-flex; align-items: center; gap: 10px; color: var(--ink, #e8edf4); } .ds-mark svg { flex-shrink: 0; } .ds-mark-word { font-family: var(--font-display), sans-serif; font-weight: 500; letter-spacing: 0.005em; font-size: clamp(1.3rem, 2.3vw, 1.6rem); line-height: 1; }"
+    },
+    {
       "name": "Key (primary action)",
       "kind": "button",
       "refersTo": "key",
       "description": "The primary action, built as a pressed fitting rather than a button.",
       "html": "<button class=\"ds-key\">Play today</button>",
-      "css": ".ds-key { display: inline-flex; align-items: center; justify-content: center; gap: 10px; padding: 14px 26px; background: var(--signal, #4f8ce8); color: var(--signal-on, #0c1725); border: 1px solid rgba(0,0,0,0.42); border-radius: 2px; font-family: var(--font-stencil), sans-serif; font-weight: 700; text-transform: uppercase; letter-spacing: 0.2em; font-size: 0.82rem; line-height: 1; cursor: pointer; box-shadow: 0 3px 0 rgba(0,0,0,0.4), 0 10px 18px -10px rgba(0,0,0,0.8); transition: transform 140ms cubic-bezier(0.16,1,0.3,1), box-shadow 140ms cubic-bezier(0.16,1,0.3,1), background-color 140ms ease-out; } .ds-key:hover { background: color-mix(in srgb, var(--signal, #4f8ce8) 82%, #e8edf4); transform: translateY(-1px); box-shadow: 0 4px 0 rgba(0,0,0,0.4), 0 14px 22px -10px rgba(0,0,0,0.85); } .ds-key:active { transform: translateY(2px); box-shadow: 0 1px 0 rgba(0,0,0,0.4), 0 6px 10px -8px rgba(0,0,0,0.8); } .ds-key:focus-visible { outline: 2px solid var(--signal, #4f8ce8); outline-offset: 3px; }"
+      "css": ".ds-key { display: inline-flex; align-items: center; justify-content: center; gap: 10px; padding: 14px 26px; background: var(--signal, #4f8ce8); color: var(--signal-on, #0c1725); border: 1px solid rgba(0,0,0,0.42); border-radius: var(--radius-sm, 12px); font-family: var(--font-label, var(--font-text)), sans-serif; font-weight: 600; text-transform: uppercase; letter-spacing: 0.14em; font-size: 0.82rem; line-height: 1; cursor: pointer; box-shadow: 0 3px 0 rgba(0,0,0,0.4), 0 10px 18px -10px rgba(0,0,0,0.8); transition: transform 140ms cubic-bezier(0.16,1,0.3,1), box-shadow 140ms cubic-bezier(0.16,1,0.3,1), background-color 140ms ease-out; } .ds-key:hover { background: color-mix(in srgb, var(--signal, #4f8ce8) 82%, #e8edf4); transform: translateY(-1px); box-shadow: 0 4px 0 rgba(0,0,0,0.4), 0 14px 22px -10px rgba(0,0,0,0.85); } .ds-key:active { transform: translateY(2px); box-shadow: 0 1px 0 rgba(0,0,0,0.4), 0 6px 10px -8px rgba(0,0,0,0.8); } .ds-key:focus-visible { outline: 2px solid var(--signal, #4f8ce8); outline-offset: 3px; border-radius: var(--radius-xs, 8px); }"
     },
     {
       "name": "Key Quiet (secondary action)",
@@ -68,31 +76,31 @@
       "refersTo": "key-quiet",
       "description": "The secondary action: a keyline outline that goes cobalt on hover and never moves.",
       "html": "<button class=\"ds-key-quiet\">Standings</button>",
-      "css": ".ds-key-quiet { display: inline-flex; align-items: center; justify-content: center; gap: 10px; padding: 14px 26px; background: transparent; color: var(--ink-quiet, #b3bfd0); border: 1px solid var(--keyline-strong, rgba(232,237,244,0.32)); border-radius: 2px; font-family: var(--font-stencil), sans-serif; font-weight: 700; text-transform: uppercase; letter-spacing: 0.2em; font-size: 0.82rem; line-height: 1; cursor: pointer; transition: color 140ms ease-out, border-color 140ms ease-out; } .ds-key-quiet:hover { color: var(--ink, #e8edf4); border-color: var(--signal, #4f8ce8); } .ds-key-quiet:focus-visible { outline: 2px solid var(--signal, #4f8ce8); outline-offset: 3px; }"
+      "css": ".ds-key-quiet { display: inline-flex; align-items: center; justify-content: center; gap: 10px; padding: 14px 26px; background: transparent; color: var(--ink-quiet, #b3bfd0); border: 1px solid var(--keyline-strong, rgba(232,237,244,0.32)); border-radius: var(--radius-sm, 12px); font-family: var(--font-label, var(--font-text)), sans-serif; font-weight: 600; text-transform: uppercase; letter-spacing: 0.14em; font-size: 0.82rem; line-height: 1; cursor: pointer; transition: color 140ms ease-out, border-color 140ms ease-out; } .ds-key-quiet:hover { color: var(--ink, #e8edf4); border-color: var(--signal, #4f8ce8); } .ds-key-quiet:focus-visible { outline: 2px solid var(--signal, #4f8ce8); outline-offset: 3px; }"
     },
     {
       "name": "Plate",
       "kind": "card",
       "refersTo": "plate",
-      "description": "The raised enamel container every figure sits on: dark border, painted inset keyline, hard offset shadow.",
+      "description": "The raised enamel container every figure sits on: dark border, concentric inset keyline, hard offset shadow.",
       "html": "<div class=\"ds-plate\"><div class=\"ds-plate-body\"><span class=\"ds-plate-value\">14</span><span class=\"ds-plate-unit\">Day streak</span></div></div>",
-      "css": ".ds-plate { position: relative; background: var(--plate-face, #e2e8f1); color: var(--plate-ink, #0c1725); border: 1px solid rgba(0,0,0,0.3); border-radius: 3px; box-shadow: 0 2px 0 rgba(0,0,0,0.34), 0 6px 12px -6px rgba(0,0,0,0.62); } .ds-plate::after { content: \"\"; position: absolute; inset: 4px; border: 1px solid color-mix(in srgb, #0c1725 28%, transparent); border-radius: 1px; pointer-events: none; } .ds-plate-body { padding: 20px 20px 18px; } .ds-plate-value { display: block; font-family: var(--font-display), sans-serif; font-weight: 800; font-variant-numeric: tabular-nums; font-size: clamp(1.9rem, 4.5vw, 2.6rem); line-height: 0.9; } .ds-plate-unit { display: block; margin-top: 8px; font-family: var(--font-stencil), sans-serif; font-size: 0.6rem; letter-spacing: 0.2em; text-transform: uppercase; color: color-mix(in srgb, #0c1725 78%, #e2e8f1); }"
+      "css": ".ds-plate { position: relative; background: var(--plate-face, #e2e8f1); color: var(--plate-ink, #0c1725); border: 1px solid rgba(0,0,0,0.3); border-radius: var(--radius, 16px); box-shadow: 0 2px 0 rgba(0,0,0,0.34), 0 6px 12px -6px rgba(0,0,0,0.62); } .ds-plate::after { content: \"\"; position: absolute; inset: 4px; border: 1px solid color-mix(in srgb, #0c1725 28%, transparent); border-radius: 12px; pointer-events: none; } .ds-plate-body { padding: 20px 20px 18px; } .ds-plate-value { display: block; font-family: var(--font-display), sans-serif; font-weight: 600; font-variant-numeric: tabular-nums; font-size: clamp(1.9rem, 4.5vw, 2.6rem); line-height: 0.9; } .ds-plate-unit { display: block; margin-top: 8px; font-family: var(--font-label, var(--font-text)), sans-serif; font-weight: 600; font-size: 0.6rem; letter-spacing: 0.14em; text-transform: uppercase; color: color-mix(in srgb, #0c1725 78%, #e2e8f1); }"
     },
     {
       "name": "Slot (routed channel)",
       "kind": "card",
       "refersTo": "slot",
-      "description": "The cut container: everything recessed is this channel plus the inset cut shadow.",
+      "description": "The cut container: everything recessed is this channel plus the inset cut shadow, at the softest corner on the scale.",
       "html": "<div class=\"ds-slot\"><p class=\"ds-slot-label\">Today</p></div>",
-      "css": ".ds-slot { background: var(--routed, #050a11); border-radius: 4px; box-shadow: inset 0 3px 7px rgba(0,0,0,0.62), inset 0 -1px 0 rgba(232,237,244,0.07); padding: 16px; } .ds-slot-label { margin: 0; font-family: var(--font-stencil), sans-serif; font-weight: 600; text-transform: uppercase; letter-spacing: 0.24em; font-size: 0.72rem; color: var(--ink-quiet, #b3bfd0); }"
+      "css": ".ds-slot { background: var(--routed, #050a11); border-radius: var(--radius-lg, 20px); box-shadow: inset 0 3px 7px rgba(0,0,0,0.62), inset 0 -1px 0 rgba(232,237,244,0.07); padding: 16px; } .ds-slot-label { margin: 0; font-family: var(--font-label, var(--font-text)), sans-serif; font-weight: 600; text-transform: uppercase; letter-spacing: 0.12em; font-size: 0.72rem; color: var(--ink-quiet, #b3bfd0); }"
     },
     {
       "name": "Readout",
       "kind": "custom",
       "refersTo": "readout",
-      "description": "The three-up stat strip on the stage side rail: nano stencil label over a display figure, in a routed channel.",
+      "description": "The three-up stat strip on the stage side rail: nano label over a display figure, in a routed channel.",
       "html": "<div class=\"ds-readout\"><div class=\"ds-readout-item\"><span class=\"ds-readout-label\">Time</span><span class=\"ds-readout-value\">04:12</span></div><div class=\"ds-readout-item\"><span class=\"ds-readout-label\">Mistakes</span><span class=\"ds-readout-value ds-is-warn\">2/3</span></div><div class=\"ds-readout-item\"><span class=\"ds-readout-label\">Left</span><span class=\"ds-readout-value\">31</span></div></div>",
-      "css": ".ds-readout { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); background: var(--routed, #050a11); border-radius: 4px; box-shadow: inset 0 3px 7px rgba(0,0,0,0.62), inset 0 -1px 0 rgba(232,237,244,0.07); overflow: hidden; } .ds-readout-item { display: flex; flex-direction: column; gap: 4px; padding: 12px 14px; border-right: 1px solid var(--keyline, rgba(232,237,244,0.16)); } .ds-readout-item:last-child { border-right: 0; } .ds-readout-label { font-family: var(--font-stencil), sans-serif; text-transform: uppercase; letter-spacing: 0.18em; font-size: 0.56rem; color: var(--ink-faint, #8b98a9); } .ds-readout-value { font-family: var(--font-display), sans-serif; font-weight: 800; font-variant-numeric: tabular-nums; font-size: 1.5rem; line-height: 1; color: var(--ink, #e8edf4); } .ds-readout-value.ds-is-warn { color: var(--signal-ink, #5f95e6); }"
+      "css": ".ds-readout { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); background: var(--routed, #050a11); border-radius: var(--radius-lg, 20px); box-shadow: inset 0 3px 7px rgba(0,0,0,0.62), inset 0 -1px 0 rgba(232,237,244,0.07); overflow: hidden; } .ds-readout-item { display: flex; flex-direction: column; gap: 4px; padding: 12px 14px; border-right: 1px solid var(--keyline, rgba(232,237,244,0.16)); } .ds-readout-item:last-child { border-right: 0; } .ds-readout-label { font-family: var(--font-label, var(--font-text)), sans-serif; font-weight: 600; text-transform: uppercase; letter-spacing: 0.13em; font-size: 0.56rem; color: var(--ink-faint, #8b98a9); } .ds-readout-value { font-family: var(--font-display), sans-serif; font-weight: 600; font-variant-numeric: tabular-nums; font-size: 1.5rem; line-height: 1; color: var(--ink, #e8edf4); } .ds-readout-value.ds-is-warn { color: var(--signal-ink, #5f95e6); }"
     },
     {
       "name": "Pad Key",
@@ -100,15 +108,15 @@
       "refersTo": "pad-key",
       "description": "A number-pad key on the slate panel; hover mixes cobalt into the panel and turns the border cobalt.",
       "html": "<button class=\"ds-pad-key\"><span class=\"ds-pad-digit\">7</span><span class=\"ds-pad-left\">3</span></button>",
-      "css": ".ds-pad-key { position: relative; appearance: none; border: 1px solid var(--keyline-strong, rgba(232,237,244,0.32)); border-radius: 3px; background: var(--panel, #24384f); color: var(--ink, #e8edf4); padding: 10px 18px; cursor: pointer; transition: background-color 140ms ease-out, border-color 140ms ease-out, transform 120ms cubic-bezier(0.16,1,0.3,1); } .ds-pad-key:hover { background: color-mix(in srgb, var(--signal, #4f8ce8) 24%, var(--panel, #24384f)); border-color: var(--signal, #4f8ce8); } .ds-pad-key:active { transform: translateY(1px); } .ds-pad-key:focus-visible { outline: 2px solid var(--signal, #4f8ce8); outline-offset: 3px; } .ds-pad-digit { display: block; font-family: var(--font-display), sans-serif; font-weight: 800; font-size: clamp(1.4rem, 2.4vw, 1.9rem); line-height: 1; font-variant-numeric: tabular-nums; } .ds-pad-left { position: absolute; top: 4px; right: 7px; font-family: var(--font-display), sans-serif; font-size: 0.66rem; font-variant-numeric: tabular-nums; color: var(--ink-faint, #8b98a9); }"
+      "css": ".ds-pad-key { position: relative; appearance: none; border: 1px solid var(--keyline-strong, rgba(232,237,244,0.32)); border-radius: var(--radius-sm, 12px); background: var(--panel, #24384f); color: var(--ink, #e8edf4); padding: 10px 18px; cursor: pointer; transition: background-color 140ms ease-out, border-color 140ms ease-out, transform 120ms cubic-bezier(0.16,1,0.3,1); } .ds-pad-key:hover { background: color-mix(in srgb, var(--signal, #4f8ce8) 24%, var(--panel, #24384f)); border-color: var(--signal, #4f8ce8); } .ds-pad-key:active { transform: translateY(1px); } .ds-pad-key:focus-visible { outline: 2px solid var(--signal, #4f8ce8); outline-offset: 3px; } .ds-pad-digit { display: block; font-family: var(--font-display), sans-serif; font-weight: 600; font-size: clamp(1.4rem, 2.4vw, 1.9rem); line-height: 1; font-variant-numeric: tabular-nums; } .ds-pad-left { position: absolute; top: 4px; right: 7px; font-family: var(--font-display), sans-serif; font-size: 0.66rem; font-variant-numeric: tabular-nums; color: var(--ink-faint, #8b98a9); }"
     },
     {
       "name": "Tool Toggle",
       "kind": "chip",
       "refersTo": "tool",
-      "description": "A stencilled toggle in the stage tool grid; the on-state fills 20% cobalt.",
+      "description": "A tracked-caps toggle in the stage tool grid; the on-state fills 20% cobalt.",
       "html": "<button class=\"ds-tool ds-is-on\">Notes<em>N</em></button>",
-      "css": ".ds-tool { display: flex; align-items: center; gap: 8px; appearance: none; border: 1px solid var(--keyline, rgba(232,237,244,0.16)); border-radius: 3px; background: transparent; color: var(--ink-quiet, #b3bfd0); padding: 9px 10px; font-family: var(--font-stencil), sans-serif; text-transform: uppercase; letter-spacing: 0.12em; font-size: 0.64rem; cursor: pointer; transition: color 140ms ease-out, border-color 140ms ease-out, background-color 140ms ease-out; } .ds-tool:hover { color: var(--ink, #e8edf4); border-color: var(--signal, #4f8ce8); } .ds-tool.ds-is-on { background: color-mix(in srgb, var(--signal, #4f8ce8) 20%, transparent); border-color: var(--signal, #4f8ce8); color: var(--ink, #e8edf4); } .ds-tool:focus-visible { outline: 2px solid var(--signal, #4f8ce8); outline-offset: 3px; } .ds-tool em { margin-left: auto; font-style: normal; color: var(--signal-ink, #5f95e6); font-size: 0.6rem; }"
+      "css": ".ds-tool { display: flex; align-items: center; gap: 8px; appearance: none; border: 1px solid var(--keyline, rgba(232,237,244,0.16)); border-radius: var(--radius-sm, 12px); background: transparent; color: var(--ink-quiet, #b3bfd0); padding: 9px 10px; font-family: var(--font-label, var(--font-text)), sans-serif; font-weight: 600; text-transform: uppercase; letter-spacing: 0.12em; font-size: 0.64rem; cursor: pointer; transition: color 140ms ease-out, border-color 140ms ease-out, background-color 140ms ease-out; } .ds-tool:hover { color: var(--ink, #e8edf4); border-color: var(--signal, #4f8ce8); } .ds-tool.ds-is-on { background: color-mix(in srgb, var(--signal, #4f8ce8) 20%, transparent); border-color: var(--signal, #4f8ce8); color: var(--ink, #e8edf4); } .ds-tool:focus-visible { outline: 2px solid var(--signal, #4f8ce8); outline-offset: 3px; } .ds-tool em { margin-left: auto; font-style: normal; color: var(--signal-ink, #5f95e6); font-size: 0.6rem; }"
     },
     {
       "name": "Field",
@@ -116,23 +124,23 @@
       "refersTo": "field-input",
       "description": "A text field cut into the board: routed background, inset shadow, cobalt border on focus.",
       "html": "<label class=\"ds-field\"><span class=\"ds-field-label\">Room code</span><input class=\"ds-field-input\" placeholder=\"Enter code\" /></label>",
-      "css": ".ds-field { display: block; } .ds-field-label { display: block; font-family: var(--font-stencil), sans-serif; text-transform: uppercase; letter-spacing: 0.18em; font-size: 0.56rem; color: var(--ink-faint, #8b98a9); margin-bottom: 6px; } .ds-field-input { appearance: none; width: 100%; background: var(--routed, #050a11); border: 1px solid var(--keyline-strong, rgba(232,237,244,0.32)); border-radius: 3px; box-shadow: inset 0 3px 7px rgba(0,0,0,0.62), inset 0 -1px 0 rgba(232,237,244,0.07); color: var(--ink, #e8edf4); font-family: var(--font-text), system-ui, sans-serif; font-size: 16px; padding: 9px 12px; } .ds-field-input::placeholder { color: var(--ink-faint, #8b98a9); } .ds-field-input:focus { outline: none; border-color: var(--signal, #4f8ce8); }"
+      "css": ".ds-field { display: block; } .ds-field-label { display: block; font-family: var(--font-label, var(--font-text)), sans-serif; font-weight: 600; text-transform: uppercase; letter-spacing: 0.13em; font-size: 0.56rem; color: var(--ink-faint, #8b98a9); margin-bottom: 6px; } .ds-field-input { appearance: none; width: 100%; background: var(--routed, #050a11); border: 1px solid var(--keyline-strong, rgba(232,237,244,0.32)); border-radius: var(--radius-sm, 12px); box-shadow: inset 0 3px 7px rgba(0,0,0,0.62), inset 0 -1px 0 rgba(232,237,244,0.07); color: var(--ink, #e8edf4); font-family: var(--font-text), system-ui, sans-serif; font-size: 16px; padding: 9px 12px; } .ds-field-input::placeholder { color: var(--ink-faint, #8b98a9); } .ds-field-input:focus { outline: none; border-color: var(--signal, #4f8ce8); }"
     },
     {
       "name": "State Tag",
       "kind": "chip",
       "refersTo": "tag-live",
-      "description": "State as a stencilled word plus a drawn 7px mark. Color is the third channel, never the only one.",
+      "description": "State as a written word plus a drawn 7px mark. Color is the third channel, never the only one.",
       "html": "<span class=\"ds-tag ds-tag-live\"><svg class=\"ds-tag-mark\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.6\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><circle cx=\"12\" cy=\"12\" r=\"9\" fill=\"currentColor\"/></svg>Live</span>",
-      "css": ".ds-tag { display: inline-flex; align-items: center; gap: 6px; font-family: var(--font-stencil), sans-serif; font-weight: 600; text-transform: uppercase; letter-spacing: 0.16em; font-size: 0.62rem; line-height: 1; padding: 5px 9px 4px; border: 1px solid currentColor; border-radius: 2px; white-space: nowrap; } .ds-tag-mark { width: 7px; height: 7px; flex-shrink: 0; } .ds-tag-live { color: var(--signal, #4f8ce8); background: color-mix(in srgb, #4f8ce8 14%, transparent); }"
+      "css": ".ds-tag { display: inline-flex; align-items: center; gap: 6px; font-family: var(--font-label, var(--font-text)), sans-serif; font-weight: 600; text-transform: uppercase; letter-spacing: 0.12em; font-size: 0.62rem; line-height: 1; padding: 5px 9px 4px; border: 1px solid currentColor; border-radius: var(--radius-xs, 8px); white-space: nowrap; } .ds-tag-mark { width: 7px; height: 7px; flex-shrink: 0; } .ds-tag-live { color: var(--signal, #4f8ce8); background: color-mix(in srgb, #4f8ce8 14%, transparent); }"
     },
     {
       "name": "Rail Navigation",
       "kind": "nav",
       "refersTo": null,
-      "description": "The sticky head rail: stencil links in quiet ink, current page marked by a 3px cobalt underline on the rail edge.",
-      "html": "<nav class=\"ds-rail\"><span class=\"ds-rail-wordmark\">GameHub</span><span class=\"ds-rail-sub\">The club board</span><span class=\"ds-rail-nav\"><a class=\"ds-rail-link\" aria-current=\"page\" href=\"#\">Board</a><a class=\"ds-rail-link\" href=\"#\">Standings</a></span></nav>",
-      "css": ".ds-rail { display: flex; align-items: center; gap: 24px; height: 68px; padding: 0 24px; background: var(--ground, #0c1725); border-bottom: 1px solid var(--keyline-strong, rgba(232,237,244,0.32)); box-shadow: 0 1px 0 rgba(0,0,0,0.3), 0 10px 20px -18px rgba(0,0,0,0.9); } .ds-rail-wordmark { font-family: var(--font-stencil), sans-serif; font-weight: 700; text-transform: uppercase; letter-spacing: 0.16em; font-size: clamp(1.35rem, 2.4vw, 1.75rem); line-height: 1; color: var(--ink, #e8edf4); } .ds-rail-sub { font-family: var(--font-stencil), sans-serif; font-size: 0.62rem; letter-spacing: 0.28em; text-transform: uppercase; color: var(--signal, #4f8ce8); } .ds-rail-nav { display: flex; align-items: stretch; gap: 4px; height: 100%; margin-left: 16px; } .ds-rail-link { position: relative; display: inline-flex; align-items: center; padding: 0 14px; font-family: var(--font-stencil), sans-serif; font-weight: 600; text-transform: uppercase; letter-spacing: 0.18em; font-size: 0.76rem; color: var(--ink-quiet, #b3bfd0); text-decoration: none; transition: color 160ms ease-out; } .ds-rail-link:hover { color: var(--ink, #e8edf4); } .ds-rail-link[aria-current=\"page\"] { color: var(--ink, #e8edf4); } .ds-rail-link[aria-current=\"page\"]::after { content: \"\"; position: absolute; left: 10px; right: 10px; bottom: -1px; height: 3px; background: var(--signal, #4f8ce8); box-shadow: 0 1px 0 rgba(0,0,0,0.45); }"
+      "description": "The sticky head rail: the mark and wordmark, then tracked-caps links, current page marked by a 3px cobalt underline on the rail edge.",
+      "html": "<nav class=\"ds-rail\"><a class=\"ds-rail-mark\" href=\"#\"><svg viewBox=\"0 0 32 32\" width=\"30\" height=\"30\" fill=\"none\" aria-hidden=\"true\"><rect x=\"2.8\" y=\"2.8\" width=\"26.4\" height=\"26.4\" rx=\"8.6\" stroke=\"currentColor\" stroke-width=\"2.3\"/><g stroke=\"var(--signal, #4f8ce8)\" stroke-width=\"2.1\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M16 10.9v11.2\"/><path d=\"M16 11.7a4.1 4.1 0 0 0-6.8 2.7 3.4 3.4 0 0 0 .6 6.2 3.9 3.9 0 0 0 6.2 1.3\"/><path d=\"M16 11.7a4.1 4.1 0 0 1 6.8 2.7 3.4 3.4 0 0 1-.6 6.2 3.9 3.9 0 0 1-6.2 1.3\"/></g></svg><span class=\"ds-rail-wordmark\">BrainBox</span></a><span class=\"ds-rail-nav\"><a class=\"ds-rail-link\" aria-current=\"page\" href=\"#\">Board</a><a class=\"ds-rail-link\" href=\"#\">Standings</a></span></nav>",
+      "css": ".ds-rail { display: flex; align-items: center; gap: 24px; height: 68px; padding: 0 24px; background: var(--ground, #0c1725); border-bottom: 1px solid var(--keyline-strong, rgba(232,237,244,0.32)); box-shadow: 0 1px 0 rgba(0,0,0,0.3), 0 10px 20px -18px rgba(0,0,0,0.9); } .ds-rail-mark { display: inline-flex; align-items: center; gap: 10px; color: var(--ink, #e8edf4); text-decoration: none; } .ds-rail-wordmark { font-family: var(--font-display), sans-serif; font-weight: 500; letter-spacing: 0.005em; font-size: clamp(1.3rem, 2.3vw, 1.6rem); line-height: 1; } .ds-rail-nav { display: flex; align-items: stretch; gap: 4px; height: 100%; margin-left: 16px; } .ds-rail-link { position: relative; display: inline-flex; align-items: center; padding: 0 14px; font-family: var(--font-label, var(--font-text)), sans-serif; font-weight: 600; text-transform: uppercase; letter-spacing: 0.13em; font-size: 0.76rem; color: var(--ink-quiet, #b3bfd0); text-decoration: none; transition: color 160ms ease-out; } .ds-rail-link:hover { color: var(--ink, #e8edf4); } .ds-rail-link[aria-current=\"page\"] { color: var(--ink, #e8edf4); } .ds-rail-link[aria-current=\"page\"]::after { content: \"\"; position: absolute; left: 10px; right: 10px; bottom: -1px; height: 3px; background: var(--signal, #4f8ce8); box-shadow: 0 1px 0 rgba(0,0,0,0.45); }"
     },
     {
       "name": "Notice (error)",
@@ -140,7 +148,7 @@
       "refersTo": "notice",
       "description": "The one place fault red appears outside a wrong sudoku cell. The message carries the meaning; the red confirms it.",
       "html": "<p class=\"ds-notice\">That room code is no longer open.</p>",
-      "css": ".ds-notice { margin: 0; padding: 10px 12px; border: 1px solid #b3241a; border-radius: 3px; background: color-mix(in srgb, #b3241a 14%, transparent); color: var(--ink, #e8edf4); font-family: var(--font-text), system-ui, sans-serif; font-size: 0.82rem; line-height: 1.45; }"
+      "css": ".ds-notice { margin: 0; padding: 10px 12px; border: 1px solid #b3241a; border-radius: var(--radius-sm, 12px); background: color-mix(in srgb, #b3241a 14%, transparent); color: var(--ink, #e8edf4); font-family: var(--font-text), system-ui, sans-serif; font-size: 0.82rem; line-height: 1.45; }"
     },
     {
       "name": "Room Code",
@@ -148,55 +156,65 @@
       "refersTo": "roomcode",
       "description": "The one solid cobalt plate on the board: a code being read aloud, with signal-on ink and the resting lift.",
       "html": "<div class=\"ds-roomcode\"><span class=\"ds-roomcode-label\">Room</span><span class=\"ds-roomcode-value\">QF4K</span><button class=\"ds-roomcode-copy\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.6\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><rect x=\"9\" y=\"9\" width=\"11\" height=\"11\" rx=\"2\"/><path d=\"M5 15V6a2 2 0 0 1 2-2h9\"/></svg></button></div>",
-      "css": ".ds-roomcode { display: flex; align-items: center; gap: 12px; padding: 10px 12px; background: var(--signal, #4f8ce8); border-radius: 3px; box-shadow: 0 2px 0 rgba(0,0,0,0.34), 0 6px 12px -6px rgba(0,0,0,0.62); color: var(--signal-on, #0c1725); } .ds-roomcode-label { font-family: var(--font-stencil), sans-serif; text-transform: uppercase; letter-spacing: 0.2em; font-size: 0.56rem; opacity: 0.8; } .ds-roomcode-value { font-family: var(--font-display), sans-serif; font-weight: 800; font-size: 1.7rem; letter-spacing: 0.22em; line-height: 1; margin-right: auto; } .ds-roomcode-copy { appearance: none; border: 1px solid color-mix(in srgb, currentColor 40%, transparent); background: transparent; color: inherit; border-radius: 3px; padding: 6px 8px; cursor: pointer; display: inline-flex; } .ds-roomcode-copy:hover { background: color-mix(in srgb, currentColor 14%, transparent); }"
+      "css": ".ds-roomcode { display: flex; align-items: center; gap: 12px; padding: 10px 12px; background: var(--signal, #4f8ce8); border-radius: var(--radius-sm, 12px); box-shadow: 0 2px 0 rgba(0,0,0,0.34), 0 6px 12px -6px rgba(0,0,0,0.62); color: var(--signal-on, #0c1725); } .ds-roomcode-label { font-family: var(--font-label, var(--font-text)), sans-serif; font-weight: 600; text-transform: uppercase; letter-spacing: 0.14em; font-size: 0.56rem; opacity: 0.8; } .ds-roomcode-value { font-family: var(--font-display), sans-serif; font-weight: 600; font-size: 1.7rem; letter-spacing: 0.15em; line-height: 1; margin-right: auto; } .ds-roomcode-copy { appearance: none; border: 1px solid color-mix(in srgb, currentColor 40%, transparent); background: transparent; color: inherit; border-radius: var(--radius-xs, 8px); padding: 6px 8px; cursor: pointer; display: inline-flex; } .ds-roomcode-copy:hover { background: color-mix(in srgb, currentColor 14%, transparent); }"
     }
   ],
   "narrative": {
     "northStar": "The Club Scoreboard",
-    "overview": "GameHub is a hand-operated board in a club back room, now painted in navy and cobalt. Nothing on it is generated: every figure sits on an enamel plate that somebody screwed to a hook, every region is a channel routed into the panel, every label is stencilled on. The interface reads as fabricated hardware rather than rendered software.\n\nThe board is lit two ways. The night coat is the navy ground with bone ink; the day coat relights the same board without touching the paint tin — roles swap, paints do not. There are five paints and no sixth. Every tone between them is a color-mix of two paints, never a new pigment and never a gradient. What separates two adjacent surfaces is a printed speckle, a routed keyline, or a shadow — never a blend.\n\nDensity is high and unapologetic. Numbers are large, condensed and tabular; supporting text is small, quiet and short. Game play takes the whole window: a route that plays something claims the full viewport below the rail and sizes its board to that space rather than growing the page. Confirmed rejection: no gradients, no soft glassy translucency as a surface, no decorative color that is not also a fitting.",
+    "overview": "BrainBox is a hand-operated board in a club back room, painted in navy and cobalt. Nothing on it is generated: every figure sits on an enamel plate that somebody screwed to a hook, every region is a channel routed into the panel, every label is painted on. The interface reads as fabricated hardware rather than rendered software.\n\nThe hardware is rounded, not machined. Corners run on a soft scale (8/12/16/20px), the display face is curvy and capped at semibold, and the mark is a brain in a soft-cornered box. The board is friendly and it does not shout — the tone commitment is carried by the corner scale and the weight ceiling, not by adding color.\n\nThe board is lit two ways. The night coat is the navy ground with bone ink; the day coat relights the same board without touching the paint tin — roles swap, paints do not. There are five paints and no sixth. Every tone between them is a color-mix of two paints, never a new pigment and never a gradient.\n\nDensity is high but the voice is warm. Numbers are large, rounded and tabular; supporting text is small, quiet and short. Game play takes the whole window: a route that plays something claims the full viewport below the rail and sizes its board to that space rather than growing the page. Confirmed rejection: no gradients, no soft glassy translucency as a surface, no decorative color that is not also a fitting.",
     "keyCharacteristics": [
       "Five paints, closed; every other tone is a mix of two of them",
       "Two coats that swap roles, not paints (night is default; day is a relight)",
+      "One rounded corner scale (8/12/16/20/999px); nothing gets a bespoke radius",
+      "Two faces, two-and-a-half roles: Fredoka is the voice, Nunito is the reading and, set in caps and tracked, the labels",
+      "Display weight is capped at 600 — the board never shouts",
       "Depth is offset-plus-blur shadow standing off the board, or an inset routed channel cut into it — never both directions in one element",
       "A single fixed speckle layer over the whole window; no per-element texture",
-      "Stencil for what the board painted on itself; condensed display for figures; Archivo for anything a person wrote",
-      "State is a stencilled word plus a drawn mark, never color alone",
+      "State is a written word plus a drawn mark, never color alone",
       "Play routes own the window: a fixed-height stage, a board that fits it"
     ],
     "rules": [
       { "name": "The Five Paints Rule", "body": "The palette is closed at five: navy, slate, steel, bone, cobalt. Any new tone is a color-mix of two of them. A sixth pigment requires a palette decision, not a component decision. Fault red is the single documented exception and is reserved for error.", "section": "colors" },
-      { "name": "The Repaint Rule", "body": "The day coat swaps roles, not paints. [data-paint=\"day\"] reassigns --ground, --ink, --signal, --signal-on, --panel, --routed and the shadow tokens; it never introduces a hex. Anything built with role tokens relights for free. Audit test: if a component reads --paint-* directly for a fill or a text color, it must look right in both coats or be rewritten onto a role token.", "section": "colors" },
+      { "name": "The Repaint Rule", "body": "The day coat swaps roles, not paints. [data-paint=\"day\"] reassigns --ground, --ink, --signal, --signal-on, --panel, --routed and the shadow tokens; it never introduces a hex. Audit test: if a component reads --paint-* directly for a fill or a text color, it must look right in both coats or be rewritten onto a role token. The one licensed exception is a static asset that cannot read a variable: app/icon.svg and app/apple-icon.svg hardcode navy, bone and cobalt because a favicon has no CSS context.", "section": "colors" },
       { "name": "The Signal Is Not Text Rule", "body": "Cobalt at ~4.4:1 on navy is a fill, a stroke, and large display type — never body text, never a small label. Words in the accent use --signal-ink.", "section": "colors" },
       { "name": "The Computed Contrast Rule", "body": "--ink-quiet, --ink-faint, --plate-ink-quiet and every keyline mix are computed to clear 4.5:1 against their own ground in both coats. Changing a mix percentage means recomputing, not eyeballing.", "section": "colors" },
-      { "name": "The Three Faces Rule", "body": "Archivo, Big Shoulders, Big Shoulders Stencil — all self-hosted, no fourth face, and no system display stack. A new weight is allowed; a new family is a system change.", "section": "typography" },
-      { "name": "The Stencil-For-Labels Rule", "body": "Stencil is what the board painted on itself: wordmark, zone labels, tags, button faces, column headers, unit lines. It is always uppercase, always letterspaced at or above 0.12em, and never sets a sentence.", "section": "typography" },
+      { "name": "The Two Faces Rule", "body": "Fredoka and Nunito, both self-hosted through next/font, no third family and no system display stack. --font-label is an alias of --font-text, not a new face. A new weight inside the loaded set is allowed; a new family is a system change.", "section": "typography" },
+      { "name": "The Quiet Ceiling Rule", "body": "Display type stops at 600. No 700, 800 or 900 anywhere in the display role — the ramp gets its emphasis from size, never from mass. Nunito's 700 exists for inline body emphasis only.", "section": "typography" },
+      { "name": "The Caps-For-Labels Rule", "body": "The label role is the body face uppercased and tracked: zone labels, tags, button faces, column headers, unit lines. It is always uppercase, always letterspaced between 0.12em and 0.16em, and never sets a sentence.", "section": "typography" },
       { "name": "The Tabular Rule", "body": "Figures are tabular. font-variant-numeric: tabular-nums is set on body and re-asserted on every numeral class, so a score never shifts width as it changes.", "section": "typography" },
-      { "name": "The Every-Zone-Names-Itself Rule", "body": "Every region of the board opens with a stencilled zone label whose trailing hairline runs to the edge of the region. Wayfinding is reading, not iconography.", "section": "typography" },
+      { "name": "The Every-Zone-Names-Itself Rule", "body": "Every region of the board opens with a zone label whose trailing hairline runs to the edge of the region. Wayfinding is reading, not iconography.", "section": "typography" },
       { "name": "The Stage Owns The Window Rule", "body": "A play route claims the window below the rail and nothing inside it may grow that height. Boards fit the stage; the stage never fits the board. Audit test: with the game running at 1280x800, the page must not scroll.", "section": "layout" },
       { "name": "The Page Owns Its Container Rule", "body": "The layout supplies no width and no padding. Every page states its own container — .board__inner for reading surfaces, .stage for play.", "section": "layout" },
       { "name": "The Two Directions Rule", "body": "Every depth effect either stands off the board (offset + blur) or is cut into it (inset). Never both on one element, and never a shadow with zero offset.", "section": "elevation" },
       { "name": "The No-Gradient Rule", "body": "No gradient anywhere. An apparent tone shift is a color-mix of two paints, the speckle layer, or a shadow.", "section": "elevation" },
       { "name": "The One Speckle Rule", "body": "One fixed speckle layer for the whole window. Components do not carry their own texture, noise, or backdrop except the stage veil's single 3px blur.", "section": "elevation" },
+      { "name": "The One Corner Scale Rule", "body": "Every corner on the board comes from --radius-xs / -sm / --radius / -lg / -pill. No component declares its own radius literal. Audit test: a border-radius in the sheet that is not a var(--radius*) reference is a bug, with the two documented exceptions — the 12px concentric inner keyline and the 50% drilled hole in the hung plate.", "section": "shapes" },
       { "name": "The One Stroke Rule", "body": "Every mark on the board is drawn at one weight in one file, so hardware and game marks read as a single set of fittings. A new icon is added there or not at all.", "section": "shapes" }
     ],
     "dos": [
       "Do build from role tokens (--ground, --ink, --signal, --signal-on, --panel, --routed) so a component relights in both coats for free.",
       "Do use --signal-ink for any word in the accent color, and reserve --signal for fills, strokes and large display type.",
+      "Do take every corner from --radius-xs / -sm / --radius / -lg / -pill.",
       "Do express every space as a calc(var(--u) * n) multiple of the 8px unit.",
+      "Do set labels in the body face, uppercased and tracked 0.12em-0.16em, via --font-label.",
       "Do give each new game a .stage with a .stage__bar and a .stage__body, and assemble its side rail from the existing furniture (.readout, .pad, .tools, .status, .field, .notice).",
       "Do size a game board to the stage — container queries or cqmin type, min-height: 0 on the grid track — so the page never scrolls during play.",
       "Do state every status with a word plus a drawn form; color confirms it, it does not carry it.",
       "Do draw new marks in components/board/icons.js at the 1.6 stroke weight on the 24x24 box.",
-      "Do open every region with a stencilled zone label."
+      "Do open every region with a zone label.",
+      "Do keep the mark's interior at three strokes; it is a tested legibility floor at 16px."
     ],
     "donts": [
       "Don't introduce a sixth paint. New tones are color-mix of the five. Fault red is the single documented exception and is only for error.",
       "Don't use a gradient anywhere, on any surface, in any coat.",
       "Don't set body text, small labels or long copy in --signal.",
+      "Don't set display type above 600, and don't reach for weight where size is the correct emphasis.",
+      "Don't write a bespoke border-radius literal; if the scale is wrong, change the scale.",
       "Don't add a second texture, noise or backdrop layer; the fixed speckle is the whole budget.",
       "Don't let a play route's content determine the page height, and don't put a page container in the root layout.",
-      "Don't add a fourth font family or fall back to a system display face.",
+      "Don't add a third font family or fall back to a system display face.",
       "Don't ship a glyph icon, an icon font, or an icon at a stroke weight other than 1.6.",
+      "Don't redraw the mark's brain as a single continuous path (it reads as a \"2\") or as dense parallel folds (it fills in at 16px).",
       "Don't extend the hung-plate mechanic to new surfaces while it is under review.",
       "Don't treat .legacy as a component to reuse; it exists only until chess is rebuilt."
     ]

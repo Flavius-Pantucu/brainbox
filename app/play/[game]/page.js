@@ -9,7 +9,7 @@ export function generateStaticParams() {
 export async function generateMetadata({ params }) {
   const { game: slug } = await params;
   const game = GAME_BY_ID[slug];
-  return { title: game ? `${game.name} — GameHub` : "GameHub" };
+  return { title: game ? `${game.name} — BrainBox` : "BrainBox" };
 }
 
 export default async function PlayPage({ params }) {

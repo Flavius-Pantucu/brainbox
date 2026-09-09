@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Lamp } from "./icons";
+import { BrainBoxMark } from "./logo";
 import { NamePlate } from "./nameplate";
 
 const LINKS = [
@@ -23,7 +24,7 @@ function PaintSwitch() {
     document.documentElement.dataset.paint = next;
     setPaint(next);
     try {
-      window.localStorage.setItem("gamehub.paint", next);
+      window.localStorage.setItem("brainbox.paint", next);
     } catch {
       /* the board simply forgets the choice next visit */
     }
@@ -50,9 +51,9 @@ export function Rail() {
   return (
     <header className="rail">
       <div className="rail__inner">
-        <Link href="/" className="rail__mark" aria-label="GameHub, back to the board">
-          <span className="rail__wordmark">GameHub</span>
-          <span className="rail__mark-sub">Club Board</span>
+        <Link href="/" className="rail__mark" aria-label="BrainBox, back to the board">
+          <BrainBoxMark className="rail__logo" size={30} />
+          <span className="rail__wordmark">BrainBox</span>
         </Link>
 
         <nav className="rail__nav" aria-label="Board sections">
