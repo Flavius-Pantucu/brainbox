@@ -1,7 +1,7 @@
 # BrainBox
 
-A portal for browser-based logic games — chess, Go, checkers, Reversi, Connect Four,
-minesweeper, sudoku and tic-tac-toe — built with
+A portal for browser-based logic games — chess, Go, backgammon, checkers, Reversi, Connect
+Four, minesweeper, sudoku and tic-tac-toe — built with
 [Next.js](https://nextjs.org/).
 
 The interface is a hand-operated club board, painted in navy and steel: today's challenge,
@@ -19,6 +19,7 @@ Games:
 - [x] **Minesweeper** — beginner to expert, with a first click that is always safe
 - [x] **Sudoku** — a fresh puzzle every game, generated in the browser, at four difficulties
 - [x] **Go** — 9×9 to 19×19, against the machine, against the next chair, or online by room code
+- [x] **Backgammon** — against the machine, against the next chair, or online by room code
 - [x] **Checkers** — against the machine, against the next chair, or online by room code
 - [x] **Reversi** — against the machine, against the next chair, or online by room code
 - [x] **Connect Four** — against the machine, against the next chair, or online by room code
@@ -36,6 +37,7 @@ Games:
 | `/play/reversi`  | Reversi, inside the play frame                                     |
 | `/play/checkers` | Checkers, inside the play frame                                    |
 | `/play/minesweeper` | Minesweeper, inside the play frame                              |
+| `/play/backgammon` | Backgammon, inside the play frame                                |
 | `/play/sudoku`   | Sudoku, inside the play frame                                      |
 | `/play/tictactoe`| Tic-Tac-Toe, inside the play frame                                 |
 | `/standings`     | The ladder and your card — recent games, wins, day run             |
@@ -82,6 +84,25 @@ and takes the one that wins most, on a time budget that grows with the board. It
 own eyes and passes when it has nothing left. It is a real opponent on 9×9 and an honest one
 above that. Not implemented: positional superko, and the search runs on the main thread rather
 than in a worker.
+
+## Backgammon
+
+`lib/backgammon.js` holds the rules, including the one most implementations get wrong: **you
+must use both dice if any order lets you, and if only one can be played it has to be the higher
+one.** That is not a check you can make move by move — playing the low die first can strand the
+high one — so a turn is generated whole. Every legal sequence for the roll is built, only the
+longest survive, and the board offers you the first step of whatever is still open. Doubles are
+played four times over. The bar comes before anything else, bearing off needs every checker home
+with an over-roll allowed only from the furthest point, and a win is worth one, two for a gammon
+or three for a backgammon.
+
+The machine picks a whole turn rather than a move, scoring the position it would leave: pips,
+checkers off and on the bar, points made at home, anchors in the opponent's home, and blots
+weighted by how many of the thirty-six rolls could hit them. On an opening 3-1 it makes the
+five-point, which is the book move.
+
+Online, **the dice are the server's to roll** — a client that rolled its own would be choosing
+them. No doubling cube.
 
 ## Checkers
 

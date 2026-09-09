@@ -4,12 +4,14 @@ import { useEffect, useRef } from "react";
 import { Board as ChessBoard } from "../games/chess/board";
 import { Goban } from "../games/go/goban";
 import { Grid as Connect4Grid } from "../games/connect4/grid";
+import { BackgammonBoard } from "../games/backgammon/board";
 import { CheckersGrid } from "../games/checkers/grid";
 import { MineField } from "../games/minesweeper/grid";
 import { ReversiGrid } from "../games/reversi/grid";
 import { SudokuGrid } from "../games/sudoku/grid";
 import { Board as TicTacToeBoard } from "../games/tictactoe/board";
 import {
+  BACKGAMMON_PREVIEW,
   CHECKERS_PREVIEW,
   CHESS_PREVIEW,
   CONNECT4_PREVIEW,
@@ -78,6 +80,14 @@ export function GamePreview({ gameId }) {
           onDrop={() => {}}
           disabled
         />
+      </Inert>
+    );
+  }
+
+  if (gameId === "backgammon") {
+    return (
+      <Inert>
+        <BackgammonBoard state={BACKGAMMON_PREVIEW.state} disabled />
       </Inert>
     );
   }

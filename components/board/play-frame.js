@@ -10,6 +10,7 @@ import Go from "../games/go/go";
 import Reversi from "../games/reversi/reversi";
 import Checkers from "../games/checkers/checkers";
 import Minesweeper from "../games/minesweeper/minesweeper";
+import Backgammon from "../games/backgammon/backgammon";
 import { Tag } from "./tag";
 import { ArrowLeft } from "./icons";
 import { GAME_BY_ID } from "../../lib/games";
@@ -23,6 +24,7 @@ const SURFACES = {
   reversi: Reversi,
   checkers: Checkers,
   minesweeper: Minesweeper,
+  backgammon: Backgammon,
   sudoku: Sudoku,
   tictactoe: TicTacToe,
 };

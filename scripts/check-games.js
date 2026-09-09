@@ -2,7 +2,7 @@
 // library's: the chess material read, the review maths, the variation tree, the
 // clocks, Connect Four's rules and opponent, Go's rules and scoring, Reversi's
 // turning and passing, draughts' compulsory captures and chains, minesweeper's
-// safe first click, and the room's move rules.
+// safe first click, backgammon's dice rules, and the room's move rules.
 //   npm run check
 const assert = require("node:assert/strict");
 const { Chess } = require("chess.js");
@@ -15,6 +15,7 @@ async function main() {
   const rev = await import("../lib/reversi.js");
   const chk = await import("../lib/checkers.js");
   const ms = await import("../lib/minesweeper.js");
+  const bg = await import("../lib/backgammon.js");
   const daily = await import("../lib/daily.js");
   const games = await import("../lib/games.js");
   const rooms = await import("../lib/rooms.js");
@@ -620,6 +621,146 @@ async function main() {
   const chorded = ms.chordAt(chordField, oneOpen, marked, numbered);
   assert.ok(chorded.revealed.filter(Boolean).length > 1, "and everything else opens once they do");
   assert.equal(chorded.hit, false, "with the mine flagged, nothing blows up");
+
+  {
+    /* backgammon ------------------------------------------------------------ */
+    const race0 = bg.start();
+    assert.equal(bg.pipCount(race0, "w"), 167, "the opening is a hundred and sixty-seven pips");
+    assert.equal(bg.pipCount(race0, "b"), 167);
+    assert.equal(
+      race0.board.filter((n) => n > 0).reduce((a, b) => a + b, 0),
+      15,
+      "fifteen checkers a side"
+    );
+
+    const blank = () => ({ board: new Array(24).fill(0), bar: { w: 0, b: 0 }, off: { w: 0, b: 0 } });
+
+    // doubles are played four times over
+    assert.equal(bg.turnOptions(race0, "w", [6, 6, 6, 6])[0].length, 4);
+
+    // a checker on the bar comes in before anything else moves
+    const barred = blank();
+    barred.board[10] = 2;
+    barred.bar.w = 1;
+    const fromBar = bg.nextPlays(bg.turnOptions(barred, "w", [3, 4]));
+    assert.ok(fromBar.length > 0 && fromBar.every((play) => play.from === "bar"), "the bar comes first");
+    assert.deepEqual(fromBar.map((play) => play.to).sort((a, b) => a - b), [20, 21]);
+
+    // and stays there while both entry points are shut
+    const shutOut = blank();
+    shutOut.board[21] = -2;
+    shutOut.board[20] = -2;
+    shutOut.bar.w = 1;
+    assert.equal(bg.turnOptions(shutOut, "w", [3, 4]).length, 0, "no way in is no move at all");
+
+    // when only one die can be played it has to be the higher one
+    const onlyOne = blank();
+    onlyOne.board[10] = 1;
+    onlyOne.board[9] = -2; // the 1 is shut
+    onlyOne.board[7] = -2;
+    onlyOne.board[6] = -2;
+    const onlyHigh = bg.turnOptions(onlyOne, "w", [1, 5]);
+    assert.equal(onlyHigh.length, 1);
+    assert.equal(onlyHigh[0][0].die, 5, "the five, not the one");
+
+    // bearing off: an exact roll always, a bigger one only from the furthest point
+    const bearing = blank();
+    bearing.board[3] = 1;
+    bearing.board[1] = 1;
+    assert.deepEqual(
+      bg.playsWithDie(bearing, "w", 4).map((play) => `${play.from}>${play.to}`),
+      ["3>off"],
+      "four bears off the four-point exactly"
+    );
+    assert.deepEqual(
+      bg.playsWithDie(bearing, "w", 6).map((play) => `${play.from}>${play.to}`),
+      ["3>off"],
+      "and six only takes the furthest checker"
+    );
+    const alone = blank();
+    alone.board[1] = 1;
+    assert.deepEqual(bg.playsWithDie(alone, "w", 6).map((play) => play.to), ["off"]);
+
+    // a lone checker gets sent back
+    const lone = blank();
+    lone.board[10] = 1;
+    lone.board[7] = -1;
+    const hit = bg.playsWithDie(lone, "w", 3)[0];
+    assert.equal(hit.hit, true);
+    const afterHit = bg.applyPlay(lone, "w", hit);
+    assert.equal(afterHit.bar.b, 1, "onto the bar");
+    assert.equal(afterHit.board[7], 1, "and the point is white's");
+
+    // what a win is worth
+    const plain = blank();
+    plain.off.w = 15;
+    plain.off.b = 2;
+    plain.board[20] = -1;
+    assert.deepEqual(bg.isOver(plain), { winner: "w", value: 1, reason: "the game" });
+
+    const gammon = blank();
+    gammon.off.w = 15;
+    gammon.board[20] = -3;
+    assert.equal(bg.isOver(gammon).value, 2, "nothing borne off is a gammon");
+
+    const deep = blank();
+    deep.off.w = 15;
+    deep.board[2] = -3;
+    assert.equal(bg.isOver(deep).value, 3, "still in the winner's home is a backgammon");
+
+    assert.equal(bg.isOver(race0), null);
+
+    // the opening three-one makes the five point, which is the book move
+    const book = bg.pickSequence(race0, "w", [3, 1], "sharp");
+    assert.deepEqual(
+      book.map((play) => `${play.from}/${play.to}`).sort(),
+      ["5/4", "7/4"],
+      "8/5 6/5 in this board's numbering"
+    );
+
+    // a whole game finishes
+    let race = bg.start();
+    let side = "w";
+    let turns = 0;
+    while (!bg.isOver(race) && turns < 500) {
+      const path = bg.pickSequence(race, side, bg.roll(), "fair");
+      if (path) for (const play of path) race = bg.applyPlay(race, side, play);
+      side = bg.other(side);
+      turns += 1;
+    }
+    const raced = bg.isOver(race);
+    assert.ok(raced, "somebody bears off");
+    assert.equal(race.off[raced.winner], 15);
+
+    /* a backgammon room, where the dice are the server's --------------------- */
+    const bgHost = rooms.createRoom("Ada", "backgammon", { seat: "w" });
+    const bgGuest = rooms.joinRoom(bgHost.room.code, "Bo");
+    const bgCode = bgHost.room.code;
+    let bgState = rooms.publicState(rooms.getRoom(bgCode), bgHost.token);
+    assert.ok(bgState.dice.length >= 2, "the first roll is down as soon as both seats are filled");
+    assert.ok(bgState.plays.length > 0, "and the mover is told what it may do");
+
+    const onRoll = bgState.turn === "w" ? bgHost.token : bgGuest.token;
+    const waiting = bgState.turn === "w" ? bgGuest.token : bgHost.token;
+    assert.equal(
+      rooms.act(bgCode, waiting, "move", bgState.plays[0]).error,
+      "not-your-turn",
+      "the other side cannot move the dice it did not roll"
+    );
+    assert.equal(rooms.act(bgCode, onRoll, "move", { from: 99, to: 98 }).error, "illegal-move");
+    assert.equal(rooms.act(bgCode, onRoll, "undo", {}).error, "nothing-to-undo");
+
+    const firstPlay = bgState.plays[0];
+    rooms.act(bgCode, onRoll, "move", { from: firstPlay.from, to: firstPlay.to });
+    bgState = rooms.publicState(rooms.getRoom(bgCode), bgHost.token);
+    assert.equal(bgState.played.length, 1);
+    assert.equal(bgState.used.filter(Boolean).length, 1, "one die spent");
+
+    rooms.act(bgCode, onRoll, "undo", {});
+    bgState = rooms.publicState(rooms.getRoom(bgCode), bgHost.token);
+    assert.equal(bgState.played.length, 0, "and a turn can be taken back to where it started");
+    assert.equal(bgState.used.filter(Boolean).length, 0);
+  }
 
   /* every game the catalog lists can be today's --------------------------- */
   for (let day = 0; day < 40; day += 1) {

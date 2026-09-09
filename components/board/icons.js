@@ -131,6 +131,19 @@ export function MinesweeperMark({ size = 20, ...rest }) {
   );
 }
 
+export function BackgammonMark({ size = 20, ...rest }) {
+  // Two points and a die.
+  return (
+    <svg {...base} width={size} height={size} {...rest}>
+      <rect x="3.5" y="3.5" width="17" height="17" rx="1.5" />
+      <path d="M6.5 3.8 8.9 12 11.3 3.8" fill="currentColor" stroke="none" />
+      <path d="M12.7 20.2 15.1 12l2.4 8.2" strokeWidth="1.2" />
+      <circle cx="8.9" cy="17.5" r="1.1" fill="currentColor" stroke="none" />
+      <circle cx="15.1" cy="6.5" r="1.1" fill="currentColor" stroke="none" />
+    </svg>
+  );
+}
+
 export const GAME_MARKS = {
   chess: ChessMark,
   sudoku: SudokuMark,
@@ -140,6 +153,7 @@ export const GAME_MARKS = {
   reversi: ReversiMark,
   checkers: CheckersMark,
   minesweeper: MinesweeperMark,
+  backgammon: BackgammonMark,
 };
 
 export function Lamp({ size = 18, lit = false, ...rest }) {

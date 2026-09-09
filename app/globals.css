@@ -4462,3 +4462,180 @@ span.movelist__half {
     height: 3px;
   }
 }
+
+/* =========================================================================
+   BACKGAMMON
+   ========================================================================= */
+
+.bg {
+  display: contents;
+}
+
+.bg__field {
+  grid-column: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 0;
+  min-width: 0;
+}
+
+.bg__side {
+  grid-column: 2;
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--u) * 2);
+  min-height: 0;
+  overflow: auto;
+  padding-bottom: var(--u);
+}
+
+.bg__wrap {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 100 / 62;
+  max-height: min(100%, 74vh);
+  margin: auto;
+}
+
+.bg__board {
+  width: 100%;
+  height: 100%;
+  border-radius: var(--radius-sm);
+  box-shadow: var(--lift-2);
+  touch-action: manipulation;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.bg__face {
+  fill: color-mix(in srgb, var(--paint-steel) 46%, var(--paint-navy));
+}
+
+.bg__bar,
+.bg__tray {
+  fill: color-mix(in srgb, var(--paint-navy) 76%, var(--paint-steel));
+}
+
+.bg__point--light {
+  fill: color-mix(in srgb, var(--paint-bone) 76%, var(--paint-steel));
+}
+
+.bg__point--dark {
+  fill: color-mix(in srgb, var(--paint-navy) 58%, var(--paint-steel));
+}
+
+.bg__point.is-last {
+  fill: color-mix(in srgb, var(--paint-cobalt) 52%, var(--paint-steel));
+}
+
+.bg__checker--w {
+  fill: var(--paint-bone);
+  stroke: rgba(0, 0, 0, 0.3);
+  stroke-width: 0.2;
+}
+
+.bg__checker--b {
+  fill: var(--paint-navy);
+  stroke: rgba(232, 237, 244, 0.22);
+  stroke-width: 0.2;
+}
+
+.bg__stack {
+  font-family: var(--font-label), sans-serif;
+  font-size: 2.6px;
+  font-weight: 700;
+}
+
+.bg__stack--w {
+  fill: var(--paint-navy);
+}
+
+.bg__stack--b {
+  fill: var(--paint-bone);
+}
+
+.bg__target {
+  fill: var(--paint-cobalt);
+}
+
+.bg__off--w {
+  fill: var(--paint-bone);
+}
+
+.bg__off--b {
+  fill: var(--paint-navy);
+  stroke: rgba(232, 237, 244, 0.3);
+  stroke-width: 0.2;
+}
+
+.bg__offcount {
+  font-family: var(--font-label), sans-serif;
+  font-size: 3px;
+  font-weight: 700;
+  fill: var(--paint-bone);
+}
+
+.bg__hit {
+  fill: transparent;
+}
+
+.bg__hit.is-open {
+  cursor: pointer;
+  fill: color-mix(in srgb, var(--paint-cobalt) 12%, transparent);
+}
+
+.bg__hit.is-picked {
+  fill: color-mix(in srgb, var(--paint-cobalt) 26%, transparent);
+}
+
+/* ---------- the dice ---------- */
+
+.dice {
+  display: flex;
+  gap: var(--u);
+}
+
+.die {
+  width: 34px;
+  height: 34px;
+  transition: opacity 200ms ease-out;
+}
+
+.die rect {
+  fill: var(--plate-face);
+  stroke: var(--keyline-strong);
+  stroke-width: 1;
+}
+
+.die circle {
+  fill: var(--plate-ink);
+}
+
+.die.is-spent {
+  opacity: 0.32;
+}
+
+.preview .bg__wrap {
+  grid-column: auto;
+  grid-row: auto;
+  width: 100%;
+  height: auto;
+  max-height: 100%;
+  margin: 0;
+}
+
+.preview .bg__board {
+  box-shadow: none;
+}
+
+@media (max-width: 900px) {
+  .bg__field,
+  .bg__side {
+    grid-column: 1;
+  }
+
+  .bg__wrap {
+    max-height: none;
+  }
+}
