@@ -4494,7 +4494,7 @@ span.movelist__half {
   position: relative;
   container-type: inline-size;
   width: 100%;
-  aspect-ratio: 100 / 62;
+  aspect-ratio: 100 / 70;
   max-height: min(100%, 74vh);
   margin: auto;
 }

@@ -6,10 +6,11 @@ import { countAt } from "../../../lib/backgammon";
 const W = 7; // one point wide
 const BAR = 47;
 const TRAY = 89;
+const H = 70; // board height, deep enough for two stacks of five to clear
 const TOP = 1;
-const BOTTOM = 61;
-const ROW = 26; // how far a point reaches into the board
-const R = 3.1; // a checker
+const BOTTOM = H - 1;
+const ROW = 30; // how far a point reaches into the board
+const R = 2.85; // a checker
 const MAX_SHOWN = 5;
 
 // Where a point sits, and which way it hangs.
@@ -59,10 +60,10 @@ export function BackgammonBoard({
 
   return (
     <div className="bg__wrap">
-      <svg className="bg__board" viewBox="0 0 100 62" role="grid" aria-label="Backgammon board">
-        <rect className="bg__face" x="0" y="0" width="100" height="62" rx="1.4" />
-        <rect className="bg__bar" x={BAR - 5} y="0" width="5" height="62" />
-        <rect className="bg__tray" x={TRAY} y="0" width="11" height="62" rx="1" />
+      <svg className="bg__board" viewBox={`0 0 100 ${H}`} role="grid" aria-label="Backgammon board">
+        <rect className="bg__face" x="0" y="0" width="100" height={H} rx="1.4" />
+        <rect className="bg__bar" x={BAR - 5} y="0" width="5" height={H} />
+        <rect className="bg__tray" x={TRAY} y="0" width="11" height={H} rx="1" />
 
         {Array.from({ length: 24 }, (_, index) => {
           const { x, top } = pointAt(index);
@@ -128,9 +129,9 @@ export function BackgammonBoard({
               key={`h${index}`}
               className={`bg__hit ${open ? "is-open" : ""} ${selected === index ? "is-picked" : ""}`}
               x={x}
-              y={top ? 0 : 31}
+              y={top ? 0 : H / 2}
               width={W}
-              height={31}
+              height={H / 2}
               role="gridcell"
               aria-label={`Point ${index + 1}`}
               onClick={() => !disabled && onPress?.(index)}
@@ -145,7 +146,7 @@ export function BackgammonBoard({
           x={BAR - 5}
           y="0"
           width="5"
-          height="62"
+          height={H}
           role="gridcell"
           aria-label="The bar"
           onClick={() => !disabled && onPress?.("bar")}
@@ -156,7 +157,7 @@ export function BackgammonBoard({
           x={TRAY}
           y="0"
           width="11"
-          height="62"
+          height={H}
           role="gridcell"
           aria-label="Bear off"
           onClick={() => !disabled && onPress?.("off")}

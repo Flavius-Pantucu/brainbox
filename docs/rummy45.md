@@ -15,14 +15,60 @@ Rummy 45 is not Gin Rummy, not Rummikub, and not Indian 13-card Rummy. Rules bel
 | # | Ambiguity | Possible readings | Current assumption |
 |---|---|---|---|
 | A1 | **There is no trump card in Rummy 45.** The prompt asks for one. | (a) The prompt means the *joker indicator* — the face-up tile turned at deal time that designates which numbered tile acts as the second wild. (b) The prompt means the red `JOKER` control in the screenshot. (c) The prompt imported "trump" from a trick-taking game by mistake. | **(c) with (a) as the compatible object.** Part 5 documents the joker-indicator slot in the trump-shaped position and marks the whole concept `OPTIONAL_VARIANT`. The shipped code has no trump and no indicator: both jokers are fixed tiles 104 and 105. |
-| A2 | `(45 p)` beside two names in the screenshot. Their melds total 51 and 48, not 45. | (a) A badge meaning "this seat has met the 45 opening" (a flag, not a sum). (b) The points *counted toward opening only*, capped/frozen at the opening lay. (c) Live meld total, and my tile reading is off. | **(a) — an opened flag rendered as `(45 p)`.** Seats without the badge have not opened. |
+| A2 | `(45 p)` beside two names in the screenshot. | — | **RESOLVED: a live meld total.** Under the banded valuation of §0.1 both clusters come to exactly 45 — `11b 12b 13b`(30) + `5k 5y 5r`(15) and `10r 10b 10k`(30) + `5r 6r 7r`(15). The badge is the seat's points on the table; its presence also implies opened. |
 | A3 | The `2` on the face of the right-most stock back. | (a) Number of 7-stacks remaining. (b) Number of loose tiles beyond the last full 7-stack. (c) A face-up tile. | **(b) loose remainder**, matching `stacksOf()` which returns `{ full, loose }`. |
-| A4 | Dealer's extra tile. | (a) Everyone gets 14. (b) Dealer gets 15 and throws first without drawing. | **(b) for the physical game** (it makes the stock exactly 7×7=49), **(a) in the shipped code** (`HAND = 14`, stock 50). See §4 note — this is a real divergence, not a documentation gap. |
+| A4 | Dealer's extra tile. | — | **RESOLVED: the dealer takes 15, everyone else 14.** The dealer opens the round by discarding without drawing. Stock = 106 − 57 = **49 = 7 × 7 exactly**. The shipped `deal()` still gives everyone 14 (stock 50); see §0.2. |
 | A5 | Taking from the discard line. | (a) Top tile only (classic). (b) Reach any index, paying with every tile thrown after it. | **(b)** — implemented in `takeFrom()` and shown by the "takes N tiles" hint in the UI. This is a house rule specific to this build. |
 | A6 | Whether melds on the table may be broken and re-formed (Rummikub-style rearrangement). | (a) No — once down, a meld is frozen; you may only extend it. (b) Yes — the whole table may be re-solved. | **(a)** — `bestMelds()` carries a `ponytail:` note that a table-wide rearranger is the upgrade path, not present today. |
 | A7 | Joker buy-back. | (a) Only the meld's owner may buy. (b) Any opened player may buy. (c) Not allowed at all. | **(b)** — `jokerSwap()` is not owner-scoped; the caller requires only that the buyer has opened. |
+| A8 | Value of a **group of 1s** (`1r 1y 1b`) at meld time. The 1's meld value is positional, but a group has no position. | (a) 5 each, consistent with `1-2-3`. (b) 10 each, consistent with `12-13-1`. (c) 25 each, consistent with the end-of-round penalty. | **(a) 5 each = 15.** `band(1) = 5` falls out of the one-line band function with no special case. Marked OPEN — this is the one gap the answers did not cover. |
+| A9 | `LIMIT = 100` under banded scoring. | (a) Keep 100 — the game is meant to be short. (b) Raise it; a single bad round can cost 60–90 now, so 100 ends the game in two rounds. | **(a) as shipped**, flagged. The banded scale is far coarser than face value, so 100 is a much lower bar than it was. Raise it if rounds feel truncated. |
 
 Everything below Part 0 assumes the rightmost column. Change a row and the affected parts are flagged with the row id.
+
+### 0.1 Tile values — the banded scale `AUTHORITATIVE`
+
+Rummy 45 does **not** score tiles at face value. Values come in two bands, and the 1 is special:
+
+```
+                MELD VALUE (on the table)          END-OF-ROUND PENALTY (on your rack)
+  tiles 2–9            5 points each                        5 points each
+  tiles 10–13         10 points each                       10 points each
+  the 1          positional: 5 low, 10 high               25 points
+  joker          the value of the slot it fills           25 points
+```
+
+The 1 is bivalent in a run — it sits below the 2 or above the 13 — and its **value follows its position**:
+
+```
+   1  2  3   →   5 + 5 + 5  = 15      the 1 is playing as a 1,  band 5
+  12 13  1   →  10 + 10 + 10 = 30     the 1 is playing as a 14, band 10
+```
+
+Which collapses to a single function over the **position** `p` (1..14), not over the tile:
+
+```js
+const band = (p) => (p <= 9 ? 5 : 10);   // p = 1 → 5, p = 14 → 10, no special case
+```
+
+Two consequences worth internalising before reading Part 14:
+
+- **The largest single meld is 40** (four 10-band tiles) and the largest 3-run is 30 (`12 13 14`). So an opening is normally **two melds**, not one. The only single-meld openings are runs of five or more in the high band: `9 10 11 12 13` = 45, `10 11 12 13 1(=14)` = 50.
+- **Both screenshot clusters are exactly 45**, which is what confirms this scale (§0 A2).
+
+### 0.2 Divergences from the shipped code `ACTION REQUIRED`
+
+[lib/remi.js](../lib/remi.js) predates these answers and is wrong on two counts. The spec below is authoritative; the code is not.
+
+| Code | Ships | Should be |
+|---|---|---|
+| `readGroup` | `value: number * tiles.length` | `value: band(number) * tiles.length` |
+| `readRun` | `for (p…) value += p` | `for (p…) value += band(p)` |
+| `handValue` | `numberOf(tile)` | `numberOf(tile) === 1 ? 25 : band(numberOf(tile))` |
+| `pickDiscard` tie-break | `numberOf(b) - numberOf(a)` | band-then-number |
+| `deal` | 14 to everyone, stock 50 | 15 to the dealer, 14 to the rest, stock 49; dealer starts in phase `play` |
+
+Until those land, `meldValue()` overstates low melds and understates nothing — a hand that the engine says opens at 45 may be worth as little as 21 under the real scale.
 
 ---
 
@@ -94,7 +140,7 @@ Camera directly above the table, looking straight down.
 
 ## PART 3 — THE PLAYER RACK
 
-**Count.** 14 tiles at the start of a round (15 for the dealer under A4(b)). During your own turn, between drawing and throwing, you hold 15 (or 16). You always end your turn back at your pre-draw count minus whatever you laid down.
+**Count.** 14 tiles at the start of a round; **15 for the dealer** (A4), who therefore opens the round by throwing rather than drawing. During your own turn, between drawing and throwing, you hold 15. You always end your turn back at your pre-draw count minus whatever you laid down.
 
 **Geometry.** Two tiers, 13 slots each, 26 slots total (`TIERS = 2`, `SLOTS = 13`). Tiles sit in discrete slots left-to-right; they **do not overlap** — a real rack's groove is one tile deep. A slot may be **empty**, and an empty slot is meaningful: it is how you separate one group from the next.
 
@@ -110,9 +156,9 @@ tier B  [ ·  ·  12y ·  1y ·  ·  ·  ·  ·  ·  2r · ]
 versus, once arranged:
 
 tier A  [ 5r 6r 7r ·  11k 11r 11b ·  ·  ·  ·  ·  · ]
-          └──18──┘     └────33────┘
+          └──15──┘     └────30────┘
 tier B  [ ·  ·  ·  ·  ·  ·  ·  ·  ·  ·  ·  ·  · ]
-                     opening total = 51  ✓
+                     opening total = 45  ✓  (exactly)
 ```
 
 **Visibility.** Faces towards the owner only. Opponents know **the count** of tiles on a rack (they can see how many are in the groove) and nothing else. That count is public and matters — it is the tell that someone is about to go out.
@@ -151,9 +197,9 @@ DRAWING AREA — the stock as it sits in the box, face-down
 
 They lie **side by side in a row**, not one on top of another. That matters for detection: the screenshot shows them as a horizontal fan at bottom-left, and the count text reads `N left / k of seven and r`.
 
-**Why seven.** With four players and A4(b): 106 − (3 × 14 + 15) = 106 − 57 = **49 = 7 × 7**. Stacking the stock in sevens makes the remaining supply countable at a glance without touching it — seven visible stacks means 49 tiles, and each stack that disappears is exactly one seventh of the round gone. It is a counting affordance, not a rule.
+**Why seven.** With four players and the dealer on 15 (A4): 106 − (3 × 14 + 15) = 106 − 57 = **49 = 7 × 7**, with no remainder. Stacking the stock in sevens makes the remaining supply countable at a glance without touching it — seven visible stacks means 49 tiles, and each stack that disappears is exactly one seventh of the round gone. It is a counting affordance, not a rule, but the exactness is why the number is seven and not four or five.
 
-> **Divergence, A4:** the shipped `deal()` gives every seat 14, so the stock is 106 − 56 = **50 = 7 stacks + 1 loose**. The physical 7×7 identity holds only if the dealer takes 15. Either give the dealer the extra tile or accept a permanent loose tile in the box.
+> At 2 or 3 players the identity does not hold (106 − 29 = 77 = 11 × 7 for two players, which is exact; 106 − 43 = 63 = 9 × 7 for three, also exact — the dealer's extra tile makes every seat count work out). Only the shipped 14-to-everyone deal breaks it. See §0.2.
 
 **Face-down.** Every stock tile is face-down. Nobody, including the AI, may know any stock tile's identity. Inference over the *unseen set* is legitimate; asserting a specific stock tile is not.
 
@@ -594,7 +640,7 @@ validate_combination(tiles, combination_type /* "auto"|"group"|"run" */,
 - All real tiles share **one number**.
 - All real tiles have **distinct colours** — four colours exist, so `11r 11r 11b` is invalid (duplicate colour) even though the two `11r` are different physical tiles.
 - **At most one joker.**
-- Value = `number × length`. A four-tile group of 10s is worth 40, not 30.
+- Value = `band(number) × length`, where `band(p) = p <= 9 ? 5 : 10`. Three 5s = 15. Three 10s = 30. **Four 13s = 40, the largest meld in the game.** A group of 1s is 15 under A8 (open).
 
 ### Run (sequence)
 - Length **≥ 3**, no upper bound short of 14.
@@ -602,12 +648,18 @@ validate_combination(tiles, combination_type /* "auto"|"group"|"run" */,
 - Numbers **consecutive**.
 - The **1 is bivalent**: it may sit *below the 2* (worth 1) or *above the 13* (worth 14). `13 1` therefore means `13 14`. `13 1 2` is **not** a run — the sequence does not wrap.
 - **At most one joker**, filling exactly one gap.
-- Value = the sum of the positions occupied, including the joker's position and including a high ace as 14. `11 12 13 1(=14)` = 50.
+- Value = `Σ band(p)` over every position `p` the run occupies, including the joker's position and including a high ace as `p = 14`.
+  - `5r 6r 7r` = 5+5+5 = **15**
+  - `11b 12b 13b` = 10+10+10 = **30**
+  - `1 2 3` = 5+5+5 = **15** — the 1 is low, band 5
+  - `12 13 1(=14)` = 10+10+10 = **30** — the same 1, now high, band 10
+  - `11k 12k 13k 1k(=14)` = **40**
+  - `9 10 11 12 13` = 5+10+10+10+10 = **45** — the shortest single-meld opening
 
 ### Jokers
 - Exactly two exist (`104`, `105`).
 - One per meld, maximum.
-- A joker's **value is positional**: the value of the slot it fills, not a fixed number.
+- A joker's **value is positional**: `band` of the slot it fills, not a fixed number. A joker standing for the 13 in `11 12 J` is worth 10; one standing for the 3 in `2 J 4` is worth 5.
 - Held at scoring time, a joker costs **25 penalty points** (`JOKER_PENALTY`).
 - On the table, a joker can be bought back by the tile it represents (`REPLACE_JOKER`).
 
@@ -626,8 +678,8 @@ Rack-side only. `rackGroups(slots)` re-reads the arrangement on every change. Ta
 ### Return shape
 
 ```json
-{ "valid": true, "kind": "run", "start": 5, "colour": "r", "points": 18,
-  "tiles": ["5r", "6r", "7r"] }
+{ "valid": true, "kind": "run", "start": 5, "colour": "r", "points": 15,
+  "tiles": ["5r", "6r", "7r"], "bands": [5, 5, 5] }
 ```
 
 ```json
@@ -661,26 +713,32 @@ function openingValue(melds) {
 |---|---|
 | Which tiles count? | Only tiles **from your own rack**, laid this turn. |
 | Which combinations count? | Any valid group or run. No restriction on kind. |
-| Can several combinations be summed? | **Yes.** The 45 is the total across all melds laid in that one turn. This is the usual way to open — a single meld rarely reaches 45 (the maximum group is 13×4 = 52; the maximum 3-run is 12+13+14 = 39). |
+| Can several combinations be summed? | **Yes, and you will almost always need to.** The 45 is the total across all melds laid in that one turn. Under the banded scale the largest group is 40 (four 10-band tiles) and the largest 3-run is 30, so **no group and no three-tile run can open on its own**. The only single-meld openings are high runs of five or more: `9 10 11 12 13` = 45, `10 11 12 13 1(=14)` = 50. |
 | Must it be one turn? | **Yes.** Value does not accumulate across turns. 33 this turn and 20 next turn is not an opening. |
 | Does trump affect it? | No trump exists. |
-| Do jokers count? | **Yes**, at the positional value of the slot they fill. A joker standing in for the 13 in `11 12 J` contributes 13. Opening on a joker is legal but expensive — it is worth 25 against you if the round dies. |
+| Do jokers count? | **Yes**, at `band` of the slot they fill. A joker standing in for the 13 in `11 12 J` contributes 10. Opening on a joker is legal but expensive — it is worth 25 against you if the round dies, more than any real tile except the 1. |
 | Do tiles already on the table count? | **No.** Extending an existing meld is forbidden before you open, so it cannot contribute to opening. |
 | May the player rearrange while opening? | On the **rack**, freely and at no cost, before committing. Once `MELD` is submitted it is irreversible. |
 
 **Examples.**
 
 ```
-✓ 11b 12b 13b (36)  +  5k 5y 5r (15)                        = 51  ≥ 45   OPENS
-✓ 10r 10b 10k (30)  +  5r 6r 7r (18)                        = 48  ≥ 45   OPENS
-✓ 11k 12k 13k 1k(=14) (50)                                  = 50  ≥ 45   OPENS  (single meld)
-✓ 13r 13y 13b 13k (52)                                      = 52  ≥ 45   OPENS  (single meld)
-✓ 11y 12y J(=13y) (36) + 4r 4y 4b (12)                      = 48  ≥ 45   OPENS  (joker counts 13)
-✗ 5r 6r 7r (18) + 4k 4y 4b (12)                             = 30  < 45   refused
-✗ 11b 12b 13b (36), then 4r 4b 4k (12) next turn            = never; 45 must be one turn
-✗ 1r 2r 3r (6) + 1y 1b 1k (3)                               = 9   < 45   refused
+✓ 11b 12b 13b (30)   +  5k 5y 5r (15)                       = 45  = 45   OPENS   ← SweetGirl44
+✓ 10r 10b 10k (30)   +  5r 6r 7r (15)                       = 45  = 45   OPENS   ← alina17
+✓ 13r 13y 13b 13k (40) + 2r 3r 4r (15)                      = 55  ≥ 45   OPENS
+✓ 9k 10k 11k 12k 13k (45)                                   = 45  = 45   OPENS   (single meld, rare)
+✓ 10r 11r 12r 13r 1r(=14) (50)                              = 50  ≥ 45   OPENS   (single meld, rare)
+✓ 11y 12y J(=13y) (30) + 4r 4y 4b (15)                      = 45  = 45   OPENS   (joker counts 10)
+✓ 12b 13b 1b(=14) (30) + 7k 8k 9k (15)                      = 45  = 45   OPENS   (high ace, band 10)
+
+✗ 13r 13y 13b 13k (40)                                      = 40  < 45   refused (biggest single meld)
+✗ 5r 6r 7r (15) + 4k 4y 4b (15)                             = 30  < 45   refused
+✗ 1r 2r 3r (15) + 1y 1b 1k (15)                             = 30  < 45   refused (low aces, band 5)
+✗ 11b 12b 13b (30), then 4r 4b 4k (15) next turn            = never; 45 must be one turn
 ✗ extend alina17's 10r 10b 10k with your 10y                = illegal before opening
 ```
+
+**The shape of an opening.** Because 30 + 15 = 45 exactly, the canonical opening is **one high meld plus one low meld**: a 10-band group or run, plus any three-tile low meld. Both seats in the reference screenshot opened on precisely that shape. Anything less than a high meld in the pair cannot get there with three-tile melds (15 + 15 = 30), so the first question to ask of a hand is *"do I have a 10-band meld?"*
 
 ---
 
@@ -730,9 +788,9 @@ Output for the reference screenshot. Seats numbered in header order; the local p
   "you": "player_4",
 
   "players": {
-    "player_1": { "name": "SweetGirl44",  "position": "left",   "has_opened": true,
+    "player_1": { "name": "SweetGirl44",  "position": "left",   "has_opened": true, "table_points": 45,
                   "hand_count": null, "hand": null, "private": true, "score": null },
-    "player_2": { "name": "alina17",      "position": "top",    "has_opened": true,
+    "player_2": { "name": "alina17",      "position": "top",    "has_opened": true, "table_points": 45,
                   "hand_count": null, "hand": null, "private": true, "score": null },
     "player_3": { "name": "Madalina8731", "position": "right",  "has_opened": false,
                   "hand_count": null, "hand": null, "private": true, "score": null },
@@ -763,12 +821,13 @@ Output for the reference screenshot. Seats numbered in header order; the local p
 
   "table": {
     "melds": [
-      { "seat": "player_1", "kind": "run",   "tiles": ["11b","12b","13b"], "points": 36 },
+      { "seat": "player_1", "kind": "run",   "tiles": ["11b","12b","13b"], "points": 30 },
       { "seat": "player_1", "kind": "group", "tiles": ["5k","5y","5r"],    "points": 15 },
       { "seat": "player_2", "kind": "group", "tiles": ["10r","10b","10k"], "points": 30 },
-      { "seat": "player_2", "kind": "run",   "tiles": ["5r","6r","7r"],    "points": 18 }
+      { "seat": "player_2", "kind": "run",   "tiles": ["5r","6r","7r"],    "points": 15 }
     ],
-    "totals": { "player_1": 51, "player_2": 48 }
+    "totals": { "player_1": 45, "player_2": 45 },
+    "cross_check": "both totals equal the (45 p) badges in the header — the banded scale is confirmed"
   },
 
   "status": "playing",
@@ -828,10 +887,14 @@ Inputs: legal moves, own hand, `bestMelds()` over the hand, the opening flag, th
      If I am opened, the round is young, and my hand is flexible, holding a run lets it
      grow. If any rival's hand_count ≤ 3, stop holding — dump everything you legally can.
 6. Which discard?
-     a. never a joker;
+     a. never a joker (25 against you) and never a 1 (also 25) unless it is truly dead;
      b. prefer a tile with two copies already visible (dead — nobody wants it);
      c. prefer a tile adjacent to nothing in my hand (`helpfulness()` = 0);
-     d. among equals, throw the HIGHEST number — penalty is face value;
+     d. among equals throw from the HIGH BAND (10–13, worth 10) before the low band
+        (2–9, worth 5). Within a band the face number is nearly irrelevant to penalty —
+        a 2 and a 9 both cost 5 — so break band ties on usefulness, not on size.
+        This is the single biggest change from face-value scoring: dumping your 13
+        before your 9 saves 5 points, not 4, and dumping your 9 before your 2 saves 0.
      e. penalise any tile that visibly extends a meld on the table or matches the
         colour/number neighbourhood of a rival's recent takes.
 ```
@@ -840,7 +903,7 @@ Inputs: legal moves, own hand, `bestMelds()` over the hand, the opening flag, th
 
 ### Endgame
 
-When `pieces_remaining < 7` (one stack left), the round is likely to die without a winner. Switch the objective from *win* to *minimise the tiles left on the rack*: lay everything legal, extend everything extendable, throw high.
+When `pieces_remaining < 7` (one stack left), the round is likely to die without a winner. Switch the objective from *win* to *minimise the points left on the rack* — which under the banded scale is **not** the same as minimising tiles. Shed in this order: the joker (25), any 1 (25), then high-band tiles (10), then low band (5). Four low tiles cost 20; one joker costs 25. Lay everything legal, extend everything extendable.
 
 **Never** take the first legal move. Enumerate, score, then commit.
 
@@ -1118,13 +1181,13 @@ SCORING  (penalty = sum of tiles left on the rack; joker = 25; winner scores 0)
 
 **11. Discarding.** End every turn by throwing exactly one tile face-up onto the end of the line. You may not pass.
 
-**12. Groups (sets).** Three or four tiles of the **same number** in **different colours**. Worth number × count.
+**12. Groups (sets).** Three or four tiles of the **same number** in **different colours**. Worth 5 each if the number is 2–9, 10 each if it is 10–13. Three 5s = 15; three 10s = 30; four 13s = 40, the biggest meld there is.
 
-**13. Runs (sequences).** Three or more tiles of **consecutive numbers** in **one colour**. The 1 counts as 1 below the 2, or as 14 above the 13. No wrap-around. Worth the sum of the positions.
+**13. Runs (sequences).** Three or more tiles of **consecutive numbers** in **one colour**. The 1 sits below the 2 or above the 13, never both, and never wraps. Each position is worth 5 up to 9 and 10 from 10 upward — so the 1 is worth **5 when it plays low** and **10 when it plays high**. `5 6 7` = 15; `11 12 13` = 30; `12 13 1` = 30.
 
-**14. Jokers.** Two exist. One per meld, standing in for exactly one identifiable tile at that slot's value. On the table, a joker may be bought back by any opened player holding the exact tile it represents. Left on your rack at the end of a round, a joker costs **25**.
+**14. Jokers.** Two exist. One per meld, standing in for exactly one identifiable tile and worth whatever that slot is worth (5 or 10). On the table, a joker may be bought back by any opened player holding the exact tile it represents. Left on your rack at the end of a round, a joker costs **25** — the most expensive thing you can be caught with, tied with the 1.
 
-**15. Opening with 45.** Your first lay of the round must total **45 or more, in a single turn**, from tiles on your own rack. Several melds may be summed. Until you open you may lay nothing, extend nothing, and buy no joker. Value never carries over between turns.
+**15. Opening with 45.** Your first lay of the round must total **45 or more, in a single turn**, from tiles on your own rack. Several melds may be summed, and normally must be: no group and no three-tile run reaches 45 alone. The standard opening is a 10-band meld (30) plus any low meld (15). Until you open you may lay nothing, extend nothing, and buy no joker. Value never carries over between turns.
 
 **16. Extending.** Once opened, you may add tiles to **any** meld on the table, yours or anyone's, whenever they fit.
 
@@ -1132,7 +1195,16 @@ SCORING  (penalty = sum of tiles left on the rack; joker = 25; winner scores 0)
 
 **18. Ending a round.** A round ends when a player discards their **last** tile — they go out and score 0 — or when the stock runs dry, in which case nobody goes out and everybody counts.
 
-**19. Scoring.** Penalty points, low is good. Each tile left on your rack costs its face value (1 as 1); each joker costs 25. The player who went out scores 0. Totals accumulate across rounds.
+**19. Scoring.** Penalty points, low is good. What is left on your rack costs:
+
+| Left on your rack | Costs |
+|---|---|
+| a 2, 3, 4, 5, 6, 7, 8 or 9 | **5** |
+| a 10, 11, 12 or 13 | **10** |
+| a 1 | **25** |
+| a joker | **25** |
+
+The player who went out scores 0. Totals accumulate across rounds. Note the 1 is cheap on the table (5 or 10) and ruinous in the hand (25) — play it or throw it early.
 
 **20. Special cases.** You always need a tile to throw, so you cannot empty your rack by melding alone — keep one throwable tile. You cannot go out without having opened. A round that dies on an empty stock has no winner and everybody pays.
 
@@ -1174,5 +1246,18 @@ number  = (id % 13) + 1
 colour  = ["r","y","b","k"][ floor(id / 13) % 4 ]
 copy    = floor(id / 52)
 ```
+
+Value functions — the whole scoring system, in four lines:
+
+```js
+const band = (p) => (p <= 9 ? 5 : 10);        // p = a RUN POSITION, 1..14
+
+const meldPoints = (positions) => positions.reduce((s, p) => s + band(p), 0);
+
+const tilePenalty = (tile) =>                 // what it costs LEFT IN HAND
+  isJoker(tile) || numberOf(tile) === 1 ? 25 : band(numberOf(tile));
+```
+
+`band` takes a position, not a tile — that one distinction is what makes the bivalent 1 fall out for free: it is `band(1) = 5` when it plays low and `band(14) = 10` when it plays high, with no special case anywhere.
 
 `0 = 1r`, `12 = 13r`, `13 = 1y`, `26 = 1b`, `39 = 1k`, `51 = 13k`, `52 = 1r` (second copy), `104/105 = joker`.
