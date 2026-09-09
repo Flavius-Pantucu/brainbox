@@ -62,7 +62,7 @@ export function Opening({ game, stats, today, entering, onEnter }) {
 
       <span className="opening__face">
         <span className="opening__name">
-          <Mark size={20} />
+          <Mark size={18} />
           <Link href={href} className="opening__link" onClick={press} prefetch>
             {game.name}
           </Link>
@@ -75,31 +75,32 @@ export function Opening({ game, stats, today, entering, onEnter }) {
 
         <span className="opening__line">{game.line}</span>
 
-        <span className="opening__stats">
-          {never ? (
-            <em>Not played yet</em>
-          ) : (
-            <>
-              <b>{stats.played}</b> played
-              {game.outcomes && stats.winRate != null && (
-                <>
-                  {" · "}
-                  <b>{stats.winRate}%</b> won
-                </>
-              )}
-              {game.measure === "time" && stats.bestTime && (
-                <>
-                  {" · best "}
-                  <b>{stats.bestTime}</b>
-                </>
-              )}
-            </>
-          )}
+        <span className="opening__foot">
+          <span className="opening__stats">
+            {never ? (
+              <em>Not played yet</em>
+            ) : (
+              <>
+                <b>{stats.played}</b> played
+                {game.outcomes && stats.winRate != null && (
+                  <>
+                    {" · "}
+                    <b>{stats.winRate}%</b> won
+                  </>
+                )}
+                {game.measure === "time" && stats.bestTime && (
+                  <>
+                    {" · best "}
+                    <b>{stats.bestTime}</b>
+                  </>
+                )}
+              </>
+            )}
+          </span>
+          <span className="opening__enter" aria-hidden="true">
+            Enter
+          </span>
         </span>
-      </span>
-
-      <span className="opening__enter" aria-hidden="true">
-        Enter
       </span>
     </div>
   );

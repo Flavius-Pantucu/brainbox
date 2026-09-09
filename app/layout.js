@@ -1,6 +1,7 @@
 import { Fredoka, Nunito } from "next/font/google";
 import "./globals.css";
 import { Rail } from "../components/board/rail";
+import { Sidebar } from "../components/board/sidebar";
 
 // Nunito carries the reading: humanist, rounded terminals, friendly at small
 // sizes and still precise enough for figures.
@@ -46,7 +47,10 @@ export default function RootLayout({ children }) {
       <body>
         <div className="board">
           <Rail />
-          <main className="board__main">{children}</main>
+          <div className="board__body">
+            <Sidebar />
+            <main className="board__main">{children}</main>
+          </div>
           <footer className="foot">
             <div className="foot__inner">
               <span>BrainBox — three games, one board</span>

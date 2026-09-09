@@ -36,6 +36,7 @@
   /* --- board geometry --- */
   --u: 8px;
   --rail-h: 68px;
+  --side-strip: 54px;
   --radius-xs: 8px;
   --radius-sm: 12px;
   --radius: 16px;
@@ -230,10 +231,18 @@ button {
   flex-direction: column;
 }
 
+.board__body {
+  flex: 1;
+  display: flex;
+  align-items: stretch;
+  min-height: 0;
+}
+
 .board__main {
   flex: 1;
   display: flex;
   flex-direction: column;
+  min-width: 0;
   min-height: 0;
 }
 
@@ -344,7 +353,8 @@ button {
 @media (max-width: 900px) {
   .stage {
     height: auto;
-    min-height: calc(100dvh - var(--rail-h));
+    /* the sidebar is a strip above the stage at this width, and takes its share */
+    min-height: calc(100dvh - var(--rail-h) - var(--side-strip));
     overflow: visible;
   }
 
@@ -372,8 +382,6 @@ button {
 
 .rail__inner {
   width: 100%;
-  max-width: var(--board-max);
-  margin: 0 auto;
   padding: 0 var(--gutter);
   height: var(--rail-h);
   display: flex;
@@ -1454,8 +1462,6 @@ button {
 
 .foot__inner {
   width: 100%;
-  max-width: var(--board-max);
-  margin: 0 auto;
   padding: 0 var(--gutter);
   display: flex;
   align-items: center;
@@ -3430,32 +3436,31 @@ span.movelist__half {
 /* ---------- the openings ---------- */
 
 .doorways {
-  border-radius: var(--radius-lg);
-  background: var(--panel);
-  box-shadow: var(--lift-1);
-  overflow: hidden;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: calc(var(--u) * 2.5);
 }
 
 .opening {
   position: relative;
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
-  align-items: center;
-  gap: calc(var(--u) * 3);
-  padding: calc(var(--u) * 2) calc(var(--u) * 2.5);
-  border-bottom: 1px solid var(--keyline);
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--u) * 1.5);
+  padding: calc(var(--u) * 1.75);
+  border-radius: var(--radius-lg);
+  background: var(--panel);
+  box-shadow: var(--lift-1);
   color: var(--ink);
   text-decoration: none;
-  transition: background-color 220ms ease-out;
-}
-
-.opening:last-child {
-  border-bottom: 0;
+  transition: background-color 220ms ease-out, transform 260ms var(--swing),
+    box-shadow 260ms var(--swing);
 }
 
 .opening:hover,
 .opening:focus-within {
   background: color-mix(in srgb, var(--paint-bone) 6%, transparent);
+  transform: translateY(-2px);
+  box-shadow: var(--lift-2);
 }
 
 /* the name is the link; it reaches over the whole row */
@@ -3479,7 +3484,7 @@ span.movelist__half {
 /* the hole cut in the board's face */
 .opening__mouth {
   position: relative;
-  width: clamp(112px, 17vw, 184px);
+  width: 100%;
   aspect-ratio: 1;
   border-radius: var(--radius);
   background: var(--routed);
@@ -3535,7 +3540,7 @@ span.movelist__half {
   align-items: center;
   gap: var(--u);
   font-family: var(--font-display), sans-serif;
-  font-size: clamp(1.2rem, 2.4vw, 1.6rem);
+  font-size: clamp(1.1rem, 1.7vw, 1.4rem);
   font-weight: 600;
   line-height: 1;
   color: var(--ink);
@@ -3547,10 +3552,19 @@ span.movelist__half {
 }
 
 .opening__line {
-  font-size: 0.84rem;
+  flex: 1;
+  font-size: 0.8rem;
   line-height: 1.45;
   color: var(--ink-quiet);
-  max-width: 46ch;
+}
+
+.opening__foot {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--u);
+  padding-top: var(--u);
+  border-top: 1px solid var(--keyline);
 }
 
 .opening__stats {
@@ -3571,9 +3585,10 @@ span.movelist__half {
 .opening__enter {
   display: flex;
   align-items: center;
-  gap: var(--u);
+  gap: calc(var(--u) * 0.75);
+  flex: none;
   font-family: var(--font-label);
-  font-size: 0.62rem;
+  font-size: 0.58rem;
   font-weight: 600;
   letter-spacing: 0.14em;
   text-transform: uppercase;
@@ -3583,7 +3598,7 @@ span.movelist__half {
 
 .opening__enter::after {
   content: "";
-  width: 18px;
+  width: 14px;
   height: 1px;
   background: currentColor;
   transition: width 320ms var(--swing);
@@ -3596,7 +3611,7 @@ span.movelist__half {
 }
 
 .opening:hover .opening__enter::after {
-  width: 30px;
+  width: 24px;
 }
 
 /* ---------- walking through ---------- */
@@ -3711,18 +3726,44 @@ span.movelist__half {
   box-shadow: none;
 }
 
+@media (max-width: 1180px) {
+  .doorways {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
 @media (max-width: 720px) {
-  .opening {
-    grid-template-columns: auto minmax(0, 1fr);
+  .doorways {
+    grid-template-columns: minmax(0, 1fr);
     gap: calc(var(--u) * 2);
-    padding: calc(var(--u) * 1.75);
   }
 
-  .opening__enter {
-    display: none;
+  .opening {
+    flex-direction: row;
+    align-items: center;
+    gap: calc(var(--u) * 2);
+  }
+
+  .opening__mouth {
+    width: clamp(96px, 30vw, 140px);
+    flex: none;
+  }
+
+  .opening__face {
+    flex: 1;
+    min-width: 0;
   }
 
   .opening__line {
+    display: none;
+  }
+
+  .opening__foot {
+    border-top: 0;
+    padding-top: 0;
+  }
+
+  .opening__enter {
     display: none;
   }
 
@@ -4266,5 +4307,158 @@ span.movelist__half {
   .ttt__side {
     overflow: visible;
     min-height: auto;
+  }
+}
+
+/* =========================================================================
+   SIDEBAR — everywhere you can go, down the side
+   ========================================================================= */
+
+.side {
+  flex: none;
+  width: 208px;
+  border-right: 1px solid var(--keyline);
+  background: color-mix(in srgb, var(--paint-navy) 22%, transparent);
+}
+
+.side__inner {
+  position: sticky;
+  top: var(--rail-h);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: calc(var(--u) * 2) var(--u) calc(var(--u) * 3);
+  max-height: calc(100dvh - var(--rail-h));
+  overflow: auto;
+}
+
+.side__label {
+  padding: calc(var(--u) * 1.5) calc(var(--u) * 1.5) var(--u);
+  font-family: var(--font-label);
+  font-size: 0.58rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.side__label--gap {
+  margin-top: calc(var(--u) * 1.5);
+  border-top: 1px solid var(--keyline);
+}
+
+.side__link {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: calc(var(--u) * 1.25);
+  padding: calc(var(--u) * 1.1) calc(var(--u) * 1.5);
+  border-radius: var(--radius-xs);
+  color: var(--ink-quiet);
+  font-size: 0.84rem;
+  text-decoration: none;
+  transition: color 160ms ease-out, background-color 200ms var(--swing);
+}
+
+.side__link svg {
+  flex: none;
+  color: var(--ink-faint);
+  transition: color 160ms ease-out;
+}
+
+.side__dot {
+  width: 18px;
+  height: 18px;
+  display: grid;
+  place-items: center;
+}
+
+.side__dot::after {
+  content: "";
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: 0.5;
+}
+
+.side__link:hover {
+  color: var(--ink);
+  background: color-mix(in srgb, var(--paint-bone) 7%, transparent);
+}
+
+.side__link:hover svg {
+  color: var(--signal);
+}
+
+.side__link[aria-current="page"] {
+  color: var(--ink);
+  background: color-mix(in srgb, var(--paint-cobalt) 16%, transparent);
+}
+
+.side__link[aria-current="page"] svg {
+  color: var(--signal);
+}
+
+/* the fitting that marks the page: a cobalt bar in the channel's edge */
+.side__link[aria-current="page"]::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 20%;
+  bottom: 20%;
+  width: 3px;
+  border-radius: var(--radius-pill);
+  background: var(--signal);
+}
+
+@media (max-width: 900px) {
+  /* below this it is a strip under the rail, scrolled sideways */
+  .board__body {
+    flex-direction: column;
+  }
+
+  .side {
+    width: 100%;
+    border-right: 0;
+    border-bottom: 1px solid var(--keyline);
+  }
+
+  .side__inner {
+    position: static;
+    flex-direction: row;
+    align-items: center;
+    gap: var(--u);
+    height: var(--side-strip);
+    max-height: none;
+    padding: 0 var(--gutter);
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .side__inner::-webkit-scrollbar {
+    display: none;
+  }
+
+  .side__label {
+    display: none;
+  }
+
+  .side__label--gap {
+    display: none;
+  }
+
+  .side__link {
+    flex: none;
+    white-space: nowrap;
+  }
+
+  .side__link[aria-current="page"]::before {
+    top: auto;
+    left: 20%;
+    right: 20%;
+    bottom: 0;
+    width: auto;
+    height: 3px;
   }
 }

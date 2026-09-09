@@ -1,20 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Lamp } from "./icons";
 import { BrainBoxMark } from "./logo";
-import { NamePlate } from "./nameplate";
-import { GAMES } from "../../lib/games";
-
-// The catalogue drives the nav, so a new game appears here the moment it is
-// added to lib/games.js.
-const LINKS = [
-  { href: "/", label: "Board" },
-  ...GAMES.map((game) => ({ href: `/play/${game.slug}`, label: game.name })),
-  { href: "/standings", label: "Standings" },
-];
 
 function PaintSwitch() {
   const [paint, setPaint] = useState("night");
@@ -49,9 +38,9 @@ function PaintSwitch() {
   );
 }
 
+// The head rail carries the name of the place and the light switch. Where you
+// can go is the sidebar's job.
 export function Rail() {
-  const pathname = usePathname();
-
   return (
     <header className="rail">
       <div className="rail__inner">
@@ -60,22 +49,9 @@ export function Rail() {
           <span className="rail__wordmark">BrainBox</span>
         </Link>
 
-        <nav className="rail__nav" aria-label="Board sections">
-          {LINKS.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              className="rail__link"
-              aria-current={pathname === link.href ? "page" : undefined}>
-              {link.label}
-            </Link>
-          ))}
-        </nav>
-
         <span className="rail__spacer" />
 
         <div className="rail__side">
-          <NamePlate />
           <PaintSwitch />
         </div>
       </div>
