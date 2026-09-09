@@ -65,7 +65,9 @@ Shipped and working today (product truth to preserve):
   that click is always safe, flood opening, flags, and chording. Solo — no rooms, no opponent.
 - **Remi** — Romanian rummy on 106 tiles in `lib/remi.js`: groups, runs, one joker to a meld, the
   one low or high, the 45-point opening, building on anyone's melds, buying jokers off the table,
-  and penalty scoring to 100. Two to four players. The first game with hidden information and the
+  and penalty scoring to 100. Two to four players. The rack is the workspace: a two-tier grid
+  where adjacency is the grammar — tiles side by side are read as one meld and bracketed with
+  their value, a gap parts them, and laying down sends every bracket at once. The first game with hidden information and the
   first that seats more than two: the room builds its payload per viewer, and a table that can be
   played by different numbers waits for its host to start it.
 - **Backgammon** — `lib/backgammon.js`: whole-turn move generation so that the must-use-both and

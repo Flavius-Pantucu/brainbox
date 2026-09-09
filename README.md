@@ -107,6 +107,22 @@ The machine works its rack out with the same solver the board uses: every meld t
 form, then a search for the set of them that share no tile and are worth the most — or cover the
 most tiles, once it is open and trying to go out.
 
+### The rack reads itself
+
+There is no "select these tiles and press lay". You arrange tiles on a two-tier rack, and
+anything sitting side by side that reads as a run or a group is bracketed underneath with what
+it is worth. A gap is how you say two groups are two groups — slide a run into a group and the
+bracket disappears, because six tiles in a row are one span and one span is one meld or none.
+The board totals the brackets against the forty-five, and laying down puts every bracketed
+group on the table at once.
+
+Tiles are dragged, or tapped and tapped again. Drag one onto a meld on the table to add it or to
+buy its joker; drag one into the well to throw it.
+
+Every player has a **lane** — a routed channel with their nameplate at the end, their melds
+sitting in it as valued blocks, how many tiles they still hold, and their running penalty. Yours
+is the lit one, and the lane of whoever is playing wears a cobalt bar.
+
 Two to four play. Online tables seat four, start when the host says so, and **your rack is only
 ever sent to you**.
 

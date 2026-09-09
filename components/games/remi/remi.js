@@ -2,18 +2,20 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
-  HAND,
   LEVELS,
   LIMIT,
   OPENING,
   bestMelds,
   deal,
+  emptyRack,
   extendedWith,
   handValue,
   jokerSwap,
   meldValue,
   pickDiscard,
+  rackGroups,
   readMeld,
+  seatTiles,
   sortTiles,
   tileName,
   wantsDiscard,
@@ -59,7 +61,8 @@ export default function Remi({ onResult }) {
   const [level, setLevel] = useState("fair");
   const [size, setSize] = useState(3);
   const [game, setGame] = useState(() => freshGame(["a", "b", "c"]));
-  const [picked, setPicked] = useState([]);
+  const [slots, setSlots] = useState(emptyRack);
+  const [picked, setPicked] = useState(null);
   const [note, setNote] = useState(null);
   const [dismissed, setDismissed] = useState(false);
   const [name, setName] = useState("");
@@ -73,7 +76,8 @@ export default function Remi({ onResult }) {
 
   const reset = useCallback((players) => {
     setGame(freshGame(players));
-    setPicked([]);
+    setSlots(emptyRack());
+    setPicked(null);
     setNote(null);
     setDismissed(false);
     reported.current = null;
@@ -303,6 +307,10 @@ export default function Remi({ onResult }) {
   const scores = local ? game.scores : online?.scores ?? {};
   const result = local ? game.result : online?.result ?? null;
   const winner = local ? game.winner : onlineWinner;
+  const heldCounts = local
+    ? Object.fromEntries(game.players.map((seat) => [seat, game.hands[seat].length]))
+    : { ...(online?.others || {}), ...(you ? { [you]: hand.length } : {}) };
+
   const others = local
     ? Object.fromEntries(game.players.filter((s) => s !== "a").map((s) => [s, game.hands[s].length]))
     : online?.others ?? {};
@@ -317,64 +325,69 @@ export default function Remi({ onResult }) {
   const canDraw = yours && phase === "draw" && !result;
   const canPlay = yours && phase === "play" && !result;
 
-  const chosen = useMemo(() => readMeld(picked), [picked]);
-  const chosenValue = chosen ? meldValue(picked) : 0;
+  // the rack holds your arrangement; the hand holds what you own. Seating keeps
+  // the first in step with the second without ever rearranging it for you.
+  useEffect(() => {
+    setSlots((current) => seatTiles(current, hand));
+  }, [hand]);
+
+  const groups = useMemo(() => rackGroups(slots), [slots]);
+  const bracketed = useMemo(() => groups.reduce((sum, group) => sum + group.value, 0), [groups]);
   const iAmOpen = you ? !!opened[you] : false;
+  const canOpen = !iAmOpen && bracketed >= OPENING;
 
   const act = (action, payload) => {
     if (local) setGame((current) => step(current, { type: action, ...payload }));
     else room.act(action, payload);
   };
 
-  const pick = (tile) => {
-    if (!canPlay) return;
-    setNote(null);
-    setPicked((current) =>
-      current.includes(tile) ? current.filter((t) => t !== tile) : [...current, tile]
-    );
-  };
-
-  const layIt = () => {
-    if (!chosen) {
-      setNote("Those tiles are not a run or a group.");
+  const layDown = () => {
+    if (!groups.length) {
+      setNote("Put three or more tiles side by side to make a meld.");
       return;
     }
+    const melds = groups.map((group) => group.tiles);
     if (!iAmOpen) {
-      if (chosenValue < OPENING) {
-        setNote(`Your first lay has to be worth ${OPENING}. That one is worth ${chosenValue}.`);
+      if (bracketed < OPENING) {
+        setNote(`Your first lay has to reach ${OPENING}. The rack is showing ${bracketed}.`);
         return;
       }
-      act("open", { melds: [picked] });
-    } else {
-      act("lay", local ? { melds: [picked] } : { tiles: picked });
+      act("open", { melds });
+      return;
     }
-    setPicked([]);
+    for (const meld of melds) act("lay", local ? { melds: [meld] } : { tiles: meld });
   };
 
-  // pressing a meld on the table either grows it or buys its joker
-  const onMeld = (index) => {
-    if (!canPlay || !iAmOpen || picked.length !== 1) {
-      setNote("Pick one tile from your rack first.");
+  // a tile dragged out of the rack either joins a meld or goes in the well
+  const dropOut = (kind, tile, index) => {
+    setNote(null);
+    if (kind === "discard") {
+      if (!canPlay) return;
+      act("discard", { tile });
+      setPicked(null);
       return;
     }
-    const tile = picked[0];
-    const meld = table[index];
-    if (extendedWith(meld.tiles, tile)) act("add", { meld: index, tile });
-    else if (jokerSwap(meld.tiles, tile)) act("swap", { meld: index, tile });
-    else {
-      setNote("That tile does not fit there.");
+    if (kind !== "meld") return;
+    if (!iAmOpen) {
+      setNote("Open with forty-five before you build on the table.");
       return;
     }
-    setPicked([]);
+    const at = Number(index);
+    const meld = table[at];
+    if (!meld) return;
+    if (extendedWith(meld.tiles, tile)) act("add", { meld: at, tile });
+    else if (jokerSwap(meld.tiles, tile)) act("swap", { meld: at, tile });
+    else setNote("That tile does not fit there.");
+    setPicked(null);
   };
 
-  const throwIt = () => {
-    if (picked.length !== 1) {
-      setNote("Pick the one tile you want to throw.");
+  const throwPicked = () => {
+    if (picked == null) {
+      setNote("Pick the tile you want to throw, or drag it into the well.");
       return;
     }
-    act("discard", { tile: picked[0] });
-    setPicked([]);
+    act("discard", { tile: picked });
+    setPicked(null);
   };
 
   useEffect(() => {
@@ -404,18 +417,23 @@ export default function Remi({ onResult }) {
     <div className="remi">
       <div className="remi__field">
         <RemiTable
-          table={table}
-          hand={hand}
-          others={others}
+          seats={local ? game.players : online?.playing || []}
           names={names}
+          table={table}
+          held={heldCounts}
+          opened={opened}
+          scores={scores}
+          you={you}
+          turn={turn}
+          slots={slots}
           discard={discard}
           stock={stock}
           picked={picked}
-          canDraw={canDraw}
-          canPlay={canPlay}
-          onTake={(from) => act("draw", { from })}
-          onPick={pick}
-          onMeld={onMeld}>
+          disabled={!canDraw && !canPlay}
+          onArrange={setSlots}
+          onPick={setPicked}
+          onDropOut={dropOut}
+          onTake={(from) => (canDraw ? act("draw", { from }) : null)}>
           <Verdict
             open={!!winner && !dismissed}
             tone={winner === you ? "won" : "lost"}
@@ -462,14 +480,36 @@ export default function Remi({ onResult }) {
         </p>
 
         {canPlay && (
-          <div className="row" style={{ gap: 8 }}>
-            <button type="button" className="key" onClick={layIt} disabled={picked.length < 3}>
-              {iAmOpen ? "Lay it" : `Open (${chosenValue})`}
-            </button>
-            <button type="button" className="key key--quiet" onClick={throwIt} disabled={picked.length !== 1}>
-              Throw it
-            </button>
-          </div>
+          <>
+            <div className="opening">
+              <span className="opening__reading">
+                <b>{bracketed}</b>
+                {iAmOpen ? " on the rack" : ` of ${OPENING}`}
+              </span>
+              {!iAmOpen && (
+                <span className="opening__meter" aria-hidden="true">
+                  <i style={{ width: `${Math.min(100, (bracketed / OPENING) * 100)}%` }} />
+                </span>
+              )}
+            </div>
+
+            <div className="row" style={{ gap: 8 }}>
+              <button
+                type="button"
+                className="key"
+                onClick={layDown}
+                disabled={!groups.length || (!iAmOpen && !canOpen)}>
+                {iAmOpen ? "Lay them down" : "Open"}
+              </button>
+              <button
+                type="button"
+                className="key key--quiet"
+                onClick={throwPicked}
+                disabled={picked == null}>
+                Throw it
+              </button>
+            </div>
+          </>
         )}
 
         {note && (
@@ -503,6 +543,12 @@ export default function Remi({ onResult }) {
             ))
           )}
         </div>
+
+        <p className="chalk chalk--tight">
+          Slide tiles along the rack to build. Anything sitting together that reads as a run or a
+          group is bracketed with what it is worth; leave a gap to keep two apart. Drag a tile
+          onto a meld to add it, or into the well to throw it.
+        </p>
 
         <p className="chalk chalk--tight">
           Lowest total wins. A hand costs you whatever is left on your rack, and a joker left

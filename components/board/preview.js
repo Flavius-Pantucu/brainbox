@@ -90,12 +90,18 @@ export function GamePreview({ gameId }) {
     return (
       <Inert>
         <RemiTable
-          table={REMI_PREVIEW.table}
-          hand={REMI_PREVIEW.hand}
-          others={REMI_PREVIEW.others}
+          seats={REMI_PREVIEW.seats}
           names={REMI_PREVIEW.names}
+          you={REMI_PREVIEW.you}
+          turn={REMI_PREVIEW.turn}
+          table={REMI_PREVIEW.table}
+          held={REMI_PREVIEW.held}
+          opened={REMI_PREVIEW.opened}
+          scores={REMI_PREVIEW.scores}
+          slots={REMI_PREVIEW.slots}
           discard={REMI_PREVIEW.discard}
           stock={REMI_PREVIEW.stock}
+          disabled
         />
       </Inert>
     );

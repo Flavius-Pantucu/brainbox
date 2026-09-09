@@ -809,6 +809,51 @@ async function main() {
     assert.equal(lay.value, 62, "11-12-13-1 red and three fours");
     assert.ok(lay.value >= remi.OPENING, "which opens");
 
+    // the rack reads itself: tiles side by side are one group, a gap parts them
+    let rack = remi.emptyRack();
+    [t(5, "r"), t(6, "r"), t(7, "r")].forEach((tile, i) => {
+      rack[i] = tile;
+    });
+    [t(9, "y"), t(9, "b"), t(9, "k")].forEach((tile, i) => {
+      rack[5 + i] = tile;
+    });
+    const read = remi.rackGroups(rack);
+    assert.equal(read.length, 2, "a run and a group, with a gap between them");
+    assert.deepEqual(read.map((group) => group.value), [18, 27]);
+    assert.equal(
+      read.reduce((sum, group) => sum + group.value, 0),
+      45,
+      "and together they open"
+    );
+
+    // slid together they are one span, and one span is not two melds
+    const shoved = remi.emptyRack();
+    [t(5, "r"), t(6, "r"), t(7, "r"), t(9, "y"), t(9, "b"), t(9, "k")].forEach((tile, i) => {
+      shoved[i] = tile;
+    });
+    assert.equal(remi.rackGroups(shoved).length, 0, "no gap, no reading");
+
+    // two tiers, read separately
+    const tiered = remi.emptyRack();
+    [t(5, "r"), t(6, "r"), t(7, "r")].forEach((tile, i) => {
+      tiered[i] = tile;
+    });
+    [t(9, "y"), t(9, "b"), t(9, "k")].forEach((tile, i) => {
+      tiered[remi.SLOTS + i] = tile;
+    });
+    assert.equal(remi.rackGroups(tiered).length, 2, "the second tier reads too");
+
+    // seating keeps the arrangement and finds room for whatever is new
+    const kept = remi.seatTiles(rack, [
+      t(5, "r"), t(6, "r"), t(7, "r"), t(9, "y"), t(9, "b"), t(9, "k"), t(1, "r"),
+    ]);
+    assert.equal(kept[0], t(5, "r"), "nothing already placed is moved");
+    assert.equal(kept[5], t(9, "y"), "not even across a gap");
+    assert.ok(kept.includes(t(1, "r")), "and the new tile gets a slot");
+
+    const thrown = remi.seatTiles(kept, [t(5, "r"), t(6, "r"), t(7, "r")]);
+    assert.equal(thrown.filter((tile) => tile != null).length, 3, "what left the hand leaves the rack");
+
     // and what a hand costs you if you are left holding it
     assert.equal(remi.handValue([t(13, "r"), J, t(1, "y")]), 39, "a joker in hand is twenty-five");
 
