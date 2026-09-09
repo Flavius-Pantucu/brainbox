@@ -6,13 +6,20 @@ import TicTacToe from "../games/tictactoe/tictactoe";
 import Sudoku from "../games/sudoku/sudoku";
 import Chess from "../games/chess/chess";
 import Connect4 from "../games/connect4/connect4";
+import Go from "../games/go/go";
 import { Tag } from "./tag";
 import { ArrowLeft } from "./icons";
 import { GAME_BY_ID } from "../../lib/games";
 import { recordSession } from "../../lib/board";
 import { dailyChallenge } from "../../lib/daily";
 
-const SURFACES = { chess: Chess, connect4: Connect4, sudoku: Sudoku, tictactoe: TicTacToe };
+const SURFACES = {
+  chess: Chess,
+  connect4: Connect4,
+  go: Go,
+  sudoku: Sudoku,
+  tictactoe: TicTacToe,
+};
 
 // A visit shorter than this is someone looking, not playing, and the board does
 // not record it.

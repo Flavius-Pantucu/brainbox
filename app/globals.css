@@ -3256,3 +3256,158 @@ span.movelist__half {
     max-height: none;
   }
 }
+
+/* =========================================================================
+   GO
+   ========================================================================= */
+
+.go {
+  display: contents;
+}
+
+.go__field {
+  grid-column: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 0;
+  min-width: 0;
+}
+
+.go__side {
+  grid-column: 2;
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--u) * 2);
+  min-height: 0;
+  overflow: auto;
+  padding-bottom: var(--u);
+}
+
+.goban__wrap {
+  position: relative;
+  height: 100%;
+  aspect-ratio: 1;
+  max-height: min(100%, 76vh);
+  max-width: 100%;
+  margin: auto;
+}
+
+.goban {
+  width: 100%;
+  height: 100%;
+  border-radius: var(--radius-sm);
+  box-shadow: var(--lift-2);
+  touch-action: manipulation;
+}
+
+.goban__face {
+  fill: #d9b877;
+}
+
+.goban__lines line {
+  stroke: color-mix(in srgb, #3a2a12 76%, transparent);
+  stroke-width: 0.035;
+  vector-effect: non-scaling-stroke;
+}
+
+.goban__star {
+  fill: color-mix(in srgb, #3a2a12 82%, transparent);
+}
+
+.goban__coords text {
+  fill: color-mix(in srgb, #3a2a12 62%, transparent);
+  font-family: var(--font-label), ui-sans-serif, sans-serif;
+  font-size: 0.4px;
+  letter-spacing: 0.02px;
+}
+
+.goban__stone--b {
+  fill: #17171a;
+  stroke: rgba(0, 0, 0, 0.5);
+  stroke-width: 0.02;
+}
+
+.goban__stone--w {
+  fill: #f4f2ec;
+  stroke: rgba(0, 0, 0, 0.32);
+  stroke-width: 0.03;
+}
+
+.goban__stone.is-ghost {
+  opacity: 0.42;
+  pointer-events: none;
+}
+
+.goban__last--b {
+  fill: none;
+  stroke: #f4f2ec;
+  stroke-width: 0.07;
+}
+
+.goban__last--w {
+  fill: none;
+  stroke: #17171a;
+  stroke-width: 0.07;
+}
+
+.goban__ko {
+  fill: none;
+  stroke: #c8422a;
+  stroke-width: 0.06;
+}
+
+.is-dead .goban__stone {
+  opacity: 0.32;
+}
+
+.goban__cross line {
+  stroke: #c8422a;
+  stroke-width: 0.06;
+  stroke-linecap: round;
+}
+
+.goban__territory--b {
+  fill: #17171a;
+  opacity: 0.66;
+}
+
+.goban__territory--w {
+  fill: #f4f2ec;
+  opacity: 0.86;
+  stroke: rgba(0, 0, 0, 0.3);
+  stroke-width: 0.02;
+}
+
+.goban__hit {
+  fill: transparent;
+  cursor: pointer;
+}
+
+.seat__stone {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 1px solid rgba(0, 0, 0, 0.35);
+}
+
+.seat__stone--b {
+  background: #17171a;
+}
+
+.seat__stone--w {
+  background: #f4f2ec;
+}
+
+@media (max-width: 900px) {
+  .go__field,
+  .go__side {
+    grid-column: 1;
+  }
+
+  .goban__wrap {
+    height: auto;
+    width: min(100%, 76vh);
+    max-height: none;
+  }
+}

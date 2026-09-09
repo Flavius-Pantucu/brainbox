@@ -14,6 +14,7 @@ export async function POST(request) {
   const result = createRoom(body.name, body.game || "tictactoe", {
     seat: body.seat,
     time: body.time,
+    size: body.size,
   });
   if (result.error) {
     return Response.json({ error: result.error, message: "Unknown game." }, { status: 400 });

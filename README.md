@@ -1,6 +1,6 @@
 # BrainBox
 
-A portal for browser-based logic games — chess, Connect Four, sudoku and tic-tac-toe — built with
+A portal for browser-based logic games — chess, Go, Connect Four, sudoku and tic-tac-toe — built with
 [Next.js](https://nextjs.org/).
 
 The interface is a hand-operated club board, painted in navy and steel: today's challenge,
@@ -16,6 +16,7 @@ from `app/`, shared UI lives in `components/`, and the backend will be built ins
 Games:
 
 - [x] **Sudoku** — a fresh puzzle every game, generated in the browser, at four difficulties
+- [x] **Go** — 9×9 to 19×19, against the machine, against the next chair, or online by room code
 - [x] **Connect Four** — against the machine, against the next chair, or online by room code
 - [x] **Tic-Tac-Toe** — against the machine, against the next chair, or online by room code
 - [x] **Chess** — an analysis board, a Stockfish opponent at five strengths, or online by room code
@@ -27,6 +28,7 @@ Games:
 | `/`              | The board — today's challenge, the three games, your run, standings |
 | `/play/chess`    | Chess, inside the play frame                                       |
 | `/play/connect4` | Connect Four, inside the play frame                                |
+| `/play/go`       | Go, inside the play frame                                          |
 | `/play/sudoku`   | Sudoku, inside the play frame                                      |
 | `/play/tictactoe`| Tic-Tac-Toe, inside the play frame                                 |
 | `/standings`     | The ladder and your card — recent games, wins, day run             |
@@ -59,6 +61,20 @@ Rules come from [chess.js](https://github.com/jhlywa/chess.js). The engine is
 build, which needs no cross-origin isolation headers. `npm install` copies it into
 `public/engine/` — it is 7 MB and is not in git, so a fresh clone needs that install before the
 bot or the eval bar will run.
+
+## Go
+
+9×9, 13×13 or 19×19, against the machine, the next chair, or online by room code. Full rules in
+`lib/go.js` — liberties, capture, suicide, simple ko — and **area (Chinese) scoring**: after both
+players pass, the board goes into a counting phase where clicking a group marks it dead, the
+territory and running count update live, and both players accept before the result stands.
+Komi is 6.5.
+
+The opponent is flat Monte-Carlo: it plays out hundreds of random games from each candidate move
+and takes the one that wins most, on a time budget that grows with the board. It never fills its
+own eyes and passes when it has nothing left. It is a real opponent on 9×9 and an honest one
+above that. Not implemented: positional superko, and the search runs on the main thread rather
+than in a worker.
 
 ## Connect Four
 

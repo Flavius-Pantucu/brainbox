@@ -64,11 +64,23 @@ export function Connect4Mark({ size = 20, ...rest }) {
   );
 }
 
+export function GoMark({ size = 20, ...rest }) {
+  // A corner of a goban with two stones on it.
+  return (
+    <svg {...base} width={size} height={size} {...rest}>
+      <path d="M4 4v16M12 4v16M20 4v16M4 4h16M4 12h16M4 20h16" strokeWidth="1" />
+      <circle cx="12" cy="12" r="2.6" fill="currentColor" stroke="none" />
+      <circle cx="20" cy="4" r="2.6" strokeWidth="1.6" />
+    </svg>
+  );
+}
+
 export const GAME_MARKS = {
   chess: ChessMark,
   sudoku: SudokuMark,
   tictactoe: TicTacToeMark,
   connect4: Connect4Mark,
+  go: GoMark,
 };
 
 export function Lamp({ size = 18, lit = false, ...rest }) {

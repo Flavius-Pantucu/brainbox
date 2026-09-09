@@ -1,6 +1,7 @@
 // One runnable check for the parts of the games that are ours rather than a
 // library's: the chess material read, the review maths, the variation tree, the
-// clocks, Connect Four's rules and opponent, and the room's move rules.
+// clocks, Connect Four's rules and opponent, Go's rules and scoring, and the
+// room's move rules.
 //   npm run check
 const assert = require("node:assert/strict");
 const { Chess } = require("chess.js");
@@ -9,6 +10,7 @@ async function main() {
   const core = await import("../lib/chess-core.js");
   const tree = await import("../lib/chess-tree.js");
   const c4 = await import("../lib/connect4.js");
+  const go = await import("../lib/go.js");
   const rooms = await import("../lib/rooms.js");
 
   /* material ------------------------------------------------------------- */
@@ -221,6 +223,111 @@ async function main() {
   assert.equal(c4state.score.R, 1);
   assert.equal(c4state.last, 38);
 
+  /* go -------------------------------------------------------------------- */
+  const size = 9;
+  const point = (row, col) => go.pointOf(size, row, col);
+
+  // a stone in the corner with its last liberty filled comes off
+  let stones = go.emptyBoard(size);
+  stones = go.play(stones, size, point(0, 0), "w").board;
+  stones = go.play(stones, size, point(0, 1), "b").board;
+  const taken = go.play(stones, size, point(1, 0), "b");
+  assert.deepEqual(taken.captured, [point(0, 0)]);
+  assert.equal(taken.board[point(0, 0)], null);
+
+  assert.equal(go.play(taken.board, size, point(0, 0), "w").error, "suicide");
+  assert.equal(go.play(taken.board, size, point(0, 1), "w").error, "taken");
+  assert.equal(go.play(taken.board, size, -1, "w").error, "off-board");
+
+  // ko: black takes one stone, white cannot take it straight back
+  let shape = go.emptyBoard(size);
+  for (const [r, c] of [[0, 1], [1, 0], [2, 1]]) shape[point(r, c)] = "b";
+  for (const [r, c] of [[0, 2], [1, 3], [2, 2], [1, 1]]) shape[point(r, c)] = "w";
+  const koTake = go.play(shape, size, point(1, 2), "b");
+  assert.deepEqual(koTake.captured, [point(1, 1)], "the lone white stone comes off");
+  assert.equal(koTake.ko, point(1, 1), "and that point is closed by ko");
+  assert.equal(
+    go.play(koTake.board, size, point(1, 1), "w", koTake.ko).error,
+    "ko",
+    "white cannot take it straight back"
+  );
+  assert.ok(!go.play(koTake.board, size, point(1, 1), "w", null).error, "but can a turn later");
+
+  // area scoring: one stone owns an empty board, and komi decides a bare one
+  const lone = go.emptyBoard(size);
+  lone[point(4, 4)] = "b";
+  assert.deepEqual(go.score(lone, size), { b: 81, w: 6.5, winner: "b", margin: 74.5 });
+  assert.equal(go.score(go.emptyBoard(size), size).winner, "w", "komi wins an empty board");
+
+  // a wall down the middle splits the board in two
+  const wall = go.emptyBoard(size);
+  for (let row = 0; row < size; row += 1) {
+    wall[point(row, 4)] = "b";
+    wall[point(row, 5)] = "w";
+  }
+  assert.deepEqual(go.score(wall, size, 6.5), { b: 45, w: 42.5, winner: "b", margin: 2.5 });
+
+  // marking a group dead takes its stones off and opens its territory up
+  const withDead = go.score(wall, size, 6.5, [point(0, 5)]);
+  assert.ok(withDead.w < 42.5, "white loses the stone and the territory behind it");
+
+  assert.equal(go.territoryOf(lone, size).owner.filter(Boolean).length, 80);
+  assert.equal(go.groupAt(wall, size, point(0, 4)).stones.length, 9, "the wall is one string");
+  assert.equal(go.groupAt(go.emptyBoard(size), size, 0), null);
+
+  // a board with nowhere left worth playing is a pass
+  const filled = go.emptyBoard(size).map(() => "b");
+  assert.equal(go.pickMove(filled, size, "w", "easy"), null);
+
+  /* a whole go room, from the first stone to the count ---------------------- */
+  const bigger = rooms.createRoom("Ada", "go", { seat: "b", size: 13 });
+  assert.equal(rooms.publicState(bigger.room, bigger.token).board.length, 169, "13x13 asked for");
+  assert.equal(
+    rooms.publicState(rooms.createRoom("Ada", "go", { size: 4 }).room, null).size,
+    9,
+    "a size nobody plays falls back to 9x9"
+  );
+
+  const goHost = rooms.createRoom("Ada", "go", { seat: "b", size: 9 });
+  const goGuest = rooms.joinRoom(goHost.room.code, "Bo");
+  assert.equal(goGuest.seat, "w");
+
+  const goCode = goHost.room.code;
+  assert.equal(rooms.act(goCode, goGuest.token, "move", { point: 0 }).error, "not-your-turn");
+  rooms.act(goCode, goHost.token, "move", { point: point(4, 4) });
+  assert.equal(rooms.act(goCode, goGuest.token, "move", { point: point(4, 4) }).error, "taken");
+  rooms.act(goCode, goGuest.token, "move", { point: point(0, 0) });
+
+  assert.equal(
+    rooms.act(goCode, goHost.token, "accept", {}).error,
+    "not-counting",
+    "there is nothing to agree on until both have passed"
+  );
+
+  rooms.act(goCode, goHost.token, "pass", {});
+  rooms.act(goCode, goGuest.token, "pass", {});
+  let goState = rooms.publicState(rooms.getRoom(goCode), goHost.token);
+  assert.equal(goState.status, "scoring", "two passes start the count");
+
+  rooms.act(goCode, goHost.token, "mark", { point: point(0, 0) });
+  goState = rooms.publicState(rooms.getRoom(goCode), goHost.token);
+  assert.deepEqual(goState.dead, [point(0, 0)], "white's corner stone is marked dead");
+
+  rooms.act(goCode, goHost.token, "accept", {});
+  rooms.act(goCode, goGuest.token, "mark", { point: point(0, 0) });
+  goState = rooms.publicState(rooms.getRoom(goCode), goHost.token);
+  assert.deepEqual(goState.dead, [], "marking the same group again brings it back");
+  assert.deepEqual(goState.accepted, { b: false, w: false }, "a new mark needs new agreement");
+
+  rooms.act(goCode, goGuest.token, "mark", { point: point(0, 0) });
+  rooms.act(goCode, goHost.token, "accept", {});
+  rooms.act(goCode, goGuest.token, "accept", {});
+  goState = rooms.publicState(rooms.getRoom(goCode), goHost.token);
+  assert.equal(goState.status, "won");
+  assert.equal(goState.winner, "b", "black holds the whole board");
+  assert.equal(goState.result.b, 81, "one stone plus everything it surrounds");
+  assert.equal(goState.score.b, 1);
+
   /* tictactoe still works on the same store ------------------------------ */
   const ttt = rooms.createRoom("Ada", "tictactoe", { seat: "X" });
   const tttGuest = rooms.joinRoom(ttt.room.code, "Bo");
@@ -233,7 +340,7 @@ async function main() {
   assert.equal(tttState.winner, "X");
   assert.deepEqual(tttState.line, [0, 1, 2]);
 
-  console.log("chess checks pass");
+  console.log("game checks pass");
 }
 
 main().catch((error) => {
