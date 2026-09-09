@@ -4,6 +4,8 @@ import { useState } from "react";
 import { starPoints } from "../../../lib/go";
 
 const PAD = 0.9; // room for the coordinates, in board units
+const STONE = 0.44; // a little under half the spacing, so the grid stays visible
+const LAST = 0.14; // the mark on the stone just played
 const LETTERS = "ABCDEFGHJKLMNOPQRST"; // Go boards skip I
 
 // The board itself: lines, stones, and whatever is being shown on top of them.
@@ -92,9 +94,19 @@ export function Goban({
           const { x, y } = at(point);
           return (
             <g key={`p${point}`} className={deadSet.has(point) ? "is-dead" : ""}>
-              <circle className={`goban__stone goban__stone--${stone}`} cx={x} cy={y} r="0.47" />
+              <circle
+                className={`goban__stone goban__stone--${stone}`}
+                cx={x}
+                cy={y}
+                r={STONE}
+              />
               {point === last && (
-                <circle className={`goban__last goban__last--${stone}`} cx={x} cy={y} r="0.16" />
+                <circle
+                  className={`goban__last goban__last--${stone}`}
+                  cx={x}
+                  cy={y}
+                  r={LAST}
+                />
               )}
               {deadSet.has(point) && (
                 <g className="goban__cross">
@@ -121,7 +133,7 @@ export function Goban({
             className={`goban__stone goban__stone--${turn} is-ghost`}
             cx={at(hover).x}
             cy={at(hover).y}
-            r="0.47"
+            r={STONE}
           />
         )}
 
