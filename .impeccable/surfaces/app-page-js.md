@@ -34,12 +34,14 @@ work. Do not act on these during game work; they are the agenda for the final da
    navy ground, steel/slate mid-tones. Acted on immediately (tokens only, 2026-09-09) because two
    games were about to be built in it; the five-paint discipline and the two-coat role swap are
    preserved, only the paints changed.
-2. **Too many boxes of stats.** The grid of same-shaped panels, each holding one number and one
-   label, reads as generated template regardless of skin. The final pass must cut the number of
-   stat containers and find a form that is not "panel with a figure in it".
-3. **Game access should use depth.** They want entering a game to feel like looking through an
-   opened door into the room beyond — a preview of the game surface itself, set back in space,
-   with depth as the effect. This replaces the current flat game slots.
+2. ~~**Too many boxes of stats.**~~ **Resolved 2026-09-12.** The board's stat containers are gone.
+   The streak plate, the three best plates and the seven-day strip are replaced by one line of
+   figures under today's band; the plates that were worth keeping moved to `/standings`, where
+   reading numbers is the job. The dashboard holds no panel whose content is one number.
+3. ~~**Game access should use depth.**~~ **Resolved 2026-09-12.** The game slots are replaced by
+   openings: a routed recess per game with the game's own board component rendered inside it from
+   a committed position, unlit and set back at rest, lit and forward on hover, and scaling past
+   the window on press while the stage fades in behind it. See "The opening" in DESIGN.md.
 4. ~~**The hung system does not read.**~~ **Resolved 2026-09-09.** The hook was replaced by a
    lug-and-peg fixing: a peg fixed to the board, and a punched lug in the plate's own face that
    drops over it. Two hook designs were built and rejected first; DESIGN.md records both and the

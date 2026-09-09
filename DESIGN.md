@@ -227,7 +227,7 @@ The hardware is rounded, not machined. Corners run on a soft scale (8/12/16/20px
 
 The board is lit two ways. The night coat is the navy ground with bone ink; the day coat relights the same board without touching the paint tin — roles swap, paints do not. There are five paints and no sixth. Every tone between them is a `color-mix` of two paints, never a new pigment and never a gradient. What separates two adjacent surfaces is a printed speckle, a routed keyline, or a shadow — never a blend.
 
-Density is high but the voice is warm. Numbers are large, rounded and tabular; supporting text is small, quiet and short. Game play takes the whole window: a route that plays something claims the full viewport below the rail and sizes its board to that space rather than growing the page. Confirmed rejection: no gradients, no soft glassy translucency as a surface, no decorative color that is not also a fitting.
+The board itself is a list of openings, not a grid of panels. A figure earns a plate on the standings board, where reading the numbers is the job; on the board itself the whole reading is one line, because a wall of same-shaped containers each holding one number reads as generated no matter what it is painted. Density is high but the voice is warm. Numbers are large, rounded and tabular; supporting text is small, quiet and short. Game play takes the whole window: a route that plays something claims the full viewport below the rail and sizes its board to that space rather than growing the page. Confirmed rejection: no gradients, no soft glassy translucency as a surface, no decorative color that is not also a fitting.
 
 **Key Characteristics:**
 - Five paints, closed; every other tone is a mix of two of them
@@ -326,7 +326,7 @@ Tone between two surfaces is a single fixed `feTurbulence` speckle: one `body::b
 
 ### Shadow Vocabulary
 - **Lift 1** (`--lift-1`, night `0 2px 0 rgba(0,0,0,0.34), 0 6px 12px -6px rgba(0,0,0,0.62)`): plates, the nameplate, the room-code fitting. The resting elevation.
-- **Lift 2** (`--lift-2`, night `0 3px 0 rgba(0,0,0,0.38), 0 14px 26px -12px rgba(0,0,0,0.7)`): the sudoku board, the play surface, the legacy panel. A whole game surface.
+- **Lift 2** (`--lift-2`, night `0 3px 0 rgba(0,0,0,0.38), 0 14px 26px -12px rgba(0,0,0,0.7)`): the sudoku board, the goban, the chess board, the play surface. A whole game surface.
 - **Cut** (`--cut`, night `inset 0 3px 7px rgba(0,0,0,0.62), inset 0 -1px 0 rgba(232,237,244,0.07)`): every routed channel — slots, readouts, status lines, fields, the peg groove.
 - **Key press** (`0 3px 0 rgba(0,0,0,0.4), 0 10px 18px -10px rgba(0,0,0,0.8)`): the primary key, deepening to 4px on hover and collapsing to 1px on active.
 - **Rail seat** (`0 1px 0 rgba(0,0,0,0.3), 0 10px 20px -18px rgba(0,0,0,0.9)`): the sticky rail sitting on the board.
@@ -400,13 +400,17 @@ A container-query grid: `container-type: size` on the board, so cell type is siz
 ### Tic-tac-toe board
 No box. Four SVG hash strokes in steel-mixed-with-ground at 1.1 width sit above a bare 3×3 grid; cells are transparent with a 12px radius and only appear on interaction — hover washes 16% cobalt and reveals a ghost mark at 26% ink, a winning cell holds a 22% cobalt wash. X is drawn in `--ink`, O in `--signal`, both stroked at width 9 with the `draw-mark` dash reveal; the winning line strikes through in `--signal-ink`.
 
-### The hung plate (signature — under review)
+### The hung plate (signature)
 Every figure on the dashboard hangs on a peg. `.hang` carries 17px of top padding and an absolutely positioned `.hang__peg` — a 9px cobalt disc that belongs to the board, not to the plate, so it stays put while the plate moves. The plate itself grows a `.plate__lug`: a tab in the plate's own face rising 15px above its top edge, punched with a 13px hole that shows the board through it, with the peg sitting at the top of that hole the way gravity would leave it. The plate's transform origin is the peg, so it turns about its fixing. On `.hang--left` the whole assembly moves to 30px from the left. When data changes the outgoing plate lifts off (`hang-lift`, 340ms) while the incoming plate waits 200ms for the peg to clear and then drops onto it (`hang-drop`, 620ms on `--swing`), each plate staggered 55ms by index. Both animations are removed entirely under `prefers-reduced-motion`.
 
 **Status: reworked on 2026-09-09 after the user reported that the plates did not read as hung and the fixings were misaligned.** The earlier device — a drawn hook above a plate with a drilled hole in its face — failed because the hook's curl never met the hole and the bracket was screwed to nothing. A two-piece hook that wrapped the plate edge was drawn next and also rejected: the joint that sold the wrap was hidden behind the plate, so it read as a hook parked beside a plate. The shipped lug-and-peg is the third attempt and the one that reads. Keep the peg on the board and the lug on the plate: that split is the whole illusion, and swapping it breaks the physics.
 
-### Legacy panel (transitional)
-Chess still runs its pre-rebuild interface and is marked `legacy: true` in `lib/games.js`. It renders inside `.legacy`: a full-width enamel panel on the stage with `--lift-2` and a note beneath, with a targeted override forcing the old Tailwind `text-white` / `text-slate-100` utilities to navy so the legacy UI is at least legible on enamel. This is a holding pattern, not a pattern. New games use the stage furniture; the override disappears when chess is rebuilt.
+### The opening (signature)
+The board's face has holes cut in it, one per game, and the game's own board sits in the room behind. `.opening__mouth` is a square routed recess — routed colour, 16px radius, `--cut` — with a sill drawn as an inset pseudo-element: a 20% bone lip along the top edge and a shadow pooling at the bottom, so the light reads as coming from above the opening. Inside, `.opening__room` holds the real board component at rest scaled to 0.95 and dimmed to 62% brightness: the room is there, but unlit. Hover or keyboard focus lights it — brightness to 1, scale to 1.03 over 420ms on `--swing` — and the sill picks up a 62% cobalt inset ring. Nothing bounces and nothing tilts.
+
+Pressing walks through. The pressed opening's mouth scales to 9× over 300ms on a fast-in curve while every other row drops to 20% opacity behind a 2px blur, and the route changes as the mouth fills the window; the stage on the other side arrives with a 300ms fade from 1.03. Under `prefers-reduced-motion` the link simply navigates.
+
+Two rules hold the device together. The preview is the game's own component — `Board`, `Goban`, `Grid`, `SudokuGrid` — rendered from a committed position in `lib/previews.js`, never an illustration and never a screenshot, so a preview cannot drift from the thing it previews. And the preview is inert: `inert` on the wrapper, `pointer-events: none`, `aria-hidden`, with the game's name carrying the link and its `::after` stretching over the whole row, because an anchor cannot contain the buttons a real board is made of.
 
 ## Do's and Don'ts
 

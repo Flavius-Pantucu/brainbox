@@ -941,119 +941,40 @@ button {
 .deck__games {
   grid-column: span 7;
 }
-.deck__run {
-  grid-column: span 7;
-}
-.deck__standings {
-  grid-column: span 5;
-}
 
 @media (max-width: 1000px) {
   .deck__today,
-  .deck__games,
-  .deck__run,
-  .deck__standings {
+  .deck__games {
     grid-column: span 12;
   }
 }
 
-/* =========================================================================
-   GAME SLOTS — three routed columns
-   ========================================================================= */
 
-.slots {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: calc(var(--u) * 1.5);
-}
 
-@media (max-width: 620px) {
-  .slots {
-    grid-template-columns: 1fr;
-  }
-}
 
-.gameslot {
-  display: flex;
-  flex-direction: column;
-}
 
-.gameslot__head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--u);
-  margin-bottom: calc(var(--u) * 1.5);
-}
 
-.gameslot__name {
-  font-family: var(--font-label), ui-sans-serif, sans-serif;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.14em;
-  font-size: 0.86rem;
-  color: var(--plate-ink);
-}
 
-.gameslot__mark {
-  color: var(--plate-ink);
-  opacity: 0.9;
-}
 
-.gameslot__stat {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: var(--u);
-  padding: calc(var(--u) * 0.75) 0;
-  border-bottom: 1px solid color-mix(in srgb, var(--paint-navy) 18%, transparent);
-  font-size: 0.76rem;
-  color: var(--plate-ink-quiet);
-}
 
-.gameslot__stat:last-of-type {
-  border-bottom: 0;
-}
 
-.gameslot__stat b {
-  font-family: var(--font-display), sans-serif;
-  font-weight: 600;
-  font-size: 1rem;
-  color: var(--plate-ink);
-  font-variant-numeric: tabular-nums;
-}
 
-.gameslot__plate > .plate__body {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-}
 
-.gameslot__foot {
-  margin-top: auto;
-  padding-top: calc(var(--u) * 2);
-}
 
-.gameslot .key {
-  width: 100%;
-}
 
-.streak {
-  display: flex;
-  align-items: flex-end;
-  gap: calc(var(--u) * 3.5);
-  flex-wrap: wrap;
-}
 
-.streak__count {
-  flex-shrink: 0;
-}
 
-.streak__line {
-  flex: 1 1 220px;
-  max-width: 46ch;
-  margin: 0 0 4px;
-}
+
+
+
+
+
+
+
+
+
+
+
 
 /* =========================================================================
    THE RUN — seven day hooks
@@ -1142,37 +1063,13 @@ button {
    TODAY — the oversized plate
    ========================================================================= */
 
-.today__game {
-  font-family: var(--font-display), sans-serif;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: -0.015em;
-  font-size: clamp(2.6rem, 6vw, 4.2rem);
-  line-height: 0.88;
-  color: var(--plate-ink);
-  margin: calc(var(--u) * 1.25) 0 calc(var(--u) * 1);
-}
 
-.today__date {
-  font-family: var(--font-label), ui-sans-serif, sans-serif;
-  font-size: 0.66rem;
-  letter-spacing: 0.13em;
-  text-transform: uppercase;
-  color: var(--plate-ink-quiet);
-}
 
-.today__rule {
-  height: 1px;
-  background: color-mix(in srgb, var(--paint-navy) 26%, transparent);
-  margin: calc(var(--u) * 2) 0;
-}
 
-.today__foot {
-  display: flex;
-  align-items: center;
-  gap: calc(var(--u) * 2);
-  flex-wrap: wrap;
-}
+
+
+
+
 
 /* =========================================================================
    STANDINGS LADDER — one hook per rung
@@ -2987,7 +2884,7 @@ span.movelist__half {
 
 .verdict__title {
   margin: 0;
-  font-family: var(--font-display, var(--font-label));
+  font-family: var(--font-display), sans-serif;
   font-size: clamp(1.4rem, 4vw, 1.8rem);
   line-height: 1.1;
   color: var(--plate-ink);
@@ -3417,5 +3314,411 @@ span.movelist__half {
     height: auto;
     width: min(100%, 76vh);
     max-height: none;
+  }
+}
+
+/* =========================================================================
+   THE BOARD — today's band, the tally, and the openings
+   ========================================================================= */
+
+.today {
+  display: flex;
+  align-items: center;
+  gap: calc(var(--u) * 2);
+  flex-wrap: wrap;
+  margin-top: calc(var(--u) * 3.5);
+  padding: calc(var(--u) * 1.75) calc(var(--u) * 2.25);
+  border-radius: var(--radius-lg);
+  background: var(--routed);
+  box-shadow: var(--cut);
+}
+
+.today__day {
+  font-family: var(--font-label);
+  font-size: 0.62rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.today__task {
+  display: flex;
+  align-items: center;
+  gap: var(--u);
+  flex: 1;
+  min-width: 16ch;
+  margin: 0;
+  font-size: 0.95rem;
+  color: var(--ink-quiet);
+}
+
+.today__task strong {
+  font-family: var(--font-display), sans-serif;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.today__task svg {
+  color: var(--signal);
+  flex: none;
+}
+
+.today__key {
+  text-decoration: none;
+}
+
+/* ---------- the tally ---------- */
+
+.tally {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: calc(var(--u) * 3);
+  margin: calc(var(--u) * 3) 0 calc(var(--u) * 4);
+  padding-bottom: calc(var(--u) * 2.5);
+  border-bottom: 1px solid var(--keyline);
+}
+
+.tally--empty {
+  display: block;
+  font-size: 0.9rem;
+  color: var(--ink-quiet);
+  max-width: 52ch;
+}
+
+.tally__figure {
+  display: flex;
+  align-items: baseline;
+  gap: var(--u);
+  font-family: var(--font-display), sans-serif;
+  font-size: clamp(1.5rem, 3vw, 2.1rem);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+  line-height: 1;
+}
+
+.tally__figure span {
+  font-family: var(--font-text);
+  font-size: 0.78rem;
+  font-weight: 400;
+  letter-spacing: 0;
+  color: var(--ink-faint);
+}
+
+.tally .tag {
+  align-self: center;
+}
+
+.tally__more {
+  margin-left: auto;
+  align-self: center;
+  font-size: 0.78rem;
+  color: var(--ink-quiet);
+  text-decoration: none;
+  border-bottom: 1px solid var(--keyline-strong);
+  padding-bottom: 2px;
+  transition: color 160ms ease-out, border-color 160ms ease-out;
+}
+
+.tally__more:hover {
+  color: var(--signal-ink);
+  border-color: var(--signal);
+}
+
+/* ---------- the openings ---------- */
+
+.doorways {
+  border-radius: var(--radius-lg);
+  background: var(--panel);
+  box-shadow: var(--lift-1);
+  overflow: hidden;
+}
+
+.opening {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: calc(var(--u) * 3);
+  padding: calc(var(--u) * 2) calc(var(--u) * 2.5);
+  border-bottom: 1px solid var(--keyline);
+  color: var(--ink);
+  text-decoration: none;
+  transition: background-color 220ms ease-out;
+}
+
+.opening:last-child {
+  border-bottom: 0;
+}
+
+.opening:hover,
+.opening:focus-within {
+  background: color-mix(in srgb, var(--paint-bone) 6%, transparent);
+}
+
+/* the name is the link; it reaches over the whole row */
+.opening__link {
+  color: inherit;
+  text-decoration: none;
+  border-radius: var(--radius-xs);
+}
+
+.opening__link::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+}
+
+.opening__link:focus-visible {
+  outline: 2px solid var(--signal);
+  outline-offset: 4px;
+}
+
+/* the hole cut in the board's face */
+.opening__mouth {
+  position: relative;
+  width: clamp(112px, 17vw, 184px);
+  aspect-ratio: 1;
+  border-radius: var(--radius);
+  background: var(--routed);
+  box-shadow: var(--cut);
+  overflow: hidden;
+}
+
+/* the room behind it, unlit until you look in */
+.opening__room {
+  position: absolute;
+  inset: 9%;
+  display: grid;
+  place-items: center;
+  transform: scale(0.95);
+  filter: brightness(0.62) saturate(0.85);
+  transition: transform 420ms var(--swing), filter 320ms ease-out;
+}
+
+.opening:hover .opening__room,
+.opening:focus-within .opening__room {
+  transform: scale(1.03);
+  filter: brightness(1) saturate(1);
+}
+
+/* the sill: a lit top edge and a shadow pooling at the bottom of the recess */
+.opening__mouth::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--paint-bone) 20%, transparent),
+    inset 0 -18px 26px -20px #000;
+  transition: box-shadow 260ms ease-out;
+  pointer-events: none;
+}
+
+.opening:hover .opening__mouth::after,
+.opening:focus-within .opening__mouth::after {
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--paint-cobalt) 62%, transparent),
+    inset 0 1px 0 color-mix(in srgb, var(--paint-bone) 26%, transparent),
+    inset 0 -18px 26px -22px #000;
+}
+
+.opening__face {
+  display: flex;
+  flex-direction: column;
+  gap: var(--u);
+  min-width: 0;
+}
+
+.opening__name {
+  display: flex;
+  align-items: center;
+  gap: var(--u);
+  font-family: var(--font-display), sans-serif;
+  font-size: clamp(1.2rem, 2.4vw, 1.6rem);
+  font-weight: 600;
+  line-height: 1;
+  color: var(--ink);
+}
+
+.opening__name svg {
+  color: var(--signal);
+  flex: none;
+}
+
+.opening__line {
+  font-size: 0.84rem;
+  line-height: 1.45;
+  color: var(--ink-quiet);
+  max-width: 46ch;
+}
+
+.opening__stats {
+  font-size: 0.78rem;
+  color: var(--ink-faint);
+  font-variant-numeric: tabular-nums;
+}
+
+.opening__stats b {
+  font-weight: 600;
+  color: var(--ink-quiet);
+}
+
+.opening__stats em {
+  font-style: normal;
+}
+
+.opening__enter {
+  display: flex;
+  align-items: center;
+  gap: var(--u);
+  font-family: var(--font-label);
+  font-size: 0.62rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  transition: color 200ms ease-out, transform 320ms var(--swing);
+}
+
+.opening__enter::after {
+  content: "";
+  width: 18px;
+  height: 1px;
+  background: currentColor;
+  transition: width 320ms var(--swing);
+}
+
+.opening:hover .opening__enter,
+.opening:focus-within .opening__enter {
+  color: var(--signal-ink);
+  transform: translateX(4px);
+}
+
+.opening:hover .opening__enter::after {
+  width: 30px;
+}
+
+/* ---------- walking through ---------- */
+
+.doorways[data-entering] {
+  overflow: visible;
+}
+
+.doorways[data-entering] .opening {
+  opacity: 0.2;
+  filter: blur(2px);
+  transition: opacity 240ms ease-out, filter 240ms ease-out;
+}
+
+.doorways[data-entering] .opening.is-entering {
+  opacity: 1;
+  filter: none;
+  z-index: 2;
+}
+
+.opening.is-entering .opening__mouth {
+  animation: through 300ms cubic-bezier(0.4, 0, 0.9, 0.35) forwards;
+}
+
+.opening.is-entering .opening__room {
+  transform: scale(1.03);
+  filter: brightness(1);
+}
+
+@keyframes through {
+  to {
+    transform: scale(9);
+    border-radius: 0;
+  }
+}
+
+/* and out the other side */
+.stage {
+  animation: arrive 300ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes arrive {
+  from {
+    opacity: 0;
+    transform: scale(1.03);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* ---------- the boards inside ---------- */
+
+.preview {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.preview .chessboard__wrap,
+.preview .goban__wrap,
+.preview .c4__gridwrap,
+.preview .sud__boardwrap,
+.preview .ttt__boardwrap {
+  grid-column: auto;
+  grid-row: auto;
+  height: 100%;
+  width: auto;
+  max-height: 100%;
+  max-width: 100%;
+  margin: 0;
+}
+
+.preview .c4__gridwrap {
+  height: auto;
+  width: 100%;
+}
+
+.preview .c4__grid,
+.preview .goban,
+.preview .chessboard,
+.preview .sud__board {
+  box-shadow: none;
+}
+
+@media (max-width: 720px) {
+  .opening {
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: calc(var(--u) * 2);
+    padding: calc(var(--u) * 1.75);
+  }
+
+  .opening__enter {
+    display: none;
+  }
+
+  .opening__line {
+    display: none;
+  }
+
+  .tally {
+    gap: calc(var(--u) * 2);
+  }
+
+  .tally__more {
+    margin-left: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .opening__room,
+  .opening__enter,
+  .opening__mouth::after,
+  .stage {
+    transition: none;
+    animation: none;
+  }
+
+  .opening.is-entering .opening__mouth {
+    animation: none;
   }
 }

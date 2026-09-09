@@ -6,7 +6,7 @@ import { Plate, ZoneLabel } from "./plate";
 import { Tag } from "./tag";
 import { Peg } from "./peg";
 import { Counter } from "./counter";
-import { ArrowLeft, GAME_MARKS } from "./icons";
+import { ArrowLeft, Dash, GAME_MARKS } from "./icons";
 import { NamePlate } from "./nameplate";
 import { Ladder, buildRungs } from "./ladder";
 import { gameName } from "../../lib/games";
@@ -41,6 +41,7 @@ export function StandingsBoard() {
   const recent = useMemo(() => [...sessions].reverse().slice(0, 12), [sessions]);
   const name = board?.player?.name || "You";
   const ranked = summary.played > 0;
+  const sudoku = summary.games.find((g) => g.gameId === "sudoku");
 
   const rungs = buildRungs({ count: RUNGS, name, score: summary.played });
 
@@ -107,7 +108,48 @@ export function StandingsBoard() {
               </span>
               <span className="best__unit">Day run</span>
             </Plate>
+            <Plate index={3} hangKey={`${range}-${sudoku?.bestTime ?? ""}`} empty={!sudoku?.bestTime}>
+              {sudoku?.bestTime ? (
+                <span className="best__value">{sudoku.bestTime}</span>
+              ) : (
+                <span className="best__value--unset">Not set</span>
+              )}
+              <span className="best__unit">Best sudoku</span>
+            </Plate>
           </div>
+
+          {/* the last seven days, one peg each — moved off the board itself */}
+          <div className="run" role="list" aria-label="The last seven days">
+            {summary.run.map((day, i) => (
+              <div className="day" key={day.key} role="listitem">
+                <p className="day__label">{day.weekday.slice(0, 2)}</p>
+                <Plate
+                  index={4 + i}
+                  hangKey={`${range}-${day.key}-${day.count}`}
+                  empty={day.count === 0}
+                  className={day.count === 0 ? "plate--notch" : ""}>
+                  <span className="day__plate">
+                    {day.count > 0 ? (
+                      day.count
+                    ) : (
+                      <>
+                        <Dash className="day__mark" size={16} />
+                        <span className="sr-only">
+                          {day.today ? "Nothing played today yet" : "Nothing played"}
+                        </span>
+                      </>
+                    )}
+                  </span>
+                </Plate>
+              </div>
+            ))}
+          </div>
+
+          <p className="note" style={{ margin: "20px 0 28px" }}>
+            {summary.minutes > 0
+              ? `${summary.minutes} minutes at the board in this range.`
+              : "Nothing timed in this range yet."}
+          </p>
 
           {recent.length === 0 ? (
             <div className="slot">
