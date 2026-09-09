@@ -36,10 +36,17 @@ Games:
 ## Chess
 
 Three tables, one board: **Analysis** (both sides yours, load a FEN or PGN, engine lines on),
-**Bot** (Stockfish at Learner / Casual / Club / Sharp / Brutal, pick your colour), and
-**Online** (open a room, send the invite link, the server validates every move). Move list with
-navigation, eval bar, captured material, promotion picker, draw offers and resignation, and a
-post-game review that scores each move against the engine and gives both sides an accuracy.
+**Bot** (Stockfish at Learner / Casual / Club / Sharp / Brutal, pick your colour and clock), and
+**Online** (open a room, send the invite link, the server validates every move and owns the
+clock). Move list with navigation, eval bar, captured material, promotion picker, draw offers
+and resignation, and a post-game review that scores each move against the engine and gives both
+sides an accuracy.
+
+The analysis board keeps a **tree**, not a list: play from any earlier move and it becomes a
+variation under it, shown in brackets under the move it branched from. A variation can be
+promoted to the main line or cut away. **Clocks** are 3+2, 5+0 or 10+5, or none. Online they run
+on the server — a player who stops moving still flags, and a move that arrives after the flag
+does not land.
 
 Rules come from [chess.js](https://github.com/jhlywa/chess.js). The engine is
 [Stockfish.js](https://github.com/nmrugg/stockfish.js) (GPLv3), the lite single-threaded wasm

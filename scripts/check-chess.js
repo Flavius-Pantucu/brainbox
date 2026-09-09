@@ -6,6 +6,7 @@ const { Chess } = require("chess.js");
 
 async function main() {
   const core = await import("../lib/chess-core.js");
+  const tree = await import("../lib/chess-tree.js");
   const rooms = await import("../lib/rooms.js");
 
   /* material ------------------------------------------------------------- */
@@ -37,6 +38,57 @@ async function main() {
     winner: "b",
     reason: "checkmate",
   });
+
+  /* clocks --------------------------------------------------------------- */
+  assert.equal(core.formatClock(180000), "3:00");
+  assert.equal(core.formatClock(9400), "9.4", "tenths under ten seconds");
+  assert.equal(core.formatClock(-50), "0.0", "a flagged clock never reads negative");
+  assert.equal(core.timeControl("3+2").increment, 2000);
+  assert.equal(core.timeControl("nonsense").initial, null, "an unknown control is no clock");
+
+  /* the variation tree --------------------------------------------------- */
+  const walk = new Chess();
+  const e4 = walk.move("e4");
+  const e5 = walk.move("e5");
+  walk.undo();
+  const c5 = walk.move("c5"); // a sideline against the same position
+
+  let t = tree.newTree(e4.before);
+  const first = tree.addMove(t, t.root, e4);
+  t = first.tree;
+  const main = tree.addMove(t, first.id, e5);
+  t = main.tree;
+  const side = tree.addMove(t, first.id, c5);
+  t = side.tree;
+
+  assert.equal(t.nodes[first.id].children.length, 2, "one move, two replies");
+  assert.equal(t.nodes[first.id].children[0], main.id, "the first reply is the main line");
+  assert.equal(tree.addMove(t, first.id, e5).id, main.id, "a repeated move walks in, not twice");
+  assert.deepEqual(
+    tree.lineTo(t, side.id).map((node) => node.move.san),
+    ["e4", "c5"]
+  );
+  assert.equal(tree.depthOf(t, side.id), 1);
+  assert.equal(tree.depthOf(t, main.id), 0);
+
+  const promoted = tree.promoteNode(t, side.id);
+  assert.equal(promoted.nodes[first.id].children[0], side.id, "the sideline becomes the line");
+  assert.deepEqual(
+    tree.mainLineFrom(promoted, promoted.root).map((node) => node.move.san),
+    ["e4", "c5"]
+  );
+
+  const cut = tree.removeNode(t, side.id);
+  assert.equal(cut.id, first.id, "cutting a line leaves you on its parent");
+  assert.equal(cut.tree.nodes[side.id], undefined);
+  assert.equal(cut.tree.nodes[first.id].children.length, 1);
+
+  const straight = tree.treeFromMoves([e4, e5], e4.before);
+  assert.deepEqual(
+    tree.mainLineFrom(straight.tree, straight.tree.root).map((node) => node.move.san),
+    ["e4", "e5"]
+  );
+  assert.equal(straight.tree.nodes[straight.tip].move.san, "e5");
 
   /* rooms ---------------------------------------------------------------- */
   const host = rooms.createRoom("Ada", "chess", { seat: "w" });
@@ -73,6 +125,42 @@ async function main() {
   assert.equal(again.seat, "b", "the host takes black next game");
   assert.equal(again.status, "playing");
   assert.equal(again.moves.length, 0);
+
+  /* the room owns the clock ---------------------------------------------- */
+  const timed = rooms.createRoom("Ada", "chess", { seat: "w", time: "3+2" });
+  const timedGuest = rooms.joinRoom(timed.room.code, "Bo");
+  const before = rooms.publicState(rooms.getRoom(timed.room.code), timed.token);
+  assert.equal(before.clock.initial, 180000);
+  assert.equal(before.clock.running, "w", "white's clock runs from the start");
+  assert.ok(before.clock.w <= 180000 && before.clock.w > 179000);
+
+  rooms.act(timed.room.code, timed.token, "move", { from: "e2", to: "e4" });
+  const after = rooms.publicState(rooms.getRoom(timed.room.code), timed.token);
+  assert.equal(after.clock.running, "b", "the press passes with the move");
+  assert.ok(after.clock.w > 180000, "the increment is added on");
+  assert.equal(after.clock.b, 180000, "black has not been charged yet");
+
+  // a move that arrives after the flag has fallen does not land
+  const flagged = rooms.getRoom(timed.room.code);
+  flagged.data.clock.left.b = 0;
+  flagged.data.clock.since = Date.now() - 10;
+  rooms.act(timed.room.code, timedGuest.token, "move", { from: "e7", to: "e5" });
+  const out = rooms.publicState(flagged, timedGuest.token);
+  assert.equal(out.status, "won");
+  assert.equal(out.winner, "w");
+  assert.equal(out.reason, "time");
+  assert.equal(out.moves.length, 1, "the late move never reached the board");
+
+  // a fresh game keeps the same control
+  rooms.requestRematch(timed.room.code, timed.token);
+  rooms.requestRematch(timed.room.code, timedGuest.token);
+  const rematched = rooms.publicState(rooms.getRoom(timed.room.code), timed.token);
+  assert.equal(rematched.clock.control, "3+2");
+  assert.equal(rematched.clock.b, 180000);
+
+  const untimed = rooms.createRoom("Ada", "chess", { seat: "w" });
+  rooms.joinRoom(untimed.room.code, "Bo");
+  assert.equal(rooms.publicState(rooms.getRoom(untimed.room.code), untimed.token).clock, null);
 
   /* tictactoe still works on the same store ------------------------------ */
   const ttt = rooms.createRoom("Ada", "tictactoe", { seat: "X" });

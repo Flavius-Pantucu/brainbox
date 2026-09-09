@@ -758,7 +758,11 @@ button {
   display: inline-flex;
   align-items: stretch;
   background: var(--routed);
-  border-radius: 999px;
+  /* a groove that wraps: five options in a 260px column would otherwise run
+     off the side of the panel */
+  flex-wrap: wrap;
+  max-width: 100%;
+  border-radius: var(--radius-lg);
   box-shadow: var(--cut);
   padding: 3px;
   gap: 2px;
@@ -2787,5 +2791,79 @@ button.movelist__half:hover {
 }
 
 span.movelist__half {
+  cursor: default;
+}
+
+/* ---------- clocks ---------- */
+
+.clock {
+  margin-left: auto;
+  padding: 2px calc(var(--u) * 1.25);
+  border-radius: var(--radius-xs);
+  background: var(--routed);
+  border: 1px solid var(--keyline);
+  font-family: var(--font-label);
+  font-variant-numeric: tabular-nums;
+  font-size: 0.86rem;
+  letter-spacing: 0.04em;
+  color: var(--ink-quiet);
+}
+
+.clock.is-running {
+  background: var(--plate-face);
+  border-color: var(--keyline-strong);
+  color: var(--plate-ink);
+}
+
+.clock.is-low {
+  color: #c8422a;
+}
+
+.clock.is-running.is-low {
+  background: color-mix(in srgb, #c8422a 22%, var(--plate-face));
+  color: var(--plate-ink);
+}
+
+/* ---------- variations ---------- */
+
+.movelist__branches {
+  padding: 2px 0 4px calc(var(--u) * 3.25);
+  font-size: 0.78rem;
+  line-height: 1.5;
+  color: var(--ink-quiet);
+}
+
+.movelist__var {
+  display: inline;
+}
+
+.movelist__var b {
+  font-weight: 400;
+  opacity: 0.5;
+}
+
+.movelist__var--1 {
+  opacity: 0.9;
+}
+
+.movelist__var--2 {
+  opacity: 0.78;
+}
+
+.movelist__half--inline {
+  display: inline-flex;
+  min-height: 0;
+  padding: 0 3px;
+  font-size: 0.78rem;
+}
+
+.movelist__no--inline {
+  padding: 0 2px 0 4px;
+  text-align: left;
+  font-size: 0.7rem;
+}
+
+.movelist__half--gap {
+  color: var(--ink-faint);
   cursor: default;
 }

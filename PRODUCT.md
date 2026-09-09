@@ -61,7 +61,8 @@ Shipped and working today (product truth to preserve):
 - **Chess** under `components/games/chess/**`: an analysis board, a Stockfish opponent at five
   strengths, and online play by room code. chess.js holds the rules, Stockfish (wasm, in a
   worker) holds the engine — eval bar, best-move hints, and a post-game review with per-move
-  verdicts and accuracy.
+  verdicts and accuracy. The analysis board holds a move tree with variations (`lib/chess-tree.js`);
+  clocks are 3+2 / 5+0 / 10+5, run on the server for online games.
 - Light and dark theme, previously persisted in a `site_theme` cookie.
 - Auth, register, and password-reset modals — presentational only, wired to nothing.
 - `pages/api/health.js` is the only endpoint.

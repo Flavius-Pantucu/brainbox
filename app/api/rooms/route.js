@@ -11,7 +11,10 @@ export async function POST(request) {
     // an empty body is fine; the host just gets a default name
   }
 
-  const result = createRoom(body.name, body.game || "tictactoe", { seat: body.seat });
+  const result = createRoom(body.name, body.game || "tictactoe", {
+    seat: body.seat,
+    time: body.time,
+  });
   if (result.error) {
     return Response.json({ error: result.error, message: "Unknown game." }, { status: 400 });
   }

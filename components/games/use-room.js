@@ -64,7 +64,7 @@ export function useRoom(game = "tictactoe") {
         const res = await fetch("/api/rooms", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ name, game, seat: options.seat }),
+          body: JSON.stringify({ name, game, seat: options.seat, time: options.time }),
         });
         if (!res.ok) throw new Error("Could not open a room.");
         const data = await res.json();

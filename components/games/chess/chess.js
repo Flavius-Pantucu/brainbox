@@ -13,13 +13,25 @@ import { Tag } from "../../board/tag";
 import { Bulb, Copy, Cpu, Undo, Users } from "../../board/icons";
 import {
   START_FEN,
+  TIME_CONTROLS,
   fenTurn,
+  formatClock,
   materialFrom,
   outcomeOf,
   pieceImage,
   resultLine,
+  timeControl,
   whiteScore,
 } from "../../../lib/chess-core";
+import {
+  addMove,
+  lineTo,
+  mainLineFrom,
+  newTree,
+  promoteNode,
+  removeNode,
+  treeFromMoves,
+} from "../../../lib/chess-tree";
 
 const MODES = [
   { id: "analysis", label: "Analysis" },
@@ -50,7 +62,6 @@ function snapshot(game) {
     fen: game.fen(),
     moves: game.history({ verbose: true }),
     turn: game.turn(),
-    check: game.isCheck(),
     outcome: outcomeOf(game),
   };
 }
@@ -62,6 +73,26 @@ function kingSquare(chess, color) {
     }
   }
   return null;
+}
+
+// Re-renders while something is counting down. Nothing here owns the time —
+// the clock's own numbers do — this only keeps the display honest.
+function useTick(active, ms = 200) {
+  const [, force] = useState(0);
+  useEffect(() => {
+    if (!active) return undefined;
+    const id = setInterval(() => force((n) => (n + 1) % 1000), ms);
+    return () => clearInterval(id);
+  }, [active, ms]);
+}
+
+function Clock({ ms, running }) {
+  if (ms == null) return null;
+  return (
+    <span className={`clock ${running ? "is-running" : ""} ${ms < 20000 ? "is-low" : ""}`}>
+      {formatClock(ms)}
+    </span>
+  );
 }
 
 // What one side has taken, and by how much they are up. The pile shows the
@@ -85,13 +116,13 @@ export default function ChessGame({ onResult }) {
   const [mode, setMode] = useState("analysis");
   const [levelId, setLevelId] = useState("club");
   const [sideChoice, setSideChoice] = useState("w");
+  const [timeId, setTimeId] = useState("none");
   const [orientation, setOrientation] = useState("w");
   const [engineOn, setEngineOn] = useState(true);
   const [selected, setSelected] = useState(null);
   const [promotion, setPromotion] = useState(null);
   const [marks, setMarks] = useState([]);
   const [arrows, setArrows] = useState([]);
-  const [cursor, setCursor] = useState(-1);
   const [score, setScore] = useState(null);
   const [pv, setPv] = useState([]);
   const [thinking, setThinking] = useState(false);
@@ -104,9 +135,16 @@ export default function ChessGame({ onResult }) {
   const [loadError, setLoadError] = useState(null);
   const [showReview, setShowReview] = useState(false);
 
+  // the analysis board is a tree; the bot game is one chess.js instance
+  const [tree, setTree] = useState(() => newTree(START_FEN));
+  const [nodeId, setNodeId] = useState("0");
   const gameRef = useRef(null);
   if (gameRef.current === null) gameRef.current = new Chess();
   const [local, setLocal] = useState(() => snapshot(gameRef.current));
+
+  // clocks: {w, b, increment, running, at} where `at` is a local timestamp
+  const [clockBase, setClockBase] = useState(null);
+  const [flagged, setFlagged] = useState(null);
 
   const sounds = useRef(null);
   const seen = useRef(0);
@@ -117,6 +155,7 @@ export default function ChessGame({ onResult }) {
   const room = useRoom("chess");
   const level = LEVELS.find((l) => l.id === levelId) || LEVELS[2];
   const online = mode === "online" ? room.state : null;
+  const analysis = mode === "analysis";
 
   useEffect(() => {
     sounds.current = {
@@ -126,15 +165,36 @@ export default function ChessGame({ onResult }) {
     };
   }, []);
 
-  /* ------------------------------------------------------------- the game --- */
+  /* --------------------------------------------------------- the position --- */
+
+  // Bot and online games are one straight line of moves; the move list only
+  // speaks tree, so they are handed one with no branches.
+  const playedMoves = online ? online.moves || [] : local.moves;
+  const linear = useMemo(() => treeFromMoves(playedMoves, START_FEN), [playedMoves]);
+
+  const treeNow = analysis ? tree : linear.tree;
+  const nodeNow = treeNow.nodes[nodeId] || treeNow.nodes[treeNow.root];
+  const shownFen = nodeNow.fen;
+
+  const position = useMemo(() => new Chess(shownFen), [shownFen]);
+  const board = useMemo(() => position.board(), [position]);
+  const material = useMemo(() => materialFrom(board), [board]);
+  const line = useMemo(() => lineTo(treeNow, nodeNow.id), [treeNow, nodeNow.id]);
+
+  // in a played game the newest move is where play happens
+  useEffect(() => {
+    if (!analysis) setNodeId(linear.tip);
+  }, [analysis, linear.tip]);
+
+  useEffect(() => {
+    if (!treeNow.nodes[nodeId]) setNodeId(treeNow.root);
+  }, [treeNow, nodeId]);
 
   const view = useMemo(() => {
     if (online) {
       return {
-        moves: online.moves || [],
         fen: online.fen || START_FEN,
         turn: online.turn || "w",
-        check: !!online.check,
         status: online.status,
         winner: online.winner,
         reason: online.reason,
@@ -143,69 +203,60 @@ export default function ChessGame({ onResult }) {
         over: online.status === "won" || online.status === "draw",
       };
     }
-    const you = botSide === "w" ? "b" : "w";
-    const names =
-      mode === "bot"
-        ? botSide === "w"
-          ? { w: level.label, b: "You" }
-          : { w: "You", b: level.label }
-        : { w: "White", b: "Black" };
+    if (mode === "bot") {
+      const outcome = local.outcome;
+      return {
+        fen: local.fen,
+        turn: local.turn,
+        status: flagged ? "won" : outcome.status,
+        winner: flagged ? flagged.winner : outcome.winner,
+        reason: flagged ? "time" : outcome.reason,
+        names:
+          botSide === "w" ? { w: level.label, b: "You" } : { w: "You", b: level.label },
+        mySide: botSide === "w" ? "b" : "w",
+        over: !!flagged || outcome.over,
+      };
+    }
+    // the analysis board reads its state off whatever position is on it
+    const outcome = outcomeOf(position);
     return {
-      moves: local.moves,
-      fen: local.fen,
-      turn: local.turn,
-      check: local.check,
-      status: local.outcome.status,
-      winner: local.outcome.winner,
-      reason: local.outcome.reason,
-      names,
-      mySide: mode === "bot" ? you : null, // analysis: both sides are yours
-      over: local.outcome.over,
+      fen: shownFen,
+      turn: position.turn(),
+      status: outcome.status,
+      winner: outcome.winner,
+      reason: outcome.reason,
+      names: { w: "White", b: "Black" },
+      mySide: null, // both sides are yours
+      over: outcome.over,
     };
-  }, [online, local, mode, botSide, level]);
+  }, [online, mode, local, flagged, botSide, level, position, shownFen]);
 
-  // the board follows the newest move unless you have walked back through them
-  useEffect(() => {
-    setCursor(view.moves.length - 1);
-  }, [view.moves.length]);
-
-  const atLive = cursor >= view.moves.length - 1;
-  const shownFen = !view.moves.length
-    ? view.fen
-    : atLive
-    ? view.fen
-    : cursor < 0
-    ? view.moves[0].before
-    : view.moves[cursor].after;
-
-  const shown = useMemo(() => new Chess(shownFen), [shownFen]);
-  const live = useMemo(() => new Chess(view.fen), [view.fen]);
-  const board = useMemo(() => shown.board(), [shown]);
-  const material = useMemo(() => materialFrom(board), [board]);
-
-  const shownCheck = shown.isCheck() ? kingSquare(shown, shown.turn()) : null;
-  const lastMove =
-    cursor >= 0 && view.moves[cursor]
-      ? { from: view.moves[cursor].from, to: view.moves[cursor].to }
-      : null;
-
+  const atTip = analysis || nodeNow.id === linear.tip;
   const yourTurn = view.mySide == null || view.turn === view.mySide;
   const roomReady = mode !== "online" || online?.status === "playing";
-  const canPlay = atLive && !view.over && yourTurn && roomReady && !botThinking;
+  const canPlay = analysis
+    ? !outcomeOf(position).over
+    : atTip && !view.over && yourTurn && roomReady && !botThinking;
+
+  const shownCheck = position.isCheck() ? kingSquare(position, position.turn()) : null;
+  const lastMove = nodeNow.move ? { from: nodeNow.move.from, to: nodeNow.move.to } : null;
 
   const targets = useMemo(() => {
     if (!selected || !canPlay) return [];
-    return live.moves({ square: selected, verbose: true });
-  }, [selected, canPlay, live]);
+    return position.moves({ square: selected, verbose: true });
+  }, [selected, canPlay, position]);
+
+  /* -------------------------------------------------------------- sounds --- */
 
   const playSound = useCallback((move) => {
     const bank = sounds.current;
     if (!bank || !move) return;
-    const clip = move.flags?.includes("k") || move.flags?.includes("q")
-      ? bank.castle
-      : move.captured
-      ? bank.capture
-      : bank.move;
+    const clip =
+      move.flags?.includes("k") || move.flags?.includes("q")
+        ? bank.castle
+        : move.captured
+        ? bank.capture
+        : bank.move;
     clip.currentTime = 0;
     clip.play().catch(() => {
       /* browsers refuse audio until the page has been clicked once */
@@ -213,28 +264,97 @@ export default function ChessGame({ onResult }) {
   }, []);
 
   useEffect(() => {
-    const moves = view.moves;
-    if (moves.length > seen.current) playSound(moves[moves.length - 1]);
-    seen.current = moves.length;
-  }, [view.moves, playSound]);
+    if (analysis) return;
+    if (playedMoves.length > seen.current) playSound(playedMoves[playedMoves.length - 1]);
+    seen.current = playedMoves.length;
+  }, [analysis, playedMoves, playSound]);
 
-  /* ------------------------------------------------------------- moving --- */
+  /* --------------------------------------------------------------- clock --- */
 
-  const applyLocal = useCallback((from, to, promote) => {
-    const game = gameRef.current;
-    try {
-      game.move({ from, to, promotion: promote });
-    } catch {
-      return false;
+  useEffect(() => {
+    if (mode !== "online") return;
+    const clock = online?.clock;
+    if (!clock) {
+      setClockBase(null);
+      return;
     }
-    setLocal(snapshot(game));
-    return true;
+    setClockBase({ ...clock, at: Date.now() });
+  }, [mode, online?.version, online?.clock]);
+
+  const remaining = useCallback(
+    (seat) => {
+      if (!clockBase) return null;
+      const spent = clockBase.running === seat ? Date.now() - clockBase.at : 0;
+      return Math.max(0, clockBase[seat] - spent);
+    },
+    [clockBase]
+  );
+
+  useTick(!!clockBase?.running && !view.over);
+
+  // A local flag is one timer, not a poll: the clock's own numbers say when.
+  useEffect(() => {
+    if (mode !== "bot" || !clockBase?.running || view.over) return undefined;
+    const seat = clockBase.running;
+    const left = clockBase[seat] - (Date.now() - clockBase.at);
+    const id = setTimeout(
+      () => setFlagged({ winner: seat === "w" ? "b" : "w" }),
+      Math.max(0, left)
+    );
+    return () => clearTimeout(id);
+  }, [mode, clockBase, view.over]);
+
+  const chargeClock = useCallback((mover) => {
+    setClockBase((base) => {
+      if (!base) return base;
+      const spent = base.running === mover ? Date.now() - base.at : 0;
+      return {
+        ...base,
+        [mover]: Math.max(0, base[mover] - spent) + base.increment,
+        running: mover === "w" ? "b" : "w",
+        at: Date.now(),
+      };
+    });
   }, []);
+
+  /* -------------------------------------------------------------- moving --- */
+
+  const applyLocal = useCallback(
+    (from, to, promote) => {
+      const game = gameRef.current;
+      let move;
+      try {
+        move = game.move({ from, to, promotion: promote });
+      } catch {
+        return;
+      }
+      chargeClock(move.color);
+      setLocal(snapshot(game));
+    },
+    [chargeClock]
+  );
+
+  const applyAnalysis = useCallback(
+    (from, to, promote) => {
+      const board = new Chess(shownFen);
+      let move;
+      try {
+        move = board.move({ from, to, promotion: promote });
+      } catch {
+        return;
+      }
+      const added = addMove(treeNow, nodeNow.id, move);
+      setTree(added.tree);
+      setNodeId(added.id);
+      playSound(move);
+    },
+    [shownFen, treeNow, nodeNow.id, playSound]
+  );
 
   const attemptMove = useCallback(
     (from, to, promote) => {
       if (!canPlay) return;
-      const legal = live.moves({ square: from, verbose: true }).filter((m) => m.to === to);
+      const legal = position.moves({ square: from, verbose: true }).filter((m) => m.to === to);
       if (!legal.length) return;
       if (legal[0].promotion && !promote) {
         setPromotion({ from, to, color: legal[0].color });
@@ -245,9 +365,10 @@ export default function ChessGame({ onResult }) {
       setArrows([]);
       setMarks([]);
       if (mode === "online") room.act("move", { from, to, promotion: promote });
+      else if (analysis) applyAnalysis(from, to, promote);
       else applyLocal(from, to, promote);
     },
-    [canPlay, live, mode, room, applyLocal]
+    [canPlay, position, mode, analysis, room, applyAnalysis, applyLocal]
   );
 
   const pressSquare = useCallback(
@@ -260,11 +381,12 @@ export default function ChessGame({ onResult }) {
         attemptMove(selected, square);
         return;
       }
-      const piece = live.get(square);
-      const mine = piece && piece.color === view.turn && (view.mySide == null || piece.color === view.mySide);
+      const piece = position.get(square);
+      const mine =
+        piece && piece.color === view.turn && (view.mySide == null || piece.color === view.mySide);
       setSelected(mine ? square : null);
     },
-    [canPlay, selected, targets, attemptMove, live, view.turn, view.mySide]
+    [canPlay, selected, targets, attemptMove, position, view.turn, view.mySide]
   );
 
   const toggleMark = (square) =>
@@ -279,12 +401,12 @@ export default function ChessGame({ onResult }) {
         : [...current, { from, to }]
     );
 
-  /* ------------------------------------------------------------- engine --- */
+  /* -------------------------------------------------------------- engine --- */
 
   const engineIdle = engineOn && engine.ready && review.status !== "running";
 
   useEffect(() => {
-    if (!engineIdle || (mode === "bot" && !view.over && botThinking)) return undefined;
+    if (!engineIdle || (mode === "bot" && botThinking)) return undefined;
     let alive = true;
     setThinking(true);
     engine.cancel();
@@ -303,7 +425,7 @@ export default function ChessGame({ onResult }) {
     return () => {
       alive = false;
     };
-  }, [shownFen, engineIdle, engine, mode, view.over, botThinking]);
+  }, [shownFen, engineIdle, engine, mode, botThinking]);
 
   useEffect(() => {
     if (!engineOn) {
@@ -314,9 +436,7 @@ export default function ChessGame({ onResult }) {
 
   // the bot answers
   useEffect(() => {
-    if (mode !== "bot" || !engine.ready || local.outcome.over || local.turn !== botSide) {
-      return undefined;
-    }
+    if (mode !== "bot" || !engine.ready || view.over || local.turn !== botSide) return undefined;
     let alive = true;
     setBotThinking(true);
     engine.play(local.fen, { skill: level.skill, depth: level.depth }).then((result) => {
@@ -328,21 +448,23 @@ export default function ChessGame({ onResult }) {
     return () => {
       alive = false;
     };
-  }, [mode, engine, local.fen, local.turn, local.outcome.over, botSide, level, applyLocal]);
+  }, [mode, engine, local.fen, local.turn, view.over, botSide, level, applyLocal]);
 
   const hintArrow = useMemo(() => {
-    if (!engineOn || !pv.length || !atLive || view.over) return null;
+    if (!engineOn || !pv.length || view.over) return null;
     const best = pv[0];
     if (!best || best.length < 4) return null;
     return { from: best.slice(0, 2), to: best.slice(2, 4) };
-  }, [engineOn, pv, atLive, view.over]);
+  }, [engineOn, pv, view.over]);
 
-  /* -------------------------------------------------------------- setup --- */
+  /* --------------------------------------------------------------- setup --- */
 
-  const newLocalGame = useCallback(
-    () => {
-      gameRef.current = new Chess();
+  const resetBoards = useCallback(
+    (fen = START_FEN) => {
+      gameRef.current = new Chess(fen === START_FEN ? undefined : fen);
       setLocal(snapshot(gameRef.current));
+      setTree(newTree(fen));
+      setNodeId("0");
       setSelected(null);
       setPromotion(null);
       setMarks([]);
@@ -350,6 +472,8 @@ export default function ChessGame({ onResult }) {
       setScore(null);
       setPv([]);
       setShowReview(false);
+      setFlagged(null);
+      setClockBase(null);
       review.clear();
       seen.current = 0;
       reported.current = null;
@@ -359,10 +483,20 @@ export default function ChessGame({ onResult }) {
 
   const startBotGame = () => {
     const side = sideChoice === "random" ? (Math.random() < 0.5 ? "w" : "b") : sideChoice;
-    newLocalGame();
+    resetBoards();
     setBotSide(side === "w" ? "b" : "w");
     setOrientation(side);
     setEngineOn(false);
+    const control = timeControl(timeId);
+    if (control.initial) {
+      setClockBase({
+        w: control.initial,
+        b: control.initial,
+        increment: control.increment,
+        running: "w",
+        at: Date.now(),
+      });
+    }
   };
 
   useEffect(() => {
@@ -371,21 +505,30 @@ export default function ChessGame({ onResult }) {
     setMarks([]);
     setArrows([]);
     setShowReview(false);
+    setFlagged(null);
+    setClockBase(null);
     review.clear();
-    if (mode === "analysis") setEngineOn(true);
-    if (mode === "bot") setEngineOn(false);
-    if (mode === "online") setEngineOn(false);
+    setEngineOn(mode === "analysis");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mode]);
 
   const takeback = () => {
     const game = gameRef.current;
     game.undo();
-    if (mode === "bot") game.undo(); // both halves, so it is your move again
+    game.undo(); // both halves, so it is your move again
     setLocal(snapshot(game));
     setSelected(null);
     seen.current = game.history().length;
   };
+
+  const cutLine = () => {
+    const cut = removeNode(treeNow, nodeNow.id);
+    setTree(cut.tree);
+    setNodeId(cut.id);
+    setSelected(null);
+  };
+
+  const promoteLine = () => setTree(promoteNode(treeNow, nodeNow.id));
 
   const loadPosition = () => {
     const text = loadText.trim();
@@ -398,15 +541,21 @@ export default function ChessGame({ onResult }) {
       setLoadError("That is not a FEN or a PGN this board can read.");
       return;
     }
+    const moves = game.history({ verbose: true });
+    const built = treeFromMoves(moves, game.fen());
     gameRef.current = game;
     setLocal(snapshot(game));
+    setTree(built.tree);
+    setNodeId(built.tip);
     setLoadError(null);
     setLoadText("");
     setSelected(null);
     setShowReview(false);
     review.clear();
-    seen.current = game.history().length;
+    seen.current = moves.length;
   };
+
+  const pgnOfLine = () => line.map((node) => node.move.san).join(" ");
 
   const copyText = async (text) => {
     try {
@@ -440,41 +589,40 @@ export default function ChessGame({ onResult }) {
   /* -------------------------------------------------------------- result --- */
 
   useEffect(() => {
-    if (!view.over) return;
+    if (analysis || !view.over) return;
     const stamp =
-      mode === "online" ? `${online?.code}-${online?.version}` : `${mode}-${view.moves.length}`;
+      mode === "online" ? `${online?.code}-${online?.version}` : `${mode}-${playedMoves.length}`;
     if (reported.current === stamp) return;
     reported.current = stamp;
     onResult?.({
       outcome:
         view.status === "draw"
           ? "drawn"
-          : view.mySide == null
-          ? "played"
           : view.winner === view.mySide
           ? "won"
           : "lost",
       meta: {
         mode,
-        moves: view.moves.length,
+        moves: playedMoves.length,
         level: mode === "bot" ? level.id : null,
+        time: mode === "bot" ? timeId : online?.clock?.control ?? null,
         room: online?.code ?? null,
       },
     });
-  }, [view, mode, online, level, onResult]);
+  }, [analysis, view, mode, online, level, timeId, playedMoves.length, onResult]);
 
   /* ---------------------------------------------------------------- keys --- */
 
   useEffect(() => {
     const onKey = (event) => {
       if (event.target instanceof HTMLInputElement) return;
-      if (event.key === "ArrowLeft") setCursor((c) => Math.max(-1, c - 1));
-      if (event.key === "ArrowRight") setCursor((c) => Math.min(view.moves.length - 1, c + 1));
+      if (event.key === "ArrowLeft" && nodeNow.parent) setNodeId(nodeNow.parent);
+      if (event.key === "ArrowRight" && nodeNow.children.length) setNodeId(nodeNow.children[0]);
       if (event.key === "f") setOrientation((o) => (o === "w" ? "b" : "w"));
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [view.moves.length]);
+  }, [nodeNow]);
 
   /* ---------------------------------------------------------------- copy --- */
 
@@ -489,14 +637,21 @@ export default function ChessGame({ onResult }) {
       if (botThinking) return `${level.label} is thinking.`;
       return yourTurn ? "Your move." : `${level.label} to move.`;
     }
-    if (view.check) return `${view.turn === "w" ? "White" : "Black"} is in check.`;
+    if (position.isCheck()) return `${view.turn === "w" ? "White" : "Black"} is in check.`;
     return `${view.turn === "w" ? "White" : "Black"} to move.`;
   };
 
   const away = orientation === "w" ? "b" : "w";
   const drawOffered = online?.drawOffer && online.drawOffer !== online.seat;
-  const canReview = view.moves.length > 1 && engine.ready;
-  const currentVerdict = review.report?.verdicts?.[cursor] || null;
+  const canReview = line.length > 1 && engine.ready;
+  const verdictsById = useMemo(() => {
+    if (!review.report) return null;
+    return Object.fromEntries(
+      review.report.verdicts.map((verdict, index) => [line[index]?.id, verdict]).filter(([id]) => id)
+    );
+  }, [review.report, line]);
+  const currentVerdict = verdictsById?.[nodeNow.id] || null;
+  const offMainLine = analysis && nodeNow.parent && treeNow.nodes[nodeNow.parent].children[0] !== nodeNow.id;
 
   return (
     <div className="chess">
@@ -512,6 +667,7 @@ export default function ChessGame({ onResult }) {
           <div className="chess__player">
             <span className="chess__who">{view.names[away]}</span>
             <Taken seat={away} material={material} />
+            <Clock ms={remaining(away)} running={clockBase?.running === away} />
           </div>
 
           <Board
@@ -537,6 +693,7 @@ export default function ChessGame({ onResult }) {
           <div className="chess__player">
             <span className="chess__who">{view.names[orientation]}</span>
             <Taken seat={orientation} material={material} />
+            <Clock ms={remaining(orientation)} running={clockBase?.running === orientation} />
           </div>
         </div>
       </div>
@@ -550,7 +707,13 @@ export default function ChessGame({ onResult }) {
         </div>
 
         <p className="status">
-          {mode === "bot" ? <Cpu size={16} /> : mode === "online" ? <Users size={16} /> : <Bulb size={16} />}
+          {mode === "bot" ? (
+            <Cpu size={16} />
+          ) : mode === "online" ? (
+            <Users size={16} />
+          ) : (
+            <Bulb size={16} />
+          )}
           <span>{statusLine()}</span>
         </p>
 
@@ -562,10 +725,10 @@ export default function ChessGame({ onResult }) {
         )}
 
         <MoveList
-          moves={view.moves}
-          cursor={cursor}
-          onJump={(index) => setCursor(Math.max(-1, Math.min(view.moves.length - 1, index)))}
-          verdicts={review.report?.verdicts || null}
+          tree={treeNow}
+          current={nodeNow.id}
+          onJump={(id) => id && setNodeId(id)}
+          verdicts={verdictsById}
           result={view.over ? resultLine(view, view.names) : null}
         />
 
@@ -580,7 +743,10 @@ export default function ChessGame({ onResult }) {
         )}
 
         <div className="tools">
-          <button type="button" className="tool" onClick={() => setOrientation((o) => (o === "w" ? "b" : "w"))}>
+          <button
+            type="button"
+            className="tool"
+            onClick={() => setOrientation((o) => (o === "w" ? "b" : "w"))}>
             <Undo size={16} />
             <em>Flip</em>
           </button>
@@ -592,33 +758,55 @@ export default function ChessGame({ onResult }) {
             <Bulb size={16} />
             <em>Engine</em>
           </button>
-          {mode !== "online" && (
-            <button
-              type="button"
-              className="tool"
-              onClick={takeback}
-              disabled={!view.moves.length}>
-              <Undo size={16} />
-              <em>Take back</em>
-            </button>
+          {analysis ? (
+            <>
+              <button
+                type="button"
+                className="tool"
+                onClick={cutLine}
+                disabled={!nodeNow.parent}>
+                <Undo size={16} />
+                <em>Delete</em>
+              </button>
+              <button
+                type="button"
+                className="tool"
+                onClick={promoteLine}
+                disabled={!offMainLine}>
+                <Undo size={16} />
+                <em>Promote</em>
+              </button>
+            </>
+          ) : (
+            mode === "bot" && (
+              <button
+                type="button"
+                className="tool"
+                onClick={takeback}
+                disabled={!!clockBase || playedMoves.length < 2}
+                title={clockBase ? "Not with a clock running" : undefined}>
+                <Undo size={16} />
+                <em>Take back</em>
+              </button>
+            )
           )}
         </div>
 
-        {view.over && canReview && (
+        {(view.over || analysis) && canReview && (
           <button
             type="button"
             className="key"
             style={{ width: "100%" }}
             onClick={() => {
               setShowReview(true);
-              review.run(view.moves);
+              review.run(line.map((node) => node.move));
             }}
             disabled={review.status === "running"}>
-            {review.status === "done" ? "Review again" : "Review the game"}
+            {review.status === "done" ? "Review again" : "Review this line"}
           </button>
         )}
 
-        {mode === "analysis" && (
+        {analysis && (
           <div className="stack">
             <label className="field">
               <span className="field__label">Load a FEN or a PGN</span>
@@ -636,10 +824,10 @@ export default function ChessGame({ onResult }) {
               <button type="button" className="key key--quiet" onClick={loadPosition}>
                 Load
               </button>
-              <button type="button" className="key key--quiet" onClick={() => copyText(gameRef.current.pgn())}>
-                <Copy size={14} /> PGN
+              <button type="button" className="key key--quiet" onClick={() => copyText(pgnOfLine())}>
+                <Copy size={14} /> Line
               </button>
-              <button type="button" className="key key--quiet" onClick={() => copyText(view.fen)}>
+              <button type="button" className="key key--quiet" onClick={() => copyText(shownFen)}>
                 <Copy size={14} /> FEN
               </button>
             </div>
@@ -648,7 +836,11 @@ export default function ChessGame({ onResult }) {
                 {loadError}
               </p>
             )}
-            <button type="button" className="key" style={{ width: "100%" }} onClick={newLocalGame}>
+            <button
+              type="button"
+              className="key"
+              style={{ width: "100%" }}
+              onClick={() => resetBoards()}>
               Clear the board
             </button>
           </div>
@@ -667,6 +859,17 @@ export default function ChessGame({ onResult }) {
                 You play
               </span>
               <Peg options={SIDES} value={sideChoice} onChange={setSideChoice} label="Your colour" />
+            </div>
+            <div className="stack" style={{ gap: 10 }}>
+              <span className="zone-label" style={{ margin: 0 }}>
+                Clock
+              </span>
+              <Peg
+                options={TIME_CONTROLS}
+                value={timeId}
+                onChange={setTimeId}
+                label="Time control"
+              />
             </div>
             <button type="button" className="key" style={{ width: "100%" }} onClick={startBotGame}>
               New game
@@ -696,12 +899,29 @@ export default function ChessGame({ onResult }) {
                   <Peg options={SIDES} value={sideChoice} onChange={setSideChoice} label="Your colour" />
                 </div>
 
+                <div className="stack" style={{ gap: 10 }}>
+                  <span className="zone-label" style={{ margin: 0 }}>
+                    Clock
+                  </span>
+                  <Peg
+                    options={TIME_CONTROLS}
+                    value={timeId}
+                    onChange={setTimeId}
+                    label="Time control"
+                  />
+                </div>
+
                 <button
                   type="button"
                   className="key"
                   style={{ width: "100%" }}
                   disabled={room.busy}
-                  onClick={() => room.host(name, { seat: sideChoice === "random" ? undefined : sideChoice })}>
+                  onClick={() =>
+                    room.host(name, {
+                      seat: sideChoice === "random" ? undefined : sideChoice,
+                      time: timeId,
+                    })
+                  }>
                   {room.busy ? "Opening…" : "Open a room"}
                 </button>
 
@@ -848,6 +1068,7 @@ export default function ChessGame({ onResult }) {
         <p className="chalk chalk--tight">
           Drag or click to move. Right-click marks a square, right-drag draws an arrow. Arrow keys
           walk the moves, F flips the board.
+          {analysis && " Playing from an earlier move starts a variation."}
         </p>
       </div>
     </div>
