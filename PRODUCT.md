@@ -20,8 +20,8 @@ react-hook-form, modulo-x.
 ## Users
 
 Primary user: a person who wants a short, self-contained session of a classic logic game
-(chess, Go, backgammon, checkers, Reversi, Connect Four, minesweeper, sudoku,
-tic-tac-toe) in the browser, with no install and no lobby wait. They arrive
+(chess, Go, backgammon, gin rummy, checkers, Reversi, Connect Four,
+minesweeper, sudoku, tic-tac-toe) in the browser, with no install and no lobby wait. They arrive
 on a break or in an idle moment, want to be inside a game within a few seconds, and want a
 reason to come back tomorrow.
 
@@ -63,6 +63,10 @@ Shipped and working today (product truth to preserve):
   of four, three levels), with online rooms on the same server.
 - **Minesweeper** — `lib/minesweeper.js`: three field sizes, mines laid after the first click so
   that click is always safe, flood opening, flags, and chording. Solo — no rooms, no opponent.
+- **Gin Rummy** — `lib/rummy.js`: an exact meld solver (sets, runs and sub-runs, best layout by
+  search), deadwood, knocking, gin, automatic laying off and undercuts, played to 100. The first
+  game with hidden information: the room builds its payload per viewer, so a hand only ever
+  reaches the player holding it.
 - **Backgammon** — `lib/backgammon.js`: whole-turn move generation so that the must-use-both and
   higher-die rules hold, doubles, the bar, bearing off, and gammon/backgammon scoring. The
   machine picks a turn by evaluating the position it leaves. Online the server rolls the dice.
@@ -91,7 +95,7 @@ Shipped and working today (product truth to preserve):
 Confirmed constraints (2026-09-08, amended 2026-09-09):
 - **No database and no accounts.** Player stats, streaks, leaderboards and challenge history
   have no server behind them and live in one browser.
-- **One server-side feature exists: online rooms for tic-tac-toe, chess, Connect Four, Go, Reversi, checkers and backgammon** (`lib/rooms.js`, `app/api/rooms/**`).
+- **One server-side feature exists: online rooms for tic-tac-toe, chess, Connect Four, Go, Reversi, checkers, backgammon and gin rummy** (`lib/rooms.js`, `app/api/rooms/**`).
   Rooms are held in the node process's memory and pushed to both players over SSE. This works
   under `npm run dev` and a self-hosted `npm start`; a serverless deploy with more than one
   instance would need that one module swapped for a shared store. Rooms hold no identity beyond

@@ -1,7 +1,7 @@
 # BrainBox
 
-A portal for browser-based logic games — chess, Go, backgammon, checkers, Reversi, Connect
-Four, minesweeper, sudoku and tic-tac-toe — built with
+A portal for browser-based logic games — chess, Go, backgammon, gin rummy, checkers, Reversi,
+Connect Four, minesweeper, sudoku and tic-tac-toe — built with
 [Next.js](https://nextjs.org/).
 
 The interface is a hand-operated club board, painted in navy and steel: today's challenge,
@@ -19,6 +19,7 @@ Games:
 - [x] **Minesweeper** — beginner to expert, with a first click that is always safe
 - [x] **Sudoku** — a fresh puzzle every game, generated in the browser, at four difficulties
 - [x] **Go** — 9×9 to 19×19, against the machine, against the next chair, or online by room code
+- [x] **Gin Rummy** — against the machine, or online by room code
 - [x] **Backgammon** — against the machine, against the next chair, or online by room code
 - [x] **Checkers** — against the machine, against the next chair, or online by room code
 - [x] **Reversi** — against the machine, against the next chair, or online by room code
@@ -38,6 +39,7 @@ Games:
 | `/play/checkers` | Checkers, inside the play frame                                    |
 | `/play/minesweeper` | Minesweeper, inside the play frame                              |
 | `/play/backgammon` | Backgammon, inside the play frame                                |
+| `/play/rummy`    | Gin Rummy, inside the play frame                                   |
 | `/play/sudoku`   | Sudoku, inside the play frame                                      |
 | `/play/tictactoe`| Tic-Tac-Toe, inside the play frame                                 |
 | `/standings`     | The ladder and your card — recent games, wins, day run             |
@@ -84,6 +86,22 @@ and takes the one that wins most, on a time budget that grows with the board. It
 own eyes and passes when it has nothing left. It is a real opponent on 9×9 and an honest one
 above that. Not implemented: positional superko, and the search runs on the main thread rather
 than in a worker.
+
+## Gin Rummy
+
+Ten cards each, draw and throw, knock on ten points of deadwood or less. `lib/rummy.js` works
+the hand out for you: it enumerates every set and run the cards could form — including the
+sub-runs, because a five-card run is sometimes worth breaking for a set — and searches for the
+layout that leaves the least behind. That number is the deadwood, and the same solver draws the
+melds in your hand and decides what the machine throws.
+
+Gin pays 25 over the defender's deadwood. Knock and the defender lays off what it can onto your
+melds first; if it comes out level or better, it undercuts you and takes the difference plus 25.
+Laying off is done by the engine rather than asked for, because a defender would always do it.
+First to 100 wins.
+
+Aces are low, so A-2-3 is a run and Q-K-A is not. Online, **the deck is the server's and a hand
+is only ever sent to the player holding it** — the room's payload is built per viewer.
 
 ## Backgammon
 

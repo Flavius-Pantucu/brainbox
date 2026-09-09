@@ -4639,3 +4639,231 @@ span.movelist__half {
     max-height: none;
   }
 }
+
+/* =========================================================================
+   CARDS — drawn once, dealt everywhere
+   ========================================================================= */
+
+.card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  width: clamp(38px, 5.2vw, 54px);
+  aspect-ratio: 5 / 7;
+  padding: 0;
+  border: 1px solid var(--keyline-strong);
+  border-radius: var(--radius-xs);
+  background: var(--plate-face);
+  box-shadow: var(--lift-1);
+  font-family: var(--font-display), sans-serif;
+  font-weight: 600;
+  cursor: default;
+  transition: transform 200ms var(--swing), box-shadow 200ms var(--swing),
+    opacity 200ms ease-out;
+}
+
+.card__rank {
+  font-size: clamp(0.9rem, 1.5vw, 1.15rem);
+  line-height: 1;
+}
+
+.card--black .card__rank {
+  color: var(--paint-navy);
+}
+
+.card--red .card__rank {
+  color: #b3241a;
+}
+
+.suit--black {
+  fill: var(--paint-navy);
+}
+
+.suit--red {
+  fill: #b3241a;
+}
+
+button.card:not(:disabled) {
+  cursor: pointer;
+}
+
+button.card:not(:disabled):hover {
+  transform: translateY(-6px);
+}
+
+.card.is-picked {
+  transform: translateY(-12px);
+  box-shadow: var(--lift-2), 0 0 0 2px var(--signal);
+}
+
+/* what is already in a meld, and what is still costing you */
+.card.is-melded {
+  border-color: color-mix(in srgb, var(--paint-cobalt) 62%, transparent);
+}
+
+.card.is-dim {
+  opacity: 0.72;
+}
+
+.card--back {
+  background: var(--panel);
+  border-color: var(--keyline);
+  background-image: repeating-linear-gradient(
+    45deg,
+    color-mix(in srgb, var(--paint-cobalt) 22%, transparent) 0 3px,
+    transparent 3px 7px
+  );
+}
+
+.card--empty {
+  background: none;
+  border-style: dashed;
+  box-shadow: none;
+}
+
+/* =========================================================================
+   GIN RUMMY
+   ========================================================================= */
+
+.rum {
+  display: contents;
+}
+
+.rum__field {
+  grid-column: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 0;
+  min-width: 0;
+}
+
+.rum__side {
+  grid-column: 2;
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--u) * 2);
+  min-height: 0;
+  overflow: auto;
+  padding-bottom: var(--u);
+}
+
+.rum__table {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: calc(var(--u) * 3);
+  width: 100%;
+  max-width: 760px;
+  padding: calc(var(--u) * 2.5);
+  border-radius: var(--radius-lg);
+  background: var(--panel);
+  box-shadow: var(--lift-2);
+}
+
+.rum__seat {
+  display: flex;
+  flex-direction: column;
+  gap: var(--u);
+}
+
+.rum__who {
+  display: flex;
+  align-items: baseline;
+  gap: var(--u);
+  font-family: var(--font-label);
+  font-size: 0.62rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-quiet);
+}
+
+.rum__dead {
+  font-style: normal;
+  letter-spacing: 0.02em;
+  text-transform: none;
+  color: var(--ink-faint);
+}
+
+/* a hand overlaps like a hand does */
+.rum__hand,
+.rum__backs {
+  display: flex;
+  padding-top: 12px;
+}
+
+.rum__hand > * + *,
+.rum__backs > * + * {
+  margin-left: clamp(-22px, -2.2vw, -14px);
+}
+
+.rum__backs .card {
+  width: clamp(30px, 4vw, 40px);
+}
+
+.rum__piles {
+  display: flex;
+  justify-content: center;
+  gap: calc(var(--u) * 3);
+}
+
+.pile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+}
+
+.pile:disabled {
+  cursor: default;
+}
+
+.pile:not(:disabled):hover .card {
+  transform: translateY(-4px);
+}
+
+.pile__count {
+  font-family: var(--font-label);
+  font-size: 0.58rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.preview .rum__table {
+  gap: var(--u);
+  padding: var(--u);
+  box-shadow: none;
+  max-width: none;
+}
+
+.preview .card {
+  width: 26px;
+  box-shadow: none;
+}
+
+.preview .rum__hand > * + *,
+.preview .rum__backs > * + * {
+  margin-left: -11px;
+}
+
+.preview .rum__who,
+.preview .pile__count {
+  font-size: 0.42rem;
+}
+
+@media (max-width: 900px) {
+  .rum__field,
+  .rum__side {
+    grid-column: 1;
+  }
+}

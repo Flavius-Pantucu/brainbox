@@ -144,6 +144,17 @@ export function BackgammonMark({ size = 20, ...rest }) {
   );
 }
 
+export function RummyMark({ size = 20, ...rest }) {
+  // Two cards, one behind the other, and a pip.
+  return (
+    <svg {...base} width={size} height={size} {...rest}>
+      <rect x="3.5" y="6" width="10" height="14" rx="1.6" />
+      <path d="M9.6 4.6l7 1.9a1.6 1.6 0 0 1 1.1 2l-2.6 9.6" />
+      <path d="M8.5 10.6c1.6 1.4 2.6 2.5 2.6 3.6a1.4 1.4 0 0 1-2.6.7 1.4 1.4 0 0 1-2.6-.7c0-1.1 1-2.2 2.6-3.6z" fill="currentColor" stroke="none" />
+    </svg>
+  );
+}
+
 export const GAME_MARKS = {
   chess: ChessMark,
   sudoku: SudokuMark,
@@ -154,6 +165,7 @@ export const GAME_MARKS = {
   checkers: CheckersMark,
   minesweeper: MinesweeperMark,
   backgammon: BackgammonMark,
+  rummy: RummyMark,
 };
 
 export function Lamp({ size = 18, lit = false, ...rest }) {

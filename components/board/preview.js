@@ -5,6 +5,7 @@ import { Board as ChessBoard } from "../games/chess/board";
 import { Goban } from "../games/go/goban";
 import { Grid as Connect4Grid } from "../games/connect4/grid";
 import { BackgammonBoard } from "../games/backgammon/board";
+import { RummyTable } from "../games/rummy/table";
 import { CheckersGrid } from "../games/checkers/grid";
 import { MineField } from "../games/minesweeper/grid";
 import { ReversiGrid } from "../games/reversi/grid";
@@ -12,6 +13,7 @@ import { SudokuGrid } from "../games/sudoku/grid";
 import { Board as TicTacToeBoard } from "../games/tictactoe/board";
 import {
   BACKGAMMON_PREVIEW,
+  RUMMY_PREVIEW,
   CHECKERS_PREVIEW,
   CHESS_PREVIEW,
   CONNECT4_PREVIEW,
@@ -79,6 +81,19 @@ export function GamePreview({ gameId }) {
           last={CONNECT4_PREVIEW.last}
           onDrop={() => {}}
           disabled
+        />
+      </Inert>
+    );
+  }
+
+  if (gameId === "rummy") {
+    return (
+      <Inert>
+        <RummyTable
+          hand={RUMMY_PREVIEW.hand}
+          theirs={RUMMY_PREVIEW.theirs}
+          discard={RUMMY_PREVIEW.discard}
+          stock={RUMMY_PREVIEW.stock}
         />
       </Inert>
     );

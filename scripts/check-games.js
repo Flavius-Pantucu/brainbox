@@ -2,7 +2,8 @@
 // library's: the chess material read, the review maths, the variation tree, the
 // clocks, Connect Four's rules and opponent, Go's rules and scoring, Reversi's
 // turning and passing, draughts' compulsory captures and chains, minesweeper's
-// safe first click, backgammon's dice rules, and the room's move rules.
+// safe first click, backgammon's dice rules, gin rummy's melding and
+// scoring, and the room's move rules.
 //   npm run check
 const assert = require("node:assert/strict");
 const { Chess } = require("chess.js");
@@ -16,6 +17,7 @@ async function main() {
   const chk = await import("../lib/checkers.js");
   const ms = await import("../lib/minesweeper.js");
   const bg = await import("../lib/backgammon.js");
+  const rum = await import("../lib/rummy.js");
   const daily = await import("../lib/daily.js");
   const games = await import("../lib/games.js");
   const rooms = await import("../lib/rooms.js");
@@ -760,6 +762,134 @@ async function main() {
     bgState = rooms.publicState(rooms.getRoom(bgCode), bgHost.token);
     assert.equal(bgState.played.length, 0, "and a turn can be taken back to where it started");
     assert.equal(bgState.used.filter(Boolean).length, 0);
+  }
+
+  {
+    /* gin rummy ----------------------------------------------------------- */
+    const card = (rank, suit) => suit * 13 + rank;
+
+    assert.equal(rum.valueOf(card(0, 0)), 1, "an ace is one");
+    assert.equal(rum.valueOf(card(9, 0)), 10, "a ten is ten");
+    assert.equal(rum.valueOf(card(12, 0)), 10, "and so is a king");
+    assert.equal(rum.cardName(card(12, 3)), "Kc");
+
+    // a run is same suit and consecutive; a set is same rank
+    const clean = [
+      card(0, 0), card(1, 0), card(2, 0),
+      card(5, 1), card(5, 2), card(5, 3),
+      card(9, 3), card(10, 3), card(11, 3),
+      card(1, 1),
+    ];
+    const laid = rum.bestArrangement(clean);
+    assert.equal(laid.melds.length, 3);
+    assert.equal(laid.value, 2, "only the loose two is left");
+
+    // aces are low: queen, king, ace is not a run
+    const wrapped = [card(11, 0), card(12, 0), card(0, 0), card(4, 1), card(7, 2), card(9, 3)];
+    assert.equal(
+      rum.meldsIn(wrapped).length,
+      0,
+      "nothing wraps round the king"
+    );
+
+    // the solver takes the layout that leaves least behind, not the first it finds
+    const choice = [
+      card(3, 0), card(4, 0), card(5, 0), card(6, 0), card(7, 0),
+      card(5, 1), card(5, 2),
+      card(12, 3), card(11, 3), card(0, 1),
+    ];
+    assert.equal(rum.bestArrangement(choice).value, 33);
+
+    // laying off: the defender puts what it can on the knocker's melds
+    const melds = [[card(0, 0), card(1, 0), card(2, 0)]];
+    assert.equal(rum.extendsMeld(card(3, 0), melds[0]), true, "the four goes on the end");
+    assert.equal(rum.extendsMeld(card(3, 1), melds[0]), false, "but not off suit");
+    const setMeld = [card(5, 0), card(5, 1), card(5, 2)];
+    assert.equal(rum.extendsMeld(card(5, 3), setMeld), true, "the fourth of a rank goes on a set");
+    assert.equal(rum.extendsMeld(card(5, 3), [...setMeld, card(5, 3)]), false, "a set holds four");
+
+    const off = rum.layOff([card(3, 0), card(12, 1)], melds);
+    assert.deepEqual(off.placed, [card(3, 0)]);
+    assert.equal(off.value, 10, "the king stays deadwood");
+
+    // scoring: a plain knock, a gin, and an undercut
+    const knocker = [
+      card(0, 0), card(1, 0), card(2, 0),
+      card(5, 1), card(5, 2), card(5, 3),
+      card(9, 3), card(10, 3), card(11, 3),
+      card(1, 1),
+    ];
+    const loose = [
+      card(0, 1), card(0, 2), card(0, 3),
+      card(4, 0), card(5, 0), card(6, 0),
+      card(12, 1), card(11, 1), card(8, 2), card(7, 2),
+    ];
+    const knock = rum.scoreKnock(knocker, loose);
+    assert.equal(knock.winner, "knocker");
+    assert.equal(knock.points, 35, "the difference in deadwood");
+
+    const ginHand = [
+      card(0, 0), card(1, 0), card(2, 0),
+      card(5, 1), card(5, 2), card(5, 3),
+      card(9, 3), card(10, 3), card(11, 3), card(12, 3),
+    ];
+    assert.equal(rum.deadwoodValue(ginHand), 0);
+    const gin = rum.scoreKnock(ginHand, loose);
+    assert.equal(gin.gin, true);
+    assert.equal(gin.points, rum.deadwoodValue(loose) + 25, "gin pays the bonus and no lay-offs");
+
+    // level deadwood is an undercut, and it pays the defender
+    const thin = [
+      card(0, 1), card(1, 1), card(2, 1),
+      card(6, 0), card(6, 2), card(6, 3),
+      card(9, 2), card(10, 2), card(11, 2),
+      card(1, 3),
+    ];
+    const under = rum.scoreKnock(knocker, thin);
+    assert.equal(under.winner, "defender");
+    assert.equal(under.undercut, true);
+    assert.equal(under.points, 25, "level, so just the bonus");
+
+    // a deal is a whole deck, split up and none of it lost
+    const dealt = rum.deal();
+    assert.equal(dealt.hands.a.length, 10);
+    assert.equal(dealt.hands.b.length, 10);
+    assert.equal(dealt.discard.length, 1);
+    assert.equal(dealt.stock.length, 31);
+    assert.equal(
+      new Set([...dealt.hands.a, ...dealt.hands.b, ...dealt.discard, ...dealt.stock]).size,
+      52,
+      "fifty-two cards, each of them once"
+    );
+
+    /* a rummy room keeps each hand to itself ------------------------------- */
+    const rumHost = rooms.createRoom("Ada", "rummy", { seat: "a" });
+    const rumGuest = rooms.joinRoom(rumHost.room.code, "Bo");
+    const rumCode = rumHost.room.code;
+
+    const mine = rooms.publicState(rooms.getRoom(rumCode), rumHost.token);
+    const yours = rooms.publicState(rooms.getRoom(rumCode), rumGuest.token);
+    assert.equal(mine.hand.length, 10);
+    assert.equal(mine.theirs, 10, "I am told how many they hold, not what");
+    assert.equal(mine.hands, undefined, "and never the whole deal");
+    assert.notDeepEqual(mine.hand, yours.hand, "two players, two hands");
+    assert.equal(
+      rooms.publicState(rooms.getRoom(rumCode), null).hand.length,
+      0,
+      "somebody with no seat is shown no cards"
+    );
+
+    const onTurn = mine.turn === "a" ? rumHost.token : rumGuest.token;
+    const waiting = mine.turn === "a" ? rumGuest.token : rumHost.token;
+    assert.equal(rooms.act(rumCode, waiting, "draw", { from: "stock" }).error, "not-your-turn");
+    assert.equal(rooms.act(rumCode, onTurn, "discard", { card: 0 }).error, "draw-first");
+
+    rooms.act(rumCode, onTurn, "draw", { from: "stock" });
+    const drawn = rooms.publicState(rooms.getRoom(rumCode), onTurn);
+    assert.equal(drawn.hand.length, 11, "eleven in hand between drawing and throwing");
+    assert.equal(drawn.phase, "discard");
+    assert.equal(rooms.act(rumCode, onTurn, "draw", { from: "stock" }).error, "already-drawn");
+    assert.equal(rooms.act(rumCode, onTurn, "discard", { card: 999 }).error, "not-your-card");
   }
 
   /* every game the catalog lists can be today's --------------------------- */
