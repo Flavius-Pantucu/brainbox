@@ -1,0 +1,2246 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* =========================================================================
+   GAMEHUB — THE CLUB SCOREBOARD
+   A hand-operated board. Five paints, no gradients. Depth is shadow and
+   routed channel; tone between paints is printed speckle, never a blend.
+   ========================================================================= */
+
+:root {
+  /* --- the five paints, and nothing else --- */
+  --paint-navy: #0c1725;
+  --paint-slate: #24384f;
+  --paint-steel: #8fa2b8;
+  --paint-bone: #e8edf4;
+  --paint-cobalt: #4f8ce8;
+
+  /* --- roles: night board (the club after hours) --- */
+  --ground: var(--paint-navy);
+  --ink: var(--paint-bone);
+  --ink-quiet: color-mix(in srgb, var(--paint-bone) 76%, var(--paint-navy));
+  --ink-faint: color-mix(in srgb, var(--paint-bone) 56%, var(--paint-navy));
+  --plate-face: color-mix(in srgb, var(--paint-bone) 90%, var(--paint-steel));
+  --plate-ink: var(--paint-navy);
+  --plate-ink-quiet: color-mix(in srgb, var(--paint-navy) 78%, var(--plate-face));
+  --signal: var(--paint-cobalt);
+  --signal-on: var(--paint-navy);
+  --signal-ink: color-mix(in srgb, var(--paint-cobalt) 88%, var(--paint-bone));
+  --routed: color-mix(in srgb, var(--paint-navy) 64%, #000);
+  --panel: var(--paint-slate);
+  --keyline: color-mix(in srgb, var(--paint-bone) 16%, transparent);
+  --keyline-strong: color-mix(in srgb, var(--paint-bone) 32%, transparent);
+  --speckle-opacity: 0.4;
+
+  /* --- board geometry --- */
+  --u: 8px;
+  --rail-h: 68px;
+  --radius-plate: 3px;
+  --radius-slot: 4px;
+  --board-max: 1360px;
+  --gutter: clamp(16px, 3.2vw, 40px);
+
+  /* --- shadow: offset + blur, always --- */
+  --lift-1: 0 2px 0 rgba(0, 0, 0, 0.34), 0 6px 12px -6px rgba(0, 0, 0, 0.62);
+  --lift-2: 0 3px 0 rgba(0, 0, 0, 0.38), 0 14px 26px -12px rgba(0, 0, 0, 0.7);
+  --cut: inset 0 3px 7px rgba(0, 0, 0, 0.62), inset 0 -1px 0 rgba(232, 237, 244, 0.07);
+
+  /* --- motion --- */
+  --swing: cubic-bezier(0.16, 1, 0.3, 1);
+
+  color-scheme: dark;
+}
+
+[data-paint="day"] .plate:not(.plate--empty):not(.plate--notch),
+[data-paint="day"] .nameplate,
+[data-paint="day"] .play__surface {
+  border-color: color-mix(in srgb, var(--paint-navy) 30%, transparent);
+}
+
+[data-paint="day"] {
+  /* the same board, relit for daylight: roles swap, paints do not */
+  --ground: var(--paint-bone);
+  --ink: var(--paint-navy);
+  --ink-quiet: color-mix(in srgb, var(--paint-navy) 86%, var(--paint-bone));
+  --ink-faint: color-mix(in srgb, var(--paint-navy) 74%, var(--paint-bone));
+  --plate-face: color-mix(in srgb, var(--paint-bone) 88%, var(--paint-steel));
+  --plate-ink-quiet: color-mix(in srgb, var(--paint-navy) 80%, var(--plate-face));
+  --signal: color-mix(in srgb, var(--paint-cobalt) 72%, var(--paint-navy));
+  --signal-on: var(--paint-bone);
+  --signal-ink: color-mix(in srgb, var(--paint-cobalt) 66%, var(--paint-navy));
+  --panel: color-mix(in srgb, var(--paint-steel) 34%, var(--paint-bone));
+  --routed: color-mix(in srgb, var(--paint-navy) 12%, var(--paint-bone));
+  --keyline: color-mix(in srgb, var(--paint-navy) 20%, transparent);
+  --keyline-strong: color-mix(in srgb, var(--paint-navy) 38%, transparent);
+  --speckle-opacity: 0.3;
+  --cut: inset 0 3px 8px color-mix(in srgb, var(--paint-navy) 40%, transparent),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.45);
+  --lift-1: 0 2px 0 color-mix(in srgb, var(--paint-navy) 30%, transparent),
+    0 8px 14px -8px color-mix(in srgb, var(--paint-navy) 48%, transparent);
+  --lift-2: 0 3px 0 color-mix(in srgb, var(--paint-navy) 34%, transparent),
+    0 16px 28px -14px color-mix(in srgb, var(--paint-navy) 56%, transparent);
+  color-scheme: light;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  background: var(--ground);
+}
+
+body {
+  min-height: 100dvh;
+  background: var(--ground);
+  color: var(--ink);
+  font-family: var(--font-text), ui-sans-serif, system-ui, sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Paint grain. Speckle, never a gradient. */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: var(--speckle-opacity);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)' opacity='0.22'/%3E%3C/svg%3E");
+  mix-blend-mode: overlay;
+}
+
+/* ---------- browser surfaces wear the paint too ---------- */
+
+::selection {
+  background: var(--paint-navy);
+  color: var(--paint-bone);
+}
+
+:focus-visible {
+  outline: 2px solid var(--signal);
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--signal) var(--routed);
+}
+
+::-webkit-scrollbar {
+  width: 11px;
+  height: 11px;
+}
+::-webkit-scrollbar-track {
+  background: var(--routed);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--signal);
+  border: 3px solid var(--routed);
+  border-radius: 999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: color-mix(in srgb, var(--signal) 80%, var(--paint-bone));
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+}
+
+/* =========================================================================
+   TYPE
+   ========================================================================= */
+
+.stencil {
+  font-family: var(--font-stencil), var(--font-display), ui-sans-serif, sans-serif;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  line-height: 1;
+}
+
+.numerals {
+  font-family: var(--font-display), ui-sans-serif, sans-serif;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  line-height: 0.86;
+}
+
+/* Every zone names itself. Wayfinding is reading. */
+.zone-label {
+  font-family: var(--font-stencil), ui-sans-serif, sans-serif;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.24em;
+  font-size: 0.72rem;
+  line-height: 1;
+  color: var(--ink-quiet);
+  display: flex;
+  align-items: center;
+  gap: calc(var(--u) * 1.5);
+  margin: 0 0 calc(var(--u) * 1.5);
+}
+
+.zone-label::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--keyline);
+}
+
+.zone-label__count {
+  font-family: var(--font-display), sans-serif;
+  letter-spacing: 0.06em;
+  color: var(--ink-faint);
+}
+
+/* =========================================================================
+   BOARD SHELL
+   ========================================================================= */
+
+.board {
+  position: relative;
+  z-index: 1;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+
+.board__main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.board__inner {
+  width: 100%;
+  max-width: var(--board-max);
+  margin: 0 auto;
+  padding: 0 var(--gutter);
+}
+
+/* =========================================================================
+   STAGE — a game takes the whole window
+   ========================================================================= */
+
+.stage {
+  width: 100%;
+  /* the stage is exactly the window below the rail: never grown by its own
+     content, so a board can size itself to the space and nothing else can
+     push the page taller */
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  height: calc(100dvh - var(--rail-h));
+  overflow: hidden;
+  padding: 0 var(--gutter) calc(var(--u) * 2);
+}
+
+/* a short window scrolls rather than clipping the controls */
+@media (max-height: 620px) {
+  .stage {
+    height: auto;
+    overflow: visible;
+  }
+
+  .stage__body {
+    grid-template-rows: auto;
+  }
+}
+
+.stage__bar {
+  display: flex;
+  align-items: center;
+  gap: calc(var(--u) * 2);
+  flex-wrap: wrap;
+  padding: calc(var(--u) * 1.75) 0;
+  border-bottom: 1px solid var(--keyline);
+}
+
+.stage__title {
+  font-family: var(--font-display), sans-serif;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: -0.01em;
+  font-size: clamp(1.4rem, 2.6vw, 2rem);
+  line-height: 1;
+  color: var(--ink);
+  margin: 0;
+}
+
+.stage__back {
+  display: inline-flex;
+  align-items: center;
+  gap: calc(var(--u) * 0.75);
+  font-family: var(--font-stencil), sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  font-size: 0.66rem;
+  color: var(--ink-quiet);
+  padding: 6px 0;
+  transition: color 160ms ease-out;
+}
+
+.stage__back:hover {
+  color: var(--signal);
+}
+
+.stage__spacer {
+  flex: 1;
+}
+
+.stage__body {
+  flex: 1;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(240px, 300px);
+  grid-template-rows: minmax(0, 1fr);
+  gap: calc(var(--u) * 3);
+  padding: calc(var(--u) * 2) 0 0;
+  min-height: 0;
+}
+
+.stage__field {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 0;
+  min-width: 0;
+}
+
+.stage__side {
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--u) * 2);
+  min-height: 0;
+  overflow: auto;
+  padding-bottom: var(--u);
+}
+
+@media (max-width: 900px) {
+  .stage {
+    height: auto;
+    min-height: calc(100dvh - var(--rail-h));
+    overflow: visible;
+  }
+
+  .stage__body {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto auto;
+    padding-bottom: calc(var(--u) * 3);
+  }
+
+  .stage__side {
+    overflow: visible;
+  }
+}
+
+/* ---------- head rail ---------- */
+
+.rail {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  background: var(--ground);
+  border-bottom: 1px solid var(--keyline-strong);
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.3), 0 10px 20px -18px rgba(0, 0, 0, 0.9);
+}
+
+.rail__inner {
+  width: 100%;
+  max-width: var(--board-max);
+  margin: 0 auto;
+  padding: 0 var(--gutter);
+  height: var(--rail-h);
+  display: flex;
+  align-items: center;
+  gap: calc(var(--u) * 3);
+}
+
+.rail__mark {
+  display: flex;
+  align-items: baseline;
+  gap: calc(var(--u) * 1.25);
+  flex-shrink: 0;
+}
+
+.rail__wordmark {
+  font-family: var(--font-stencil), sans-serif;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  font-size: clamp(1.35rem, 2.4vw, 1.75rem);
+  line-height: 1;
+  color: var(--ink);
+}
+
+.rail__mark-sub {
+  font-family: var(--font-stencil), sans-serif;
+  font-size: 0.62rem;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--signal);
+}
+
+.rail__nav {
+  display: flex;
+  align-items: stretch;
+  gap: calc(var(--u) * 0.5);
+  height: 100%;
+  margin-left: calc(var(--u) * 2);
+}
+
+.rail__link {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 calc(var(--u) * 1.75);
+  font-family: var(--font-stencil), sans-serif;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  font-size: 0.76rem;
+  color: var(--ink-quiet);
+  transition: color 160ms ease-out;
+}
+
+.rail__link:hover {
+  color: var(--ink);
+}
+
+.rail__link[aria-current="page"] {
+  color: var(--ink);
+}
+
+.rail__link[aria-current="page"]::after {
+  content: "";
+  position: absolute;
+  left: calc(var(--u) * 1.25);
+  right: calc(var(--u) * 1.25);
+  bottom: -1px;
+  height: 3px;
+  background: var(--signal);
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.45);
+}
+
+.rail__spacer {
+  flex: 1;
+}
+
+.rail__side {
+  display: flex;
+  align-items: center;
+  gap: calc(var(--u) * 1.5);
+  flex-shrink: 0;
+}
+
+/* =========================================================================
+   HOOK + PLATE — the one object this whole board is made of
+   ========================================================================= */
+
+.hang {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  padding-top: 13px;
+  height: 100%;
+}
+
+.hang__hook {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  color: var(--signal);
+  pointer-events: none;
+  z-index: 3;
+  filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.5));
+}
+
+.hang--left .hang__hook {
+  left: 22px;
+  transform: none;
+}
+
+.plate {
+  position: relative;
+  flex: 1;
+  background: var(--plate-face);
+  color: var(--plate-ink);
+  border: 1px solid rgba(0, 0, 0, 0.3);
+  border-radius: var(--radius-plate);
+  box-shadow: var(--lift-1);
+  transform-origin: 50% -6px;
+}
+
+.hang--left .plate {
+  transform-origin: 22px -6px;
+}
+
+/* the drilled hole the hook goes through */
+.plate::before {
+  content: "";
+  position: absolute;
+  top: 6px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--routed);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.75), 0 1px 0 rgba(255, 255, 255, 0.28);
+}
+
+.hang--left .plate::before {
+  left: 22px;
+}
+
+/* enamel keyline, painted inside the edge */
+.plate::after {
+  content: "";
+  position: absolute;
+  inset: 4px;
+  border: 1px solid color-mix(in srgb, var(--paint-navy) 28%, transparent);
+  border-radius: 1px;
+  pointer-events: none;
+}
+
+.plate__body {
+  padding: calc(var(--u) * 2.5) calc(var(--u) * 2.5) calc(var(--u) * 2.25);
+}
+
+.plate--tall .plate__body {
+  padding: calc(var(--u) * 3.25) calc(var(--u) * 3.5) calc(var(--u) * 3);
+}
+
+/* an empty hook: the board admits it has nothing to hang */
+.plate--empty {
+  background: transparent;
+  border: 1px dashed var(--keyline-strong);
+  box-shadow: none;
+  color: var(--ink-quiet);
+}
+
+.plate--empty .best__value,
+.plate--empty .numerals,
+.plate--empty .day__plate {
+  color: var(--ink-faint);
+}
+
+.plate--empty .best__unit,
+.plate--empty .chalk {
+  color: var(--ink-quiet);
+}
+
+.plate--empty::before,
+.plate--notch::before {
+  background: color-mix(in srgb, var(--ground) 70%, #000);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.6), 0 0 0 3px var(--ground);
+}
+
+.plate--empty::after {
+  display: none;
+}
+
+/* An open hook: the board shows the empty notch rather than a ghost plate. */
+.plate--notch {
+  background: var(--routed);
+  border: 1px solid rgba(0, 0, 0, 0.4);
+  box-shadow: var(--cut);
+  color: var(--ink-faint);
+}
+
+.plate--notch::after {
+  display: none;
+}
+
+.plate--notch::before {
+  background: color-mix(in srgb, var(--ground) 50%, #000);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.7), 0 0 0 3px var(--routed);
+}
+
+/* --- hanging the plate: the signature move --- */
+@keyframes hang-drop {
+  0% {
+    transform: translateY(-16px) rotate(-3.4deg);
+  }
+  52% {
+    transform: translateY(0) rotate(2.2deg);
+  }
+  76% {
+    transform: translateY(0) rotate(-1deg);
+  }
+  100% {
+    transform: translateY(0) rotate(0deg);
+  }
+}
+
+@keyframes hang-lift {
+  0% {
+    transform: translateY(0) rotate(0deg);
+    opacity: 1;
+  }
+  35% {
+    transform: translateY(3px) rotate(-2deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-26px) rotate(4deg);
+    opacity: 0;
+  }
+}
+
+.plate[data-hang] {
+  animation: hang-drop 620ms var(--swing) both;
+  animation-delay: calc(var(--i, 0) * 55ms);
+  will-change: transform;
+}
+
+/* the outgoing plate, still on its hook for one beat */
+.plate--lifting {
+  position: absolute;
+  top: 13px;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 2;
+  pointer-events: none;
+  animation: hang-lift 340ms cubic-bezier(0.4, 0, 0.7, 0.2) both;
+  animation-delay: calc(var(--i, 0) * 55ms);
+}
+
+/* the replacement waits for the hook to clear */
+.plate[data-relanding] {
+  animation-delay: calc(200ms + var(--i, 0) * 55ms);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .plate[data-hang],
+  .plate--lifting {
+    animation: none;
+  }
+
+  .plate--lifting {
+    display: none;
+  }
+  * {
+    scroll-behavior: auto !important;
+  }
+}
+
+/* =========================================================================
+   ROUTED SLOT — a channel cut into the board
+   ========================================================================= */
+
+.slot {
+  position: relative;
+  background: var(--routed);
+  border-radius: var(--radius-slot);
+  box-shadow: var(--cut);
+  padding: calc(var(--u) * 2);
+}
+
+.slot--deep {
+  padding: calc(var(--u) * 2.5);
+}
+
+/* =========================================================================
+   BRASS PLATE — the primary action. A pressed fitting, not a button.
+   ========================================================================= */
+
+.key {
+  --key-face: var(--signal);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: calc(var(--u) * 1.25);
+  padding: calc(var(--u) * 1.75) calc(var(--u) * 3.25);
+  background: var(--key-face);
+  color: var(--signal-on);
+  border: 1px solid rgba(0, 0, 0, 0.42);
+  border-radius: 2px;
+  font-family: var(--font-stencil), sans-serif;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  font-size: 0.82rem;
+  line-height: 1;
+  cursor: pointer;
+  box-shadow: 0 3px 0 rgba(0, 0, 0, 0.4), 0 10px 18px -10px rgba(0, 0, 0, 0.8);
+  transition: transform 140ms var(--swing), box-shadow 140ms var(--swing),
+    background-color 140ms ease-out;
+}
+
+.key:hover {
+  background: color-mix(in srgb, var(--signal) 82%, var(--paint-bone));
+  transform: translateY(-1px);
+  box-shadow: 0 4px 0 rgba(0, 0, 0, 0.4), 0 14px 22px -10px rgba(0, 0, 0, 0.85);
+}
+
+.key:active {
+  transform: translateY(2px);
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.4), 0 6px 10px -8px rgba(0, 0, 0, 0.8);
+}
+
+.key:disabled {
+  cursor: not-allowed;
+  background: transparent;
+  color: var(--ink-faint);
+  border: 1px dashed var(--keyline-strong);
+  box-shadow: none;
+  transform: none;
+}
+
+.key--large {
+  padding: calc(var(--u) * 2.25) calc(var(--u) * 4);
+  font-size: 0.95rem;
+}
+
+.key--quiet {
+  background: transparent;
+  color: var(--ink-quiet);
+  border: 1px solid var(--keyline-strong);
+  box-shadow: none;
+}
+
+.key--quiet:hover {
+  background: transparent;
+  color: var(--ink);
+  border-color: var(--signal);
+  transform: none;
+  box-shadow: none;
+}
+
+/* =========================================================================
+   PEG SELECTOR — a brass peg sliding in a routed groove
+   ========================================================================= */
+
+.peg {
+  display: inline-flex;
+  align-items: stretch;
+  background: var(--routed);
+  border-radius: 999px;
+  box-shadow: var(--cut);
+  padding: 3px;
+  gap: 2px;
+}
+
+.peg__option {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  padding: calc(var(--u) * 0.9) calc(var(--u) * 1.9);
+  border-radius: 999px;
+  font-family: var(--font-stencil), sans-serif;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  font-size: 0.68rem;
+  color: var(--ink-quiet);
+  cursor: pointer;
+  transition: color 160ms ease-out, background-color 200ms var(--swing);
+  white-space: nowrap;
+}
+
+.peg__option:hover {
+  color: var(--ink);
+}
+
+.peg__option[aria-checked="true"] {
+  background: var(--signal);
+  color: var(--signal-on);
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.45);
+}
+
+/* =========================================================================
+   STATE TAGS — a stenciled word plus a form. Never paint colour alone.
+   ========================================================================= */
+
+.tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-stencil), sans-serif;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  font-size: 0.62rem;
+  line-height: 1;
+  padding: 5px 9px 4px;
+  border: 1px solid currentColor;
+  border-radius: 2px;
+  white-space: nowrap;
+}
+
+.tag__mark {
+  width: 7px;
+  height: 7px;
+  flex-shrink: 0;
+}
+
+.tag--on {
+  color: var(--plate-ink);
+  background: color-mix(in srgb, var(--paint-navy) 12%, transparent);
+}
+
+.tag--live {
+  color: var(--signal);
+  background: color-mix(in srgb, var(--paint-cobalt) 14%, transparent);
+}
+
+.tag--off {
+  color: var(--ink-faint);
+  border-style: dashed;
+}
+
+.tag--chalk {
+  color: var(--ink-quiet);
+}
+
+/* =========================================================================
+   CHALK — what somebody wrote on the board beside the plates
+   ========================================================================= */
+
+.chalk {
+  font-size: 0.82rem;
+  line-height: 1.45;
+  color: var(--ink-quiet);
+}
+
+.chalk--tight {
+  font-size: 0.76rem;
+}
+
+.plate .chalk {
+  color: var(--plate-ink-quiet);
+}
+
+.plate.plate--empty .chalk,
+.plate.plate--notch .chalk {
+  color: var(--ink-quiet);
+}
+
+/* =========================================================================
+   TABLE — standings and history are ruled rows on the board
+   ========================================================================= */
+
+.ruled {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.86rem;
+}
+
+.ruled th {
+  font-family: var(--font-stencil), sans-serif;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  font-size: 0.62rem;
+  color: var(--ink-faint);
+  text-align: left;
+  padding: 0 calc(var(--u) * 1.5) calc(var(--u) * 1) 0;
+  border-bottom: 1px solid var(--keyline);
+}
+
+.ruled td {
+  padding: calc(var(--u) * 1.25) calc(var(--u) * 1.5) calc(var(--u) * 1.25) 0;
+  border-bottom: 1px solid var(--keyline);
+  color: var(--ink);
+  vertical-align: middle;
+}
+
+.ruled tr:last-child td {
+  border-bottom: 0;
+}
+
+.ruled .num {
+  font-family: var(--font-display), sans-serif;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  text-align: right;
+  padding-right: 0;
+}
+
+/* =========================================================================
+   LAYOUT — the board's regions
+   ========================================================================= */
+
+.deck {
+  display: grid;
+  gap: calc(var(--u) * 3);
+  padding: calc(var(--u) * 2.5) 0 calc(var(--u) * 8);
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  align-items: start;
+}
+
+.deck__today {
+  grid-column: span 5;
+}
+.deck__games {
+  grid-column: span 7;
+}
+.deck__run {
+  grid-column: span 7;
+}
+.deck__standings {
+  grid-column: span 5;
+}
+
+@media (max-width: 1000px) {
+  .deck__today,
+  .deck__games,
+  .deck__run,
+  .deck__standings {
+    grid-column: span 12;
+  }
+}
+
+/* =========================================================================
+   GAME SLOTS — three routed columns
+   ========================================================================= */
+
+.slots {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: calc(var(--u) * 1.5);
+}
+
+@media (max-width: 620px) {
+  .slots {
+    grid-template-columns: 1fr;
+  }
+}
+
+.gameslot {
+  display: flex;
+  flex-direction: column;
+}
+
+.gameslot__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--u);
+  margin-bottom: calc(var(--u) * 1.5);
+}
+
+.gameslot__name {
+  font-family: var(--font-stencil), sans-serif;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  font-size: 0.86rem;
+  color: var(--plate-ink);
+}
+
+.gameslot__mark {
+  color: var(--plate-ink);
+  opacity: 0.9;
+}
+
+.gameslot__stat {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--u);
+  padding: calc(var(--u) * 0.75) 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--paint-navy) 18%, transparent);
+  font-size: 0.76rem;
+  color: var(--plate-ink-quiet);
+}
+
+.gameslot__stat:last-of-type {
+  border-bottom: 0;
+}
+
+.gameslot__stat b {
+  font-family: var(--font-display), sans-serif;
+  font-weight: 700;
+  font-size: 1rem;
+  color: var(--plate-ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.gameslot__plate > .plate__body {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.gameslot__foot {
+  margin-top: auto;
+  padding-top: calc(var(--u) * 2);
+}
+
+.gameslot .key {
+  width: 100%;
+}
+
+.streak {
+  display: flex;
+  align-items: flex-end;
+  gap: calc(var(--u) * 3.5);
+  flex-wrap: wrap;
+}
+
+.streak__count {
+  flex-shrink: 0;
+}
+
+.streak__line {
+  flex: 1 1 220px;
+  max-width: 46ch;
+  margin: 0 0 4px;
+}
+
+/* =========================================================================
+   THE RUN — seven day hooks
+   ========================================================================= */
+
+.run {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: calc(var(--u) * 1.25);
+}
+
+.day {
+  text-align: center;
+  min-width: 0;
+}
+
+.day .plate__body {
+  padding: 10px 6px 12px;
+}
+
+.day__label {
+  font-family: var(--font-stencil), sans-serif;
+  font-size: 0.58rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  margin-bottom: calc(var(--u) * 0.75);
+}
+
+.day__plate {
+  aspect-ratio: 1 / 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-display), sans-serif;
+  font-weight: 800;
+  font-size: 1.5rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.day__plate .day__mark {
+  width: 22px;
+  height: 22px;
+}
+
+.bests {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: calc(var(--u) * 1.5);
+}
+
+.best__value {
+  font-size: clamp(1.7rem, 3.4vw, 2.3rem);
+}
+
+.best__value {
+  font-family: var(--font-display), sans-serif;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  font-size: clamp(1.9rem, 4.5vw, 2.6rem);
+  line-height: 0.9;
+  color: var(--plate-ink);
+  display: block;
+}
+
+.best__value--unset {
+  font-family: var(--font-stencil), sans-serif;
+  font-size: 0.86rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  line-height: 2.6;
+  color: var(--ink-faint);
+}
+
+.best__unit {
+  font-family: var(--font-stencil), sans-serif;
+  font-size: 0.6rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--plate-ink-quiet);
+  display: block;
+  margin-top: calc(var(--u) * 1);
+}
+
+/* =========================================================================
+   TODAY — the oversized plate
+   ========================================================================= */
+
+.today__game {
+  font-family: var(--font-display), sans-serif;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: -0.015em;
+  font-size: clamp(2.6rem, 6vw, 4.2rem);
+  line-height: 0.88;
+  color: var(--plate-ink);
+  margin: calc(var(--u) * 1.25) 0 calc(var(--u) * 1);
+}
+
+.today__date {
+  font-family: var(--font-stencil), sans-serif;
+  font-size: 0.66rem;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+  color: var(--plate-ink-quiet);
+}
+
+.today__rule {
+  height: 1px;
+  background: color-mix(in srgb, var(--paint-navy) 26%, transparent);
+  margin: calc(var(--u) * 2) 0;
+}
+
+.today__foot {
+  display: flex;
+  align-items: center;
+  gap: calc(var(--u) * 2);
+  flex-wrap: wrap;
+}
+
+/* =========================================================================
+   STANDINGS LADDER — one hook per rung
+   ========================================================================= */
+
+.ladder {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: calc(var(--u) * 1);
+}
+
+.ladder__rung {
+  display: grid;
+  grid-template-columns: 26px minmax(0, 1fr);
+  align-items: end;
+  gap: calc(var(--u) * 2);
+}
+
+.ladder__no {
+  font-family: var(--font-display), sans-serif;
+  font-weight: 800;
+  font-size: 1.1rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-faint);
+  text-align: right;
+  padding-bottom: 12px;
+}
+
+.ladder .plate__body {
+  padding: calc(var(--u) * 1.25) calc(var(--u) * 2) calc(var(--u) * 1.25)
+    calc(var(--u) * 5);
+}
+
+.ladder__row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: calc(var(--u) * 2);
+}
+
+.ladder__name {
+  font-family: var(--font-stencil), sans-serif;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  font-size: 0.76rem;
+}
+
+.ladder__score {
+  font-family: var(--font-display), sans-serif;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  font-size: 1.15rem;
+}
+
+/* =========================================================================
+   PLAY FRAME — the board opens and a game sits in the slot
+   ========================================================================= */
+
+.play {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  gap: calc(var(--u) * 3.5);
+  padding: calc(var(--u) * 3.5) 0 calc(var(--u) * 6);
+  align-items: start;
+}
+
+@media (max-width: 1000px) {
+  .play {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.play__surface {
+  background: var(--plate-face);
+  border: 1px solid rgba(0, 0, 0, 0.32);
+  border-radius: var(--radius-plate);
+  box-shadow: var(--lift-2);
+  padding: calc(var(--u) * 2);
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+}
+
+.play__surface::after {
+  content: "";
+  position: absolute;
+  inset: 6px;
+  border: 1px solid color-mix(in srgb, var(--paint-navy) 22%, transparent);
+  border-radius: 1px;
+  pointer-events: none;
+}
+
+.play__aside {
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--u) * 3);
+  position: sticky;
+  top: calc(var(--rail-h) + var(--u) * 3);
+}
+
+@media (max-width: 1000px) {
+  .play__aside {
+    position: static;
+  }
+}
+
+.play__head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: calc(var(--u) * 2);
+  padding-top: calc(var(--u) * 3);
+  flex-wrap: wrap;
+}
+
+.play__title {
+  font-family: var(--font-display), sans-serif;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: -0.01em;
+  font-size: clamp(2rem, 5vw, 3.1rem);
+  line-height: 0.9;
+  color: var(--ink);
+  margin: 0;
+}
+
+.play__back {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--u);
+  font-family: var(--font-stencil), sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  font-size: 0.68rem;
+  color: var(--ink-quiet);
+  transition: color 160ms ease-out;
+}
+
+.play__back:hover {
+  color: var(--signal);
+}
+
+/* the legacy game components render on the enamel surface */
+.play__surface :is(.text-white, .text-slate-100) {
+  color: var(--paint-navy) !important;
+}
+
+/* =========================================================================
+   NAME PLATE (local identity — no accounts fitted yet)
+   ========================================================================= */
+
+.nameplate {
+  display: inline-flex;
+  align-items: center;
+  gap: calc(var(--u) * 1.25);
+  background: var(--plate-face);
+  color: var(--plate-ink);
+  border: 1px solid rgba(0, 0, 0, 0.3);
+  border-radius: 2px;
+  box-shadow: var(--lift-1);
+  padding: 7px 12px 6px;
+  font-family: var(--font-stencil), sans-serif;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  font-size: 0.7rem;
+  cursor: text;
+  max-width: 190px;
+}
+
+.nameplate__input {
+  appearance: none;
+  background: transparent;
+  border: 0;
+  padding: 0;
+  width: 100%;
+  min-width: 60px;
+  font: inherit;
+  color: inherit;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+}
+
+.nameplate__input:focus {
+  outline: none;
+}
+
+.nameplate:focus-within {
+  border-color: var(--paint-navy);
+}
+
+/* =========================================================================
+   LAMP — theme switch, drawn as a fitting
+   ========================================================================= */
+
+.lamp {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 2px;
+  border: 1px solid var(--keyline-strong);
+  background: transparent;
+  color: var(--ink-quiet);
+  cursor: pointer;
+  transition: color 160ms ease-out, border-color 160ms ease-out;
+}
+
+.lamp:hover {
+  color: var(--signal);
+  border-color: var(--signal);
+}
+
+/* =========================================================================
+   EMPTY BOARD NOTES
+   ========================================================================= */
+
+.note {
+  border-left: 1px solid var(--keyline-strong);
+  padding-left: calc(var(--u) * 2);
+  color: var(--ink-quiet);
+  font-size: 0.82rem;
+  line-height: 1.5;
+  max-width: 62ch;
+}
+
+.plate .note {
+  border-left-color: color-mix(in srgb, var(--paint-navy) 26%, transparent);
+  color: var(--plate-ink-quiet);
+}
+
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--u) * 2);
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: calc(var(--u) * 1.5);
+  flex-wrap: wrap;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* =========================================================================
+   FOOT RAIL
+   ========================================================================= */
+
+@media (max-width: 720px) {
+  :root {
+    --rail-h: 60px;
+  }
+
+  .rail__mark-sub {
+    display: none;
+  }
+
+  .rail__inner {
+    gap: calc(var(--u) * 1.5);
+  }
+
+  .rail__nav {
+    margin-left: calc(var(--u) * 0.5);
+  }
+
+  .rail__link {
+    padding: 0 calc(var(--u) * 1);
+    font-size: 0.68rem;
+    letter-spacing: 0.12em;
+  }
+
+  .rail .nameplate {
+    display: none;
+  }
+
+  .lamp {
+    width: 34px;
+    height: 34px;
+  }
+
+  .run {
+    gap: 4px;
+  }
+
+  .day__label {
+    font-size: 0.52rem;
+    letter-spacing: 0.06em;
+    margin-bottom: 3px;
+  }
+
+  .day .hang {
+    padding-top: 9px;
+  }
+
+  .day .hang__hook {
+    width: 12px;
+    height: 17px;
+  }
+
+  .day .plate::before {
+    top: 4px;
+    width: 6px;
+    height: 6px;
+  }
+
+  .day .plate::after {
+    inset: 3px;
+  }
+
+  .day .plate__body {
+    padding: 6px 2px 7px;
+  }
+
+  .day__plate {
+    aspect-ratio: 1 / 1;
+    font-size: 1rem;
+  }
+
+  .bests {
+    gap: 6px;
+  }
+
+  .bests .plate__body {
+    padding: 12px 10px 13px;
+  }
+
+  .best__value {
+    font-size: 1.45rem;
+  }
+
+  .best__value--unset {
+    font-size: 0.7rem;
+    line-height: 2.1;
+  }
+
+  .best__unit {
+    font-size: 0.58rem;
+    letter-spacing: 0.1em;
+    line-height: 1.3;
+  }
+
+  .ladder__rung {
+    grid-template-columns: 18px minmax(0, 1fr);
+    gap: calc(var(--u) * 1.25);
+  }
+
+  .ladder .plate__body {
+    padding: 10px 12px 10px 34px;
+  }
+}
+
+.foot {
+  margin-top: auto;
+  border-top: 1px solid var(--keyline);
+  padding: calc(var(--u) * 3) 0 calc(var(--u) * 5);
+}
+
+.foot__inner {
+  width: 100%;
+  max-width: var(--board-max);
+  margin: 0 auto;
+  padding: 0 var(--gutter);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: calc(var(--u) * 2);
+  flex-wrap: wrap;
+  font-family: var(--font-stencil), sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  font-size: 0.62rem;
+  color: var(--ink-faint);
+}
+
+/* =========================================================================
+   GAME FURNITURE — shared by every game on the stage
+   ========================================================================= */
+
+.readout {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  background: var(--routed);
+  border-radius: var(--radius-slot);
+  box-shadow: var(--cut);
+  overflow: hidden;
+}
+
+.readout__item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: calc(var(--u) * 1.5) calc(var(--u) * 1.75);
+  border-right: 1px solid var(--keyline);
+}
+
+.readout__item:last-child {
+  border-right: 0;
+}
+
+.readout__label {
+  font-family: var(--font-stencil), sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  font-size: 0.56rem;
+  color: var(--ink-faint);
+}
+
+.readout__value {
+  font-family: var(--font-display), sans-serif;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  font-size: 1.5rem;
+  line-height: 1;
+  color: var(--ink);
+}
+
+.readout__value.is-warn {
+  color: var(--signal-ink);
+}
+
+.pad {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.pad__key {
+  position: relative;
+  appearance: none;
+  border: 1px solid var(--keyline-strong);
+  border-radius: 3px;
+  background: var(--panel);
+  color: var(--ink);
+  padding: calc(var(--u) * 1.25) 0;
+  cursor: pointer;
+  transition: background-color 140ms ease-out, border-color 140ms ease-out,
+    transform 120ms var(--swing);
+}
+
+.pad__key:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--signal) 24%, var(--panel));
+  border-color: var(--signal);
+}
+
+.pad__key:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.pad__key:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.pad__digit {
+  display: block;
+  font-family: var(--font-display), sans-serif;
+  font-weight: 800;
+  font-size: clamp(1.4rem, 2.4vw, 1.9rem);
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.pad__left {
+  position: absolute;
+  top: 4px;
+  right: 7px;
+  font-family: var(--font-display), sans-serif;
+  font-size: 0.66rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-faint);
+}
+
+.tools {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.tool {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  appearance: none;
+  border: 1px solid var(--keyline);
+  border-radius: 3px;
+  background: transparent;
+  color: var(--ink-quiet);
+  padding: calc(var(--u) * 1.1) calc(var(--u) * 1.25);
+  font-family: var(--font-stencil), sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: 0.64rem;
+  cursor: pointer;
+  transition: color 140ms ease-out, border-color 140ms ease-out,
+    background-color 140ms ease-out;
+}
+
+.tool:hover:not(:disabled) {
+  color: var(--ink);
+  border-color: var(--signal);
+}
+
+.tool:disabled {
+  opacity: 0.38;
+  cursor: not-allowed;
+}
+
+.tool.is-on {
+  background: color-mix(in srgb, var(--signal) 20%, transparent);
+  border-color: var(--signal);
+  color: var(--ink);
+}
+
+.tool em {
+  margin-left: auto;
+  font-style: normal;
+  color: var(--signal-ink);
+  font-size: 0.6rem;
+}
+
+.tool__wide {
+  width: 100%;
+  text-align: center;
+}
+
+/* =========================================================================
+   SUDOKU
+   ========================================================================= */
+
+.sud {
+  display: contents;
+}
+
+.sud__field {
+  grid-column: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 0;
+  min-width: 0;
+}
+
+.sud__side {
+  grid-column: 2;
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--u) * 2);
+  min-height: 0;
+  overflow: auto;
+  padding-bottom: var(--u);
+}
+
+.sud__boardwrap {
+  position: relative;
+  height: 100%;
+  aspect-ratio: 1;
+  max-height: min(100%, 78vh);
+  max-width: 100%;
+  margin: auto;
+}
+
+.sud__board {
+  container-type: size;
+  display: grid;
+  grid-template-columns: repeat(9, minmax(0, 1fr));
+  grid-template-rows: repeat(9, minmax(0, 1fr));
+  width: 100%;
+  height: 100%;
+  background: var(--plate-face);
+  border: 2px solid var(--paint-navy);
+  border-radius: 2px;
+  box-shadow: var(--lift-2);
+  overflow: hidden;
+}
+
+.sud__cell {
+  appearance: none;
+  border: 0;
+  border-right: 1px solid color-mix(in srgb, var(--paint-navy) 22%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, var(--paint-navy) 22%, transparent);
+  background: var(--plate-face);
+  color: var(--signal-ink);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  cursor: pointer;
+  font-family: var(--font-display), sans-serif;
+  font-variant-numeric: tabular-nums;
+  min-width: 0;
+  min-height: 0;
+  transition: background-color 110ms ease-out;
+}
+
+.sud__cell.edge-right {
+  border-right: 2px solid var(--paint-navy);
+}
+
+.sud__cell.edge-bottom {
+  border-bottom: 2px solid var(--paint-navy);
+}
+
+.sud__cell.is-peer {
+  background: color-mix(in srgb, var(--paint-navy) 8%, var(--plate-face));
+}
+
+.sud__cell.is-match {
+  background: color-mix(in srgb, var(--signal) 30%, var(--plate-face));
+}
+
+.sud__cell.is-selected {
+  background: color-mix(in srgb, var(--signal) 46%, var(--plate-face));
+}
+
+.sud__cell.is-given {
+  color: var(--paint-navy);
+  font-weight: 800;
+}
+
+.sud__cell.is-wrong {
+  color: #b3241a;
+  background: color-mix(in srgb, #b3241a 16%, var(--plate-face));
+}
+
+.sud__cell.is-wrong.is-selected {
+  background: color-mix(in srgb, #b3241a 30%, var(--plate-face));
+}
+
+.sud__cell:focus-visible {
+  outline: 2px solid var(--paint-navy);
+  outline-offset: -3px;
+}
+
+.sud__value {
+  font-size: 5.4cqmin;
+  line-height: 1;
+  font-weight: 700;
+}
+
+.sud__notes {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(3, 1fr);
+  width: 100%;
+  height: 100%;
+  padding: 4%;
+}
+
+.sud__notes i {
+  font-style: normal;
+  font-size: 1.9cqmin;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: color-mix(in srgb, var(--paint-navy) 62%, var(--plate-face));
+}
+
+.sud__veil {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: calc(var(--u) * 1.5);
+  text-align: center;
+  padding: calc(var(--u) * 3);
+  background: color-mix(in srgb, var(--ground) 88%, transparent);
+  backdrop-filter: blur(3px);
+  border-radius: 2px;
+}
+
+.sud__veil .stencil {
+  color: var(--ink);
+  font-size: 0.9rem;
+}
+
+.sud__verdict {
+  font-family: var(--font-display), sans-serif;
+  font-weight: 800;
+  text-transform: uppercase;
+  font-size: clamp(2rem, 5vw, 3.2rem);
+  line-height: 0.9;
+  color: var(--ink);
+  margin: 0;
+}
+
+.sud__veil .chalk {
+  max-width: 34ch;
+  margin: 0;
+}
+
+@media (max-width: 900px) {
+  .sud__field,
+  .sud__side {
+    grid-column: 1;
+  }
+
+  .sud__boardwrap {
+    height: auto;
+    width: min(100%, 74vh);
+    max-height: none;
+  }
+
+  .pad {
+    grid-template-columns: repeat(9, minmax(0, 1fr));
+  }
+
+  .pad__digit {
+    font-size: 1.2rem;
+  }
+
+  .pad__left {
+    display: none;
+  }
+
+  .tools {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+/* =========================================================================
+   TIC-TAC-TOE
+   ========================================================================= */
+
+.ttt {
+  display: contents;
+}
+
+.ttt__field {
+  grid-column: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 0;
+  min-width: 0;
+}
+
+.ttt__side {
+  grid-column: 2;
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--u) * 2);
+  min-height: 0;
+  overflow: auto;
+  padding-bottom: var(--u);
+}
+
+.ttt__boardwrap {
+  height: 100%;
+  aspect-ratio: 1;
+  max-height: min(100%, 76vh);
+  max-width: 100%;
+  margin: auto;
+}
+
+.ttt__board {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-rows: repeat(3, minmax(0, 1fr));
+  width: 100%;
+  height: 100%;
+}
+
+.ttt__hash {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.ttt__hash line {
+  stroke: color-mix(in srgb, var(--paint-steel) 70%, var(--ground));
+  stroke-width: 1.1;
+  stroke-linecap: round;
+}
+
+.ttt__cell {
+  appearance: none;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 13%;
+  min-width: 0;
+  min-height: 0;
+  position: relative;
+  z-index: 2;
+  transition: background-color 140ms ease-out;
+}
+
+.ttt__cell:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--signal) 16%, transparent);
+}
+
+.ttt__cell:disabled {
+  cursor: default;
+}
+
+.ttt__cell.is-win {
+  background: color-mix(in srgb, var(--signal) 22%, transparent);
+}
+
+.ttt__cell:focus-visible {
+  outline: 2px solid var(--signal);
+  outline-offset: -4px;
+}
+
+.ttt__ghost {
+  font-family: var(--font-display), sans-serif;
+  font-weight: 800;
+  font-size: 12%;
+  color: transparent;
+  transition: color 140ms ease-out;
+}
+
+.ttt__cell:hover:not(:disabled) .ttt__ghost {
+  color: color-mix(in srgb, var(--ink) 26%, transparent);
+  font-size: clamp(1.4rem, 4vw, 2.6rem);
+}
+
+.mark {
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  overflow: visible;
+  fill: none;
+  stroke-linecap: round;
+  stroke-width: 9;
+}
+
+.mark--x {
+  stroke: var(--ink);
+}
+
+.mark--o {
+  stroke: var(--signal);
+}
+
+.mark line,
+.mark circle {
+  stroke-dasharray: 200;
+  stroke-dashoffset: 200;
+  animation: draw-mark 340ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+@keyframes draw-mark {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+.ttt__strike {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  overflow: visible;
+}
+
+.ttt__strike line {
+  stroke: var(--signal-ink);
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  vector-effect: non-scaling-stroke;
+  stroke-dasharray: 160;
+  stroke-dashoffset: 160;
+  animation: draw-mark 420ms 160ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mark line,
+  .mark circle,
+  .ttt__strike line {
+    animation: none;
+    stroke-dashoffset: 0;
+  }
+}
+
+/* --- online room furniture --- */
+
+.status {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  padding: calc(var(--u) * 1.5);
+  background: var(--routed);
+  border-radius: var(--radius-slot);
+  box-shadow: var(--cut);
+  color: var(--ink);
+  font-size: 0.86rem;
+  line-height: 1.35;
+}
+
+.status svg {
+  flex-shrink: 0;
+  color: var(--signal-ink);
+}
+
+.field {
+  display: block;
+}
+
+.field__label {
+  display: block;
+  font-family: var(--font-stencil), sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  font-size: 0.56rem;
+  color: var(--ink-faint);
+  margin-bottom: 6px;
+}
+
+.field__input {
+  appearance: none;
+  width: 100%;
+  background: var(--routed);
+  border: 1px solid var(--keyline-strong);
+  border-radius: 3px;
+  box-shadow: var(--cut);
+  color: var(--ink);
+  font: inherit;
+  padding: calc(var(--u) * 1.1) calc(var(--u) * 1.5);
+}
+
+.field__input::placeholder {
+  color: var(--ink-faint);
+}
+
+.field__input:focus {
+  outline: none;
+  border-color: var(--signal);
+}
+
+.field__input--code {
+  font-family: var(--font-display), sans-serif;
+  font-weight: 800;
+  font-size: 1.5rem;
+  letter-spacing: 0.3em;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.rule {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-family: var(--font-stencil), sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.22em;
+  font-size: 0.56rem;
+  color: var(--ink-faint);
+}
+
+.rule::before,
+.rule::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--keyline);
+}
+
+.roomcode {
+  display: flex;
+  align-items: center;
+  gap: calc(var(--u) * 1.5);
+  padding: calc(var(--u) * 1.25) calc(var(--u) * 1.5);
+  background: var(--signal);
+  border-radius: 3px;
+  box-shadow: var(--lift-1);
+  color: var(--signal-on);
+}
+
+.roomcode__label {
+  font-family: var(--font-stencil), sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  font-size: 0.56rem;
+  opacity: 0.8;
+}
+
+.roomcode__value {
+  font-family: var(--font-display), sans-serif;
+  font-weight: 800;
+  font-size: 1.7rem;
+  letter-spacing: 0.22em;
+  line-height: 1;
+  margin-right: auto;
+}
+
+.roomcode__copy {
+  appearance: none;
+  border: 1px solid color-mix(in srgb, var(--signal-on) 40%, transparent);
+  background: transparent;
+  color: inherit;
+  border-radius: 3px;
+  padding: 6px 8px;
+  cursor: pointer;
+  display: inline-flex;
+}
+
+.roomcode__copy:hover {
+  background: color-mix(in srgb, var(--signal-on) 14%, transparent);
+}
+
+.seats {
+  display: grid;
+  gap: 6px;
+}
+
+.seat {
+  display: flex;
+  align-items: center;
+  gap: calc(var(--u) * 1.5);
+  padding: calc(var(--u) * 1.1) calc(var(--u) * 1.5);
+  border: 1px solid var(--keyline);
+  border-radius: 3px;
+}
+
+.seat.is-you {
+  border-color: var(--signal);
+  background: color-mix(in srgb, var(--signal) 12%, transparent);
+}
+
+.seat__mark {
+  font-family: var(--font-display), sans-serif;
+  font-weight: 800;
+  font-size: 1.2rem;
+  color: var(--signal-ink);
+  width: 18px;
+}
+
+.seat__name {
+  flex: 1;
+  font-size: 0.86rem;
+  color: var(--ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.notice {
+  margin: 0;
+  padding: calc(var(--u) * 1.25) calc(var(--u) * 1.5);
+  border: 1px solid #b3241a;
+  border-radius: 3px;
+  background: color-mix(in srgb, #b3241a 14%, transparent);
+  color: var(--ink);
+  font-size: 0.82rem;
+}
+
+@media (max-width: 900px) {
+  .ttt__field,
+  .ttt__side {
+    grid-column: 1;
+  }
+
+  .ttt__boardwrap {
+    height: auto;
+    width: min(100%, 62vh);
+    max-height: none;
+  }
+}
+
+/* A game still on the pre-rebuild interface sits on its own panel until its
+   turn comes. */
+.legacy {
+  grid-column: 1 / -1;
+  background: var(--plate-face);
+  border: 1px solid var(--keyline-strong);
+  border-radius: var(--radius-plate);
+  box-shadow: var(--lift-2);
+  padding: calc(var(--u) * 2);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  overflow: auto;
+}
+
+.legacy__note {
+  margin: calc(var(--u) * 2) 0 0;
+  color: var(--plate-ink-quiet);
+}
+
+.legacy :is(.text-white, .text-slate-100) {
+  color: var(--paint-navy) !important;
+}
