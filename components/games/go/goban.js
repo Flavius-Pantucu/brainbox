@@ -3,9 +3,11 @@
 import { useState } from "react";
 import { starPoints } from "../../../lib/go";
 
-const PAD = 0.9; // room for the coordinates, in board units
-const STONE = 0.44; // a little under half the spacing, so the grid stays visible
-const LAST = 0.14; // the mark on the stone just played
+// All in board units, where the spacing between two points is 1.
+const PAD = 1.15; // the margin the coordinates sit in
+const COORD = 0.5; // how far into that margin they are centred
+const STONE = 0.42; // under half the spacing, so the grid still reads between stones
+const LAST = 0.13; // the mark on the stone just played
 const LETTERS = "ABCDEFGHJKLMNOPQRST"; // Go boards skip I
 
 // The board itself: lines, stones, and whatever is being shown on top of them.
@@ -64,10 +66,10 @@ export function Goban({
 
         {Array.from({ length: size }, (_, i) => (
           <g key={`c${i}`} className="goban__coords">
-            <text x={PAD + i} y={PAD * 0.55} textAnchor="middle">
+            <text x={PAD + i} y={COORD} textAnchor="middle" dominantBaseline="central">
               {LETTERS[i]}
             </text>
-            <text x={PAD * 0.5} y={PAD + i} textAnchor="middle" dominantBaseline="central">
+            <text x={COORD} y={PAD + i} textAnchor="middle" dominantBaseline="central">
               {size - i}
             </text>
           </g>
