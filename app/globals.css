@@ -4492,6 +4492,7 @@ span.movelist__half {
 
 .bg__wrap {
   position: relative;
+  container-type: inline-size;
   width: 100%;
   aspect-ratio: 100 / 62;
   max-height: min(100%, 74vh);
@@ -4596,10 +4597,51 @@ span.movelist__half {
   gap: var(--u);
 }
 
+/* thrown into the middle of the board, in the empty band between the points */
+.bg__dice {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+.bg__dice .die {
+  width: clamp(24px, 4.6cqw, 44px);
+  height: auto;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.45));
+}
+
 .die {
   width: 34px;
   height: 34px;
   transition: opacity 200ms ease-out;
+}
+
+.dice.is-rolling .die {
+  animation: die-tumble 180ms ease-in-out infinite;
+}
+
+.dice.is-rolling .die:nth-child(even) {
+  animation-delay: 90ms;
+}
+
+@keyframes die-tumble {
+  0% {
+    transform: translateY(0) rotate(-14deg);
+  }
+  50% {
+    transform: translateY(-22%) rotate(12deg);
+  }
+  100% {
+    transform: translateY(0) rotate(-14deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dice.is-rolling .die {
+    animation: none;
+  }
 }
 
 .die rect {
@@ -4646,60 +4688,92 @@ span.movelist__half {
 
 .tile {
   position: relative;
-  display: grid;
-  place-items: center;
-  width: clamp(30px, 3.6vw, 40px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  width: clamp(30px, 3.4vw, 40px);
   aspect-ratio: 3 / 4;
-  padding: 0;
-  border: 0;
-  border-radius: var(--radius-xs);
-  background: #efe6d2;
-  box-shadow: inset 0 -3px 0 rgba(0, 0, 0, 0.18), inset 0 2px 0 rgba(255, 255, 255, 0.6),
-    var(--lift-1);
+  padding-top: 6%;
+  border-radius: 18% / 13%;
+  background: linear-gradient(#fdfcf8, #f2eee2);
+  box-shadow: inset 0 -0.14em 0 rgba(0, 0, 0, 0.16),
+    inset 0 0.1em 0 rgba(255, 255, 255, 0.9), 0 1px 2px rgba(0, 0, 0, 0.42);
   font-family: var(--font-display), sans-serif;
   font-weight: 600;
-  cursor: default;
-  transition: transform 180ms var(--swing), box-shadow 180ms var(--swing);
+  user-select: none;
+  transition: transform 160ms var(--swing), box-shadow 160ms var(--swing);
 }
 
 .tile__number {
-  font-size: clamp(0.95rem, 1.6vw, 1.25rem);
+  font-size: clamp(0.95rem, 1.6vw, 1.3rem);
   line-height: 1;
+  letter-spacing: -0.02em;
 }
 
-.tile--r .tile__number {
-  color: #b3241a;
+/* the peg moulded into the foot of every tile in the set */
+.tile__peg {
+  position: absolute;
+  bottom: 11%;
+  width: 22%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: radial-gradient(circle at 40% 35%, #ffffff, #d9d2c2 70%, #bdb5a3);
+  box-shadow: inset 0 -0.5px 1px rgba(0, 0, 0, 0.35);
+}
+
+.tile--r .tile__number,
+.tile--r .tile__peg {
+  color: #c8261c;
 }
 
 .tile--y .tile__number {
-  color: #b07d12;
+  color: #c48a0e;
 }
 
 .tile--b .tile__number {
-  color: #21518f;
+  color: #1f4fa0;
 }
 
 .tile--k .tile__number {
-  color: #1d2530;
+  color: #1b222c;
 }
 
-.tile__star {
+/* the joker wears the face the set gives it */
+.tile__face {
   width: 62%;
-  height: 62%;
-  fill: #b3241a;
+  aspect-ratio: 1;
 }
 
-button.tile:not(:disabled) {
-  cursor: pointer;
+.tile__head {
+  fill: none;
+  stroke: #c8261c;
+  stroke-width: 1.6;
 }
 
-button.tile:not(:disabled):hover {
-  transform: translateY(-4px);
+.tile__eye {
+  fill: #c8261c;
+}
+
+.tile__grin {
+  fill: none;
+  stroke: #c8261c;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+}
+
+.tile--small {
+  width: clamp(11px, 1.1vw, 14px);
+  box-shadow: inset 0 -0.12em 0 rgba(0, 0, 0, 0.14), 0 1px 1px rgba(0, 0, 0, 0.35);
 }
 
 .tile.is-picked {
-  transform: translateY(-10px);
-  box-shadow: var(--lift-2), 0 0 0 2px var(--signal);
+  transform: translateY(-9px);
+  box-shadow: 0 0 0 2px var(--signal), 0 8px 12px -4px rgba(0, 0, 0, 0.55);
+}
+
+.tile.is-dim {
+  filter: saturate(0.72) brightness(0.94);
 }
 
 .tile--back {
@@ -5117,4 +5191,151 @@ button.tile:not(:disabled):hover {
   .rack__tier {
     gap: 1px;
   }
+}
+
+/* ---------- the box: what is left, and what has been thrown ---------- */
+
+.remi__box {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: calc(var(--u) * 2);
+  align-items: stretch;
+  padding: var(--u);
+  border-radius: var(--radius-sm);
+  background: var(--routed);
+  box-shadow: var(--cut);
+}
+
+.stock {
+  display: flex;
+  align-items: center;
+  gap: var(--u);
+  padding: 0 var(--u) 0 4px;
+  border-right: 1px solid var(--keyline);
+  cursor: pointer;
+}
+
+.stock[data-drag] {
+  touch-action: none;
+}
+
+/* the stacks of seven the tiles sit in inside the box */
+.stock__rows {
+  display: grid;
+  grid-template-columns: repeat(5, auto);
+  gap: 3px;
+}
+
+.stock__stack {
+  display: flex;
+  gap: 1px;
+}
+
+.stock__stack--loose {
+  opacity: 0.55;
+}
+
+.stock__count {
+  display: flex;
+  flex-direction: column;
+  font-family: var(--font-label);
+  font-size: 0.56rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  white-space: nowrap;
+}
+
+.stock__count b {
+  font-family: var(--font-display), sans-serif;
+  font-size: 1.05rem;
+  letter-spacing: 0;
+  color: var(--ink);
+}
+
+.stock__count em {
+  font-style: normal;
+  font-size: 0.5rem;
+}
+
+.throws {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--u);
+  min-width: 0;
+}
+
+.throws__label {
+  font-family: var(--font-label);
+  font-size: 0.54rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+}
+
+/* everything thrown, in the order it went down */
+.throws__line {
+  display: flex;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+  padding: 2px 0;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+.throws__empty {
+  font-family: var(--font-label);
+  font-size: 0.54rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.throws__tile {
+  flex: none;
+  border-radius: var(--radius-xs);
+  transition: transform 160ms var(--swing);
+}
+
+.throws__tile.is-live {
+  cursor: pointer;
+  touch-action: none;
+}
+
+/* reaching back takes everything after it, and the line says so first */
+.throws__tile.is-coming {
+  transform: translateY(-5px);
+}
+
+.throws__tile.is-coming .tile {
+  box-shadow: 0 0 0 2px var(--signal), 0 6px 10px -4px rgba(0, 0, 0, 0.5);
+}
+
+.throws__cost {
+  position: absolute;
+  right: 0;
+  top: -6px;
+  padding: 2px 6px;
+  border-radius: var(--radius-pill);
+  background: var(--signal);
+  font-family: var(--font-label);
+  font-size: 0.5rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--signal-on);
+}
+
+.preview .stock__count em,
+.preview .throws__label,
+.preview .throws__empty {
+  font-size: 0.3rem;
+}
+
+.preview .remi__box {
+  padding: 3px;
+  gap: var(--u);
 }

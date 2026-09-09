@@ -310,6 +310,9 @@ export default function Backgammon({ onResult }) {
           last={played}
           disabled={!plays.length}
           onPress={press}>
+          <div className="bg__dice">
+            <Dice dice={dice} used={used} />
+          </div>
           <Verdict
             open={!!shownOutcome && !dismissed}
             tone={tone}
@@ -341,8 +344,6 @@ export default function Backgammon({ onResult }) {
             <Peg options={LEVELS} value={level} onChange={setLevel} label="Machine level" />
           </div>
         )}
-
-        <Dice dice={dice} used={used} />
 
         <p className="status">
           {mode === "solo" ? <Cpu size={16} /> : <Users size={16} />}

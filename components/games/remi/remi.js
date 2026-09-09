@@ -17,6 +17,7 @@ import {
   readMeld,
   seatTiles,
   sortTiles,
+  takeFrom,
   tileName,
   wantsDiscard,
 } from "../../../lib/remi";
@@ -62,7 +63,6 @@ export default function Remi({ onResult }) {
   const [size, setSize] = useState(3);
   const [game, setGame] = useState(() => freshGame(["a", "b", "c"]));
   const [slots, setSlots] = useState(emptyRack);
-  const [picked, setPicked] = useState(null);
   const [note, setNote] = useState(null);
   const [dismissed, setDismissed] = useState(false);
   const [name, setName] = useState("");
@@ -77,7 +77,6 @@ export default function Remi({ onResult }) {
   const reset = useCallback((players) => {
     setGame(freshGame(players));
     setSlots(emptyRack());
-    setPicked(null);
     setNote(null);
     setDismissed(false);
     reported.current = null;
@@ -112,14 +111,25 @@ export default function Remi({ onResult }) {
 
       if (action.type === "draw") {
         if (current.phase !== "draw") return current;
-        const from = action.from;
-        if (from === "discard" && !current.discard.length) return current;
-        if (from === "stock" && !current.stock.length) return current;
-        const pile = from === "discard" ? current.discard.slice() : current.stock.slice();
-        const tile = pile.pop();
+
+        if (action.from === "discard") {
+          const at = Number.isInteger(action.at) ? action.at : current.discard.length - 1;
+          const reach = takeFrom(current.discard, at);
+          if (!reach) return current;
+          return {
+            ...current,
+            discard: reach.left,
+            hands: { ...current.hands, [seat]: sortTiles([...hand, ...reach.taken]) },
+            phase: "play",
+          };
+        }
+
+        if (!current.stock.length) return current;
+        const stock = current.stock.slice();
+        const tile = stock.pop();
         return {
           ...current,
-          [from]: pile,
+          stock,
           hands: { ...current.hands, [seat]: sortTiles([...hand, tile]) },
           phase: "play",
         };
@@ -364,7 +374,6 @@ export default function Remi({ onResult }) {
     if (kind === "discard") {
       if (!canPlay) return;
       act("discard", { tile });
-      setPicked(null);
       return;
     }
     if (kind !== "meld") return;
@@ -378,16 +387,6 @@ export default function Remi({ onResult }) {
     if (extendedWith(meld.tiles, tile)) act("add", { meld: at, tile });
     else if (jokerSwap(meld.tiles, tile)) act("swap", { meld: at, tile });
     else setNote("That tile does not fit there.");
-    setPicked(null);
-  };
-
-  const throwPicked = () => {
-    if (picked == null) {
-      setNote("Pick the tile you want to throw, or drag it into the well.");
-      return;
-    }
-    act("discard", { tile: picked });
-    setPicked(null);
   };
 
   useEffect(() => {
@@ -428,12 +427,13 @@ export default function Remi({ onResult }) {
           slots={slots}
           discard={discard}
           stock={stock}
-          picked={picked}
-          disabled={!canDraw && !canPlay}
+          canDraw={canDraw}
+          canPlay={canPlay}
           onArrange={setSlots}
-          onPick={setPicked}
-          onDropOut={dropOut}
-          onTake={(from) => (canDraw ? act("draw", { from }) : null)}>
+          onDraw={() => canDraw && act("draw", { from: "stock" })}
+          onTakeFrom={(at) => canDraw && act("draw", { from: "discard", at })}
+          onMeld={(index, tile) => dropOut("meld", tile, index)}
+          onThrow={(tile) => canPlay && act("discard", { tile })}>
           <Verdict
             open={!!winner && !dismissed}
             tone={winner === you ? "won" : "lost"}
@@ -500,13 +500,6 @@ export default function Remi({ onResult }) {
                 onClick={layDown}
                 disabled={!groups.length || (!iAmOpen && !canOpen)}>
                 {iAmOpen ? "Lay them down" : "Open"}
-              </button>
-              <button
-                type="button"
-                className="key key--quiet"
-                onClick={throwPicked}
-                disabled={picked == null}>
-                Throw it
               </button>
             </div>
           </>
