@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { LEVELS, outcomeOf, pickMove } from "../../../lib/ttt";
-import { useRoom } from "./use-room";
+import { useRoom } from "../use-room";
 import { Peg } from "../../board/peg";
 import { Tag } from "../../board/tag";
 import { Copy, Cpu, Users } from "../../board/icons";

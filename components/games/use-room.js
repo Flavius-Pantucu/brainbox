@@ -21,8 +21,8 @@ function recallToken(code) {
 }
 
 // Holds one online room: creates or joins it, keeps a live stream open, and
-// exposes the two actions a player can take.
-export function useRoom() {
+// posts whatever actions the game on top of it defines.
+export function useRoom(game = "tictactoe") {
   const [state, setState] = useState(null);
   const [code, setCode] = useState(null);
   const [seat, setSeat] = useState(null);
@@ -57,14 +57,14 @@ export function useRoom() {
   useEffect(() => closeStream, [closeStream]);
 
   const host = useCallback(
-    async (name) => {
+    async (name, options = {}) => {
       setBusy(true);
       setError(null);
       try {
         const res = await fetch("/api/rooms", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ name }),
+          body: JSON.stringify({ name, game, seat: options.seat }),
         });
         if (!res.ok) throw new Error("Could not open a room.");
         const data = await res.json();
@@ -80,7 +80,7 @@ export function useRoom() {
         setBusy(false);
       }
     },
-    [openStream]
+    [game, openStream]
   );
 
   const join = useCallback(
@@ -157,7 +157,8 @@ export function useRoom() {
     host,
     join,
     leave,
-    move: (index) => act("move", { index }),
+    act,
+    move: (payload) => act("move", typeof payload === "number" ? { index: payload } : payload),
     rematch: () => act("rematch"),
     clearError: () => setError(null),
   };

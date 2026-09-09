@@ -38,3 +38,6 @@ yarn-error.log*
 .impeccable/review/
 .impeccable/build/
 .impeccable/questions/
+
+# stockfish is copied in by npm install, not committed
+/public/engine/

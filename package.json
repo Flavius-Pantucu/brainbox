@@ -6,12 +6,15 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "check": "node scripts/check-chess.js",
+    "postinstall": "node scripts/copy-engine.js"
   },
   "dependencies": {
     "@headlessui/react": "^1.7.13",
     "@heroicons/react": "^2.0.16",
     "axios": "^1.3.4",
+    "chess.js": "^1.4.0",
     "clsx": "^1.2.1",
     "cookies-next": "^2.1.1",
     "modulo-x": "^2.1.1",
@@ -19,7 +22,8 @@
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-hook-form": "^7.43.5",
-    "react-transition-group": "^4.4.5"
+    "react-transition-group": "^4.4.5",
+    "stockfish": "^18.0.8"
   },
   "devDependencies": {
     "@tailwindcss/forms": "^0.5.3",

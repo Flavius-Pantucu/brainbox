@@ -48,8 +48,8 @@ export function PlayFrame({ gameId }) {
     [gameId, isTodays]
   );
 
-  // A game that reports nothing (chess has no endgame detection yet) still
-  // records the sitting, once, on the way out.
+  // A game that reports nothing — an analysis board someone only looked at —
+  // still records the sitting, once, on the way out.
   useEffect(() => {
     const started = openedAt.current;
     return () => {
@@ -86,16 +86,7 @@ export function PlayFrame({ gameId }) {
       </div>
 
       <div className="stage__body">
-        {game.legacy ? (
-          <div className="legacy">
-            <Surface theme="light" />
-            <p className="chalk chalk--tight legacy__note">
-              {game.name} is still on the old interface. It is next in line for the rebuild.
-            </p>
-          </div>
-        ) : (
-          <Surface onResult={onResult} />
-        )}
+        <Surface onResult={onResult} />
       </div>
     </div>
   );

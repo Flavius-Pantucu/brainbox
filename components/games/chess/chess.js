@@ -1,928 +1,855 @@
-import { Fragment, useRef, useEffect, useState } from "react";
-import { Menu, Transition } from "@headlessui/react";
-import { ChevronDownIcon } from "@heroicons/react/20/solid";
-import ChessBoard from "./chessboard";
-import Square from "./square";
-import Moves from "./moves";
+"use client";
 
-class Piece {
-  constructor(image, type, color, mark, x, y) {
-    this.image = image;
-    this.color = color;
-    this.type = type;
-    this.mark = mark;
-    this.x = x;
-    this.y = y;
-  }
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Chess } from "chess.js";
+import { Board } from "./board";
+import { EvalBar } from "./eval-bar";
+import { MoveList } from "./move-list";
+import { ReviewPanel, useReview } from "./review";
+import { useEngine } from "./use-engine";
+import { useRoom } from "../use-room";
+import { Peg } from "../../board/peg";
+import { Tag } from "../../board/tag";
+import { Bulb, Copy, Cpu, Undo, Users } from "../../board/icons";
+import {
+  START_FEN,
+  fenTurn,
+  materialFrom,
+  outcomeOf,
+  pieceImage,
+  resultLine,
+  whiteScore,
+} from "../../../lib/chess-core";
+
+const MODES = [
+  { id: "analysis", label: "Analysis" },
+  { id: "bot", label: "Bot" },
+  { id: "online", label: "Online" },
+];
+
+// Skill Level is Stockfish's own handicap: it plays weaker moves on purpose
+// rather than simply searching less deeply.
+const LEVELS = [
+  { id: "learner", label: "Learner", skill: 0, depth: 1 },
+  { id: "casual", label: "Casual", skill: 3, depth: 4 },
+  { id: "club", label: "Club", skill: 8, depth: 8 },
+  { id: "sharp", label: "Sharp", skill: 14, depth: 12 },
+  { id: "brutal", label: "Brutal", skill: 20, depth: 16 },
+];
+
+const SIDES = [
+  { id: "w", label: "White" },
+  { id: "b", label: "Black" },
+  { id: "random", label: "Random" },
+];
+
+const LIVE_DEPTH = 16;
+
+function snapshot(game) {
+  return {
+    fen: game.fen(),
+    moves: game.history({ verbose: true }),
+    turn: game.turn(),
+    check: game.isCheck(),
+    outcome: outcomeOf(game),
+  };
 }
 
-export default function Chess(props) {
-  const theme = props.theme;
-
-  const addPieces = () => {
-    const pieces = [];
-    pieces.push(new Piece("/images/wP.svg", "pawn", "white", false, 0, 6));
-    pieces.push(new Piece("/images/wP.svg", "pawn", "white", false, 1, 6));
-    pieces.push(new Piece("/images/wP.svg", "pawn", "white", false, 2, 6));
-    pieces.push(new Piece("/images/wP.svg", "pawn", "white", false, 3, 6));
-    pieces.push(new Piece("/images/wP.svg", "pawn", "white", false, 4, 6));
-    pieces.push(new Piece("/images/wP.svg", "pawn", "white", false, 5, 6));
-    pieces.push(new Piece("/images/wP.svg", "pawn", "white", false, 6, 6));
-    pieces.push(new Piece("/images/wP.svg", "pawn", "white", false, 7, 6));
-    pieces.push(new Piece("/images/wR.svg", "rook", "white", false, 0, 7));
-    pieces.push(new Piece("/images/wR.svg", "rook", "white", false, 7, 7));
-    pieces.push(new Piece("/images/wN.svg", "knight", "white", false, 1, 7));
-    pieces.push(new Piece("/images/wN.svg", "knight", "white", false, 6, 7));
-    pieces.push(new Piece("/images/wB.svg", "bishop", "white", false, 2, 7));
-    pieces.push(new Piece("/images/wB.svg", "bishop", "white", false, 5, 7));
-    pieces.push(new Piece("/images/wQ.svg", "queen", "white", false, 3, 7));
-    pieces.push(new Piece("/images/wK.svg", "king", "white", false, 4, 7));
-
-    pieces.push(new Piece("/images/bP.svg", "pawn", "black", false, 0, 1));
-    pieces.push(new Piece("/images/bP.svg", "pawn", "black", false, 1, 1));
-    pieces.push(new Piece("/images/bP.svg", "pawn", "black", false, 2, 1));
-    pieces.push(new Piece("/images/bP.svg", "pawn", "black", false, 3, 1));
-    pieces.push(new Piece("/images/bP.svg", "pawn", "black", false, 4, 1));
-    pieces.push(new Piece("/images/bP.svg", "pawn", "black", false, 5, 1));
-    pieces.push(new Piece("/images/bP.svg", "pawn", "black", false, 6, 1));
-    pieces.push(new Piece("/images/bP.svg", "pawn", "black", false, 7, 1));
-    pieces.push(new Piece("/images/bR.svg", "rook", "black", false, 0, 0));
-    pieces.push(new Piece("/images/bR.svg", "rook", "black", false, 7, 0));
-    pieces.push(new Piece("/images/bN.svg", "knight", "black", false, 1, 0));
-    pieces.push(new Piece("/images/bN.svg", "knight", "black", false, 6, 0));
-    pieces.push(new Piece("/images/bB.svg", "bishop", "black", false, 2, 0));
-    pieces.push(new Piece("/images/bB.svg", "bishop", "black", false, 5, 0));
-    pieces.push(new Piece("/images/bQ.svg", "queen", "black", false, 3, 0));
-    pieces.push(new Piece("/images/bK.svg", "king", "black", false, 4, 0));
-
-    return pieces;
-  };
-
-  const createBoard = () => {
-    console.log(1);
-    for (var i = 0; i < yAxis.length; i++) {
-      for (var j = 0; j < xAxis.length; j++) {
-        let piece = { color: null, image: null };
-        pieces.forEach((p) => {
-          if (p.x == j && p.y == i) {
-            piece.image = p.image;
-            piece.color = p.color;
-          }
-        });
-
-        board.push(
-          <Square
-            key={`${i},${j}`}
-            axis={[xAxis, yAxis]}
-            mark={marks[8 * i + j]}
-            piece={piece}
-            coords={[i, j]}
-            lastMove={lastMove}
-            legalMoves={legalMoves}
-            currentPiece={currentPiece}
-            currentPlayer={currentPlayer}
-          />
-        );
-      }
+function kingSquare(chess, color) {
+  for (const row of chess.board()) {
+    for (const piece of row) {
+      if (piece && piece.type === "k" && piece.color === color) return piece.square;
     }
-  };
-
-  const calculatePawnMoves = (piece, i, j, color) => {
-    const legalMoves = [];
-    if (color == "white") {
-      //checks how many squares are available to move
-      let move =
-        pieces.filter((piece) => piece.x == j && piece.y == i - 1).length == 0;
-      if (move) {
-        legalMoves.push({ piece: piece, x: j, y: i - 1, special: false });
-        move =
-          pieces.filter((piece) => piece.x == j && piece.y == i - 2).length ==
-          0;
-        if (i == 6 && move)
-          legalMoves.push({ piece: piece, x: j, y: i - 2, special: false });
-      }
-
-      //checks how many pieces are available to capture
-      let capture = pieces.filter(
-        (piece) =>
-          (piece.x == j - 1 || piece.x == j + 1) &&
-          piece.y == i - 1 &&
-          piece.color == "black"
-      );
-      if (capture.length > 0) {
-        capture.forEach((_piece) => {
-          legalMoves.push({
-            piece: piece,
-            x: _piece.x,
-            y: _piece.y,
-            special: "capture",
-          });
-        }, legalMoves);
-      }
-
-      if (i == 3) {
-        let leftPawn = pieces.filter(
-          (piece) => piece.x == j - 1 && piece.y == i && piece.color == "black"
-        ).length;
-        let rightPawn = pieces.filter(
-          (piece) => piece.x == j + 1 && piece.y == i && piece.color == "black"
-        ).length;
-
-        if (
-          leftPawn == 1 &&
-          lastMove.old_y == i - 2 &&
-          lastMove.new_y == i &&
-          lastMove.old_x == j - 1 &&
-          lastMove.new_x == j - 1
-        )
-          legalMoves.push({
-            piece: piece,
-            x: j - 1,
-            y: i - 1,
-            special: "empassant",
-          });
-
-        if (
-          rightPawn == 1 &&
-          lastMove.old_y == i - 2 &&
-          lastMove.new_y == i &&
-          lastMove.old_x == j + 1 &&
-          lastMove.new_x == j + 1
-        )
-          legalMoves.push({
-            piece: piece,
-            x: j + 1,
-            y: i - 1,
-            special: "empassant",
-          });
-      }
-    } else if (color == "black") {
-      //checks how many squares are available to move
-      let condition =
-        pieces.filter((piece) => piece.x == j && piece.y == i + 1).length == 0;
-      if (condition) {
-        legalMoves.push({ piece: piece, x: j, y: i + 1, special: false });
-        condition =
-          pieces.filter((piece) => piece.x == j && piece.y == i + 2).length ==
-          0;
-        if (i == 1 && condition)
-          legalMoves.push({ piece: piece, x: j, y: i + 2, special: false });
-      }
-
-      //checks how many pieces are available to capture
-      let capture = pieces.filter(
-        (piece) =>
-          (piece.x == j - 1 || piece.x == j + 1) &&
-          piece.y == i + 1 &&
-          piece.color == "white"
-      );
-      if (capture.length > 0) {
-        capture.forEach((_piece) => {
-          legalMoves.push({
-            piece: piece,
-            x: _piece.x,
-            y: _piece.y,
-            special: "capture",
-          });
-        }, legalMoves);
-      }
-
-      if (i == 4) {
-        let leftPawn = pieces.filter(
-          (piece) => piece.x == j - 1 && piece.y == i && piece.color == "white"
-        ).length;
-        let rightPawn = pieces.filter(
-          (piece) => piece.x == j + 1 && piece.y == i && piece.color == "white"
-        ).length;
-
-        if (
-          leftPawn == 1 &&
-          lastMove[0].y == i + 2 &&
-          lastMove[1].y == i &&
-          lastMove[0].x == j - 1 &&
-          lastMove[1].x == j - 1
-        )
-          legalMoves.push({
-            piece: piece,
-            x: j - 1,
-            y: i + 1,
-            special: "empassant",
-          });
-
-        if (
-          rightPawn == 1 &&
-          lastMove[0].y == i + 2 &&
-          lastMove[1].y == i &&
-          lastMove[0].x == j + 1 &&
-          lastMove[1].x == j + 1
-        )
-          legalMoves.push({
-            piece: piece,
-            x: j + 1,
-            y: i + 1,
-            special: "empassant",
-          });
-      }
-    } else return [];
-    //promotion check
-    return legalMoves;
-  };
-
-  const calculateKnightMoves = (piece, i, j, color) => {
-    const legalMoves = [];
-
-    const x_neighbors = [-2, -1, 1, 2, 2, 1, -1, -2];
-    const y_neighbors = [-1, -2, -2, -1, 1, 2, 2, 1];
-
-    for (var n = 0; n < 8; n++) {
-      let move =
-        pieces.filter(
-          (piece) =>
-            piece.x == j + x_neighbors[n] && piece.y == i + y_neighbors[n]
-        ).length == 0;
-      if (move)
-        legalMoves.push({
-          piece: piece,
-          x: j + x_neighbors[n],
-          y: i + y_neighbors[n],
-          special: false,
-        });
-
-      let capture = pieces.filter(
-        (piece) =>
-          piece.x == j + x_neighbors[n] &&
-          piece.y == i + y_neighbors[n] &&
-          piece.color != color
-      );
-      if (capture.length > 0)
-        legalMoves.push({
-          piece: piece,
-          x: j + x_neighbors[n],
-          y: i + y_neighbors[n],
-          special: "capture",
-        });
-    }
-
-    return legalMoves;
-  };
-
-  const calculateBishopMoves = (piece, i, j, color) => {
-    const legalMoves = [];
-    for (
-      var xAxis = j - 1, yAxis = i - 1;
-      xAxis >= 0, yAxis >= 0;
-      xAxis--, yAxis--
-    ) {
-      let move =
-        pieces.filter((piece) => piece.x == xAxis && piece.y == yAxis).length ==
-        0;
-      if (move)
-        legalMoves.push({ piece: piece, x: xAxis, y: yAxis, special: false });
-
-      let capture = pieces.filter(
-        (piece) => piece.x == xAxis && piece.y == yAxis && piece.color != color
-      );
-      if (capture.length > 0)
-        legalMoves.push({
-          piece: piece,
-          x: xAxis,
-          y: yAxis,
-          special: "capture",
-        });
-
-      if (capture.length > 0 || !(move || capture.length > 0)) break;
-    }
-    for (
-      var xAxis = j + 1, yAxis = i + 1;
-      xAxis < 8, yAxis < 8;
-      xAxis++, yAxis++
-    ) {
-      let move =
-        pieces.filter((piece) => piece.x == xAxis && piece.y == yAxis).length ==
-        0;
-      if (move)
-        legalMoves.push({ piece: piece, x: xAxis, y: yAxis, special: false });
-
-      let capture = pieces.filter(
-        (piece) => piece.x == xAxis && piece.y == yAxis && piece.color != color
-      );
-      if (capture.length > 0)
-        legalMoves.push({
-          piece: piece,
-          x: xAxis,
-          y: yAxis,
-          special: "capture",
-        });
-
-      if (capture.length > 0 || !(move || capture.length > 0)) break;
-    }
-    for (
-      var xAxis = j - 1, yAxis = i + 1;
-      xAxis >= 0, yAxis < 8;
-      xAxis--, yAxis++
-    ) {
-      let move =
-        pieces.filter((piece) => piece.x == xAxis && piece.y == yAxis).length ==
-        0;
-      if (move)
-        legalMoves.push({ piece: piece, x: xAxis, y: yAxis, special: false });
-
-      let capture = pieces.filter(
-        (piece) => piece.x == xAxis && piece.y == yAxis && piece.color != color
-      );
-      if (capture.length > 0)
-        legalMoves.push({
-          piece: piece,
-          x: xAxis,
-          y: yAxis,
-          special: "capture",
-        });
-
-      if (capture.length > 0 || !(move || capture.length > 0)) break;
-    }
-    for (
-      var xAxis = j + 1, yAxis = i - 1;
-      xAxis < 8, yAxis >= 0;
-      xAxis++, yAxis--
-    ) {
-      let move =
-        pieces.filter((piece) => piece.x == xAxis && piece.y == yAxis).length ==
-        0;
-      if (move)
-        legalMoves.push({ piece: piece, x: xAxis, y: yAxis, special: false });
-
-      let capture = pieces.filter(
-        (piece) => piece.x == xAxis && piece.y == yAxis && piece.color != color
-      );
-      if (capture.length > 0)
-        legalMoves.push({
-          piece: piece,
-          x: xAxis,
-          y: yAxis,
-          special: "capture",
-        });
-
-      if (capture.length > 0 || !(move || capture.length > 0)) break;
-    }
-    return legalMoves;
-  };
-
-  const calculateRookMoves = (piece, i, j, color) => {
-    const legalMoves = [];
-    for (var xAxis = j - 1; xAxis >= 0; xAxis--) {
-      let move =
-        pieces.filter((piece) => piece.x == xAxis && piece.y == i).length == 0;
-      if (move)
-        legalMoves.push({ piece: piece, x: xAxis, y: i, special: false });
-
-      let capture = pieces.filter(
-        (piece) => piece.x == xAxis && piece.y == i && piece.color != color
-      );
-      if (capture.length > 0)
-        legalMoves.push({ piece: piece, x: xAxis, y: i, special: "capture" });
-
-      if (capture.length > 0 || !(move || capture.length > 0)) break;
-    }
-    for (var xAxis = j + 1; xAxis < 8; xAxis++) {
-      let move =
-        pieces.filter((piece) => piece.x == xAxis && piece.y == i).length == 0;
-      if (move)
-        legalMoves.push({ piece: piece, x: xAxis, y: i, special: false });
-
-      let capture = pieces.filter(
-        (piece) => piece.x == xAxis && piece.y == i && piece.color != color
-      );
-      if (capture.length > 0)
-        legalMoves.push({ piece: piece, x: xAxis, y: i, special: "capture" });
-
-      if (capture.length > 0 || !(move || capture.length > 0)) break;
-    }
-    for (var yAxis = i + 1; yAxis < 8; yAxis++) {
-      let move =
-        pieces.filter((piece) => piece.x == j && piece.y == yAxis).length == 0;
-      if (move)
-        legalMoves.push({ piece: piece, x: j, y: yAxis, special: false });
-
-      let capture = pieces.filter(
-        (piece) => piece.x == j && piece.y == yAxis && piece.color != color
-      );
-      if (capture.length > 0)
-        legalMoves.push({ piece: piece, x: j, y: yAxis, special: "capture" });
-
-      if (capture.length > 0 || !(move || capture.length > 0)) break;
-    }
-    for (var yAxis = i - 1; yAxis >= 0; yAxis--) {
-      let move =
-        pieces.filter((piece) => piece.x == j && piece.y == yAxis).length == 0;
-      if (move)
-        legalMoves.push({ piece: piece, x: j, y: yAxis, special: false });
-
-      let capture = pieces.filter(
-        (piece) => piece.x == j && piece.y == yAxis && piece.color != color
-      );
-      if (capture.length > 0)
-        legalMoves.push({ piece: piece, x: j, y: yAxis, special: "capture" });
-
-      if (capture.length > 0 || !(move || capture.length > 0)) break;
-    }
-    return legalMoves;
-  };
-
-  const calculateQueenMoves = (piece, i, j, color) => {
-    const b_legalMoves = [...calculateBishopMoves(piece, i, j, color)];
-    const r_legalMoves = [...calculateRookMoves(piece, i, j, color)];
-    return [...b_legalMoves, ...r_legalMoves];
-  };
-
-  const calculateKingMoves = (piece, i, j, color) => {
-    const legalMoves = [];
-
-    const x_neighbors = [-1, 0, 1, 1, 1, 0, -1, -1];
-    const y_neighbors = [-1, -1, -1, 0, 1, 1, 1, 0];
-
-    for (var n = 0; n < 8; n++) {
-      let move =
-        pieces.filter(
-          (piece) =>
-            piece.x == j + x_neighbors[n] && piece.y == i + y_neighbors[n]
-        ).length == 0;
-      if (move)
-        legalMoves.push({
-          piece: piece,
-          x: j + x_neighbors[n],
-          y: i + y_neighbors[n],
-          special: false,
-        });
-
-      let capture = pieces.filter(
-        (piece) =>
-          piece.x == j + x_neighbors[n] &&
-          piece.y == i + y_neighbors[n] &&
-          piece.color != color
-      );
-      if (capture.length > 0)
-        legalMoves.push({
-          piece: piece,
-          x: j + x_neighbors[n],
-          y: i + y_neighbors[n],
-          special: "capture",
-        });
-    }
-
-    const row = color == "white" ? 7 : 0;
-
-    const kingMove =
-      movesHistory.filter(
-        (move) => move.piece == "king" && move.player == color
-      ).length != 0;
-
-    const leftRookMove =
-      movesHistory.filter(
-        (move) =>
-          move.piece == "rook" &&
-          move.player == color &&
-          move.old_x == 0 &&
-          move.old_y == row
-      ).length != 0;
-
-    const rightRookMove =
-      movesHistory.filter(
-        (move) =>
-          move.piece == "rook" &&
-          move.player == color &&
-          move.old_x == 7 &&
-          move.old_y == row
-      ).length != 0;
-
-    const leftSide =
-      pieces.filter(
-        (piece) =>
-          (piece.x == 1 && piece.y == row) ||
-          (piece.x == 2 && piece.y == row) ||
-          (piece.x == 3 && piece.y == row)
-      ).length != 0;
-
-    const rightSide =
-      pieces.filter(
-        (piece) =>
-          (piece.x == 5 && piece.y == row) || (piece.x == 6 && piece.y == row)
-      ).length != 0;
-
-    if (!(kingMove || leftRookMove || leftSide)) {
-      legalMoves.push({ piece: piece, x: j - 2, y: i, special: "long-castle" });
-    }
-
-    if (!(kingMove || rightRookMove || rightSide)) {
-      legalMoves.push({
-        piece: piece,
-        x: j + 2,
-        y: i,
-        special: "short-castle",
-      });
-    }
-    return legalMoves;
-  };
-
-  const calculateLegalMoves = (i, j) => {
-    var moves = [];
-    pieces.forEach((piece) => {
-      if (piece.x == j && piece.y == i) {
-        switch (piece.type) {
-          case "pawn":
-            moves = calculatePawnMoves(piece.type, i, j, piece.color);
-            break;
-          case "rook":
-            moves = calculateRookMoves(piece.type, i, j, piece.color);
-            break;
-          case "knight":
-            moves = calculateKnightMoves(piece.type, i, j, piece.color);
-            break;
-          case "bishop":
-            moves = calculateBishopMoves(piece.type, i, j, piece.color);
-            break;
-          case "queen":
-            moves = calculateQueenMoves(piece.type, i, j, piece.color);
-            break;
-          case "king":
-            moves = calculateKingMoves(piece.type, i, j, piece.color);
-            break;
-        }
-      }
-    }, moves);
-    return moves;
-  };
-
-  const canMove = (e, chessboard) => {
-    if (legalMovesRef.current == null) return false;
-    const square = e.target.classList.contains("dot")
-      ? e.target.parentNode
-      : e.target;
-    const row = Math.floor(
-      (e.clientY - chessboard.offsetTop) / square.offsetHeight
-    );
-    const col = Math.floor(
-      (e.clientX - chessboard.offsetLeft) / square.offsetWidth
-    );
-    const isLegal =
-      legalMovesRef.current.filter((piece) => piece.x == col && piece.y == row)
-        .length == 1;
-    return isLegal;
-  };
-
-  const grabPiece = (e) => {
-    if (e.nativeEvent.button != 0) return;
-    e.target.classList.contains("mark")
-      ? (selectedPieceRef.current = e.target.parentNode)
-      : (selectedPieceRef.current = e.target);
-    const piece = selectedPieceRef.current;
-    const chessboard = chessboardRef.current;
-    if (piece.classList.contains("piece")) {
-      marks.fill(false);
-      setMarks([...marks]);
-
-      const x = e.clientX - piece.parentNode.offsetLeft - piece.offsetWidth / 2;
-      const y = e.clientY - piece.parentNode.offsetTop - piece.offsetHeight / 2;
-
-      const row = Math.floor(
-        (e.clientY - chessboard.offsetTop) / (piece.offsetHeight + 4)
-      );
-      const col = Math.floor(
-        (e.clientX - chessboard.offsetLeft) / (piece.offsetWidth + 4)
-      );
-
-      if (
-        !pieces.filter(
-          (piece) =>
-            piece.x == col &&
-            piece.y == row &&
-            piece.color == playerTurnRef.current
-        ).length
-      )
-        return;
-
-      currentPiece.x == col && currentPiece.y == row
-        ? setCurrentPiece({ x: col, y: row, retouch: true })
-        : setCurrentPiece({ x: col, y: row, retouch: false });
-
-      piece.style.position = "absolute";
-      piece.style.left = x + "px";
-      piece.style.top = y + "px";
-      piece.style.zIndex = 9999;
-
-      legalMovesRef.current = calculateLegalMoves(row, col);
-      setLegalMoves([...legalMovesRef.current]);
-    } else if (!canMove(e, chessboard)) {
-      selectedPieceRef.current = null;
-      setCurrentPiece({ x: null, y: null, retouch: false });
-      setLegalMoves([]);
-    }
-  };
-
-  const movePiece = (e) => {
-    if (
-      selectedPieceRef.current == null ||
-      chessboardRef == null ||
-      !pieces.filter(
-        (piece) =>
-          piece.x == currentPiece.x &&
-          piece.y == currentPiece.y &&
-          piece.color == playerTurnRef.current
-      ).length
-    )
-      return;
-    const piece = selectedPieceRef.current;
-    const board = piece.parentNode.parentNode;
-
-    const x = e.clientX - piece.parentNode.offsetLeft - piece.offsetWidth / 2;
-    const y = e.clientY - piece.parentNode.offsetTop - piece.offsetHeight / 2;
-    if (
-      board.offsetWidth < e.clientX - board.offsetLeft ||
-      e.clientX - board.offsetLeft < 0
-    ) {
-      piece.style.position = "relative";
-      piece.style.left = "0px";
-      piece.style.top = "0px";
-      selectedPieceRef.current = null;
-      setCurrentPiece({ x: null, y: null, retouch: false });
-    } else {
-      piece.style.position = "absolute";
-      piece.style.left = x + "px";
-      piece.style.top = y + "px";
-    }
-  };
-
-  const letPiece = (e) => {
-    if (
-      selectedPieceRef.current == null ||
-      !pieces.filter(
-        (piece) =>
-          piece.x == currentPiece.x &&
-          piece.y == currentPiece.y &&
-          piece.color == playerTurnRef.current
-      ).length
-    )
-      return;
-
-    const piece = selectedPieceRef.current;
-    const chessboard = chessboardRef.current;
-
-    if (e.nativeEvent.button == 0) {
-      const square = e.target.classList.contains("dot")
-        ? e.target.parentNode
-        : e.target;
-
-      const row = Math.floor(
-        (e.clientY - chessboard.offsetTop) / square.offsetHeight
-      );
-      const col = Math.floor(
-        (e.clientX - chessboard.offsetLeft) / square.offsetWidth
-      );
-
-      if (
-        row == currentPiece.y &&
-        col == currentPiece.x &&
-        currentPiece.retouch == true
-      ) {
-        piece.style.position = "relative";
-        piece.style.left = "0px";
-        piece.style.top = "0px";
-        selectedPieceRef.current = null;
-        setCurrentPiece({ x: null, y: null, retouch: false });
-        setLegalMoves([]);
-        return;
-      }
-
-      if (
-        legalMovesRef.current.filter((move) => move.x == col && move.y == row)
-          .length == 0
-      ) {
-        piece.style.position = "relative";
-        piece.style.left = "0px";
-        piece.style.top = "0px";
-      } else if (row < 8 && col < 8 && row >= 0 && col >= 0) {
-        const move = legalMovesRef.current.filter(
-          (move) => move.x == col && move.y == row
-        )[0];
-        if (move.special == "empassant") {
-          const index =
-            playerTurnRef.current == "black"
-              ? pieces.findIndex(
-                  (piece) => piece.x == col && piece.y == row - 1
-                )
-              : pieces.findIndex(
-                  (piece) => piece.x == col && piece.y == row + 1
-                );
-          pieces.splice(index, 1);
-          //to be added in captured pieces
-          soundsRef.current[2].play();
-        } else if (move.special == "short-castle") {
-          const rookColor = playerTurnRef.current == "black" ? 0 : 7;
-          const index = pieces.findIndex(
-            (piece) => piece.x == 7 && piece.y == rookColor
-          );
-          pieces[index].x -= 2;
-          soundsRef.current[1].play();
-        } else if (move.special == "long-castle") {
-          const rookColor = playerTurnRef.current == "black" ? 0 : 7;
-          const index = pieces.findIndex(
-            (piece) => piece.x == 0 && piece.y == rookColor
-          );
-          pieces[index].x += 3;
-          soundsRef.current[1].play();
-        } else {
-          const index = pieces.findIndex(
-            (piece) => piece.x == col && piece.y == row
-          );
-          if (index != -1) {
-            pieces.splice(index, 1);
-            //to be added in captured pieces
-            soundsRef.current[2].play();
-          } else {
-            soundsRef.current[0].play();
-          }
-        }
-        setPieces((value) => {
-          const _pieces = value.map((piece) => {
-            if (piece.x == currentPiece.x && piece.y == currentPiece.y) {
-              piece.x = col;
-              piece.y = row;
-            }
-            return piece;
-          });
-          return _pieces;
-        });
-
-        const playerMove = {
-          player: playerTurnRef.current,
-          piece: move.piece,
-          old_x: currentPiece.x,
-          old_y: currentPiece.y,
-          new_x: move.x,
-          new_y: move.y,
-          special: move.special,
-        };
-
-        movesHistory.push(playerMove);
-        setMovesHistory([...movesHistory]);
-
-        setLastMove(playerMove);
-        setCurrentPiece({ x: null, y: null, retouch: false });
-        setLegalMoves([]);
-        playerTurnRef.current == "white"
-          ? (playerTurnRef.current = "black")
-          : (playerTurnRef.current = "white");
-        setCurrentPlayer(currentPlayer == "white" ? "black" : "white");
-      } else {
-        piece.style.position = "relative";
-        piece.style.left = "0px";
-        piece.style.top = "0px";
-      }
-    } else if (e.nativeEvent.button == 2) return;
-    selectedPieceRef.current = null;
-  };
-
-  const rightClickHandler = (e) => {
-    e.preventDefault();
-
-    if (selectedPieceRef.current == null) {
-      const chessboard = chessboardRef.current;
-
-      const squareWidth = e.target.className.includes("piece")
-        ? e.target.offsetWidth + 4
-        : e.target.offsetWidth;
-      const squareHeight = e.target.className.includes("piece")
-        ? e.target.offsetHeight + 4
-        : e.target.offsetHeight;
-
-      const row = Math.floor((e.clientY - chessboard.offsetTop) / squareHeight);
-      const col = Math.floor((e.clientX - chessboard.offsetLeft) / squareWidth);
-      const elem = 8 * row + col;
-
-      marks[elem] = marks[elem] == false ? true : false;
-      setMarks([...marks]);
-
-      setCurrentPiece({ x: null, y: null, retouch: false });
-      setLegalMoves([]);
-    } else {
-      const piece = selectedPieceRef.current;
-      piece.style.position = "relative";
-      piece.style.left = "0px";
-      piece.style.top = "0px";
-      selectedPieceRef.current = null;
-      setCurrentPiece({ x: null, y: null, retouch: false });
-      setLegalMoves([]);
-    }
-  };
-
-  const xAxis = ["a", "b", "c", "d", "e", "f", "g", "h"];
-  const yAxis = ["1", "2", "3", "4", "5", "6", "7", "8"];
-  const board = [];
-
-  const soundsRef = useRef(null);
-  const chessboardRef = useRef(null);
-  const legalMovesRef = useRef(null);
-  const selectedPieceRef = useRef(null);
-  const playerTurnRef = useRef("white");
-
-  const [capturedPieces, setCapturedPieces] = useState([]);
-  const [currentPiece, setCurrentPiece] = useState({
-    x: null,
-    y: null,
-    retouch: false,
-  });
-  const [pieces, setPieces] = useState(addPieces());
-  const [marks, setMarks] = useState(new Array(64).fill(false));
-  const [legalMoves, setLegalMoves] = useState([]);
-  const [movesHistory, setMovesHistory] = useState([]);
-  const [lastMove, setLastMove] = useState([
-    { x: null, y: null },
-    { x: null, y: null },
-  ]);
-
-  const [currentPlayer, setCurrentPlayer] = useState("white");
-
-  createBoard();
+  }
+  return null;
+}
+
+// What one side has taken, and by how much they are up. The pile shows the
+// opponent's pieces, so it is drawn in the opponent's colour.
+function Taken({ seat, material }) {
+  const types = material.taken[seat];
+  const colour = seat === "w" ? "b" : "w";
+  const lead = seat === "w" ? material.score : -material.score;
+  if (!types.length) return <span className="taken" />;
+  return (
+    <span className="taken">
+      {types.map((type, i) => (
+        <img key={`${type}${i}`} src={pieceImage(colour, type)} alt="" />
+      ))}
+      {lead > 0 && <em>+{lead}</em>}
+    </span>
+  );
+}
+
+export default function ChessGame({ onResult }) {
+  const [mode, setMode] = useState("analysis");
+  const [levelId, setLevelId] = useState("club");
+  const [sideChoice, setSideChoice] = useState("w");
+  const [orientation, setOrientation] = useState("w");
+  const [engineOn, setEngineOn] = useState(true);
+  const [selected, setSelected] = useState(null);
+  const [promotion, setPromotion] = useState(null);
+  const [marks, setMarks] = useState([]);
+  const [arrows, setArrows] = useState([]);
+  const [cursor, setCursor] = useState(-1);
+  const [score, setScore] = useState(null);
+  const [pv, setPv] = useState([]);
+  const [thinking, setThinking] = useState(false);
+  const [botThinking, setBotThinking] = useState(false);
+  const [botSide, setBotSide] = useState("b");
+  const [name, setName] = useState("");
+  const [joinCode, setJoinCode] = useState("");
+  const [copied, setCopied] = useState(false);
+  const [loadText, setLoadText] = useState("");
+  const [loadError, setLoadError] = useState(null);
+  const [showReview, setShowReview] = useState(false);
+
+  const gameRef = useRef(null);
+  if (gameRef.current === null) gameRef.current = new Chess();
+  const [local, setLocal] = useState(() => snapshot(gameRef.current));
+
+  const sounds = useRef(null);
+  const seen = useRef(0);
+  const reported = useRef(null);
+
+  const engine = useEngine();
+  const review = useReview(engine);
+  const room = useRoom("chess");
+  const level = LEVELS.find((l) => l.id === levelId) || LEVELS[2];
+  const online = mode === "online" ? room.state : null;
 
   useEffect(() => {
-    soundsRef.current = new Array(3);
-    soundsRef.current[0] = new Audio("/sounds/move.mp3");
-    soundsRef.current[1] = new Audio("/sounds/castle.mp3");
-    soundsRef.current[2] = new Audio("/sounds/capture.mp3");
+    sounds.current = {
+      move: new Audio("/sounds/move.mp3"),
+      capture: new Audio("/sounds/capture.mp3"),
+      castle: new Audio("/sounds/castle.mp3"),
+    };
   }, []);
 
+  /* ------------------------------------------------------------- the game --- */
+
+  const view = useMemo(() => {
+    if (online) {
+      return {
+        moves: online.moves || [],
+        fen: online.fen || START_FEN,
+        turn: online.turn || "w",
+        check: !!online.check,
+        status: online.status,
+        winner: online.winner,
+        reason: online.reason,
+        names: { w: online.names.w || "White", b: online.names.b || "Black" },
+        mySide: online.seat,
+        over: online.status === "won" || online.status === "draw",
+      };
+    }
+    const you = botSide === "w" ? "b" : "w";
+    const names =
+      mode === "bot"
+        ? botSide === "w"
+          ? { w: level.label, b: "You" }
+          : { w: "You", b: level.label }
+        : { w: "White", b: "Black" };
+    return {
+      moves: local.moves,
+      fen: local.fen,
+      turn: local.turn,
+      check: local.check,
+      status: local.outcome.status,
+      winner: local.outcome.winner,
+      reason: local.outcome.reason,
+      names,
+      mySide: mode === "bot" ? you : null, // analysis: both sides are yours
+      over: local.outcome.over,
+    };
+  }, [online, local, mode, botSide, level]);
+
+  // the board follows the newest move unless you have walked back through them
+  useEffect(() => {
+    setCursor(view.moves.length - 1);
+  }, [view.moves.length]);
+
+  const atLive = cursor >= view.moves.length - 1;
+  const shownFen = !view.moves.length
+    ? view.fen
+    : atLive
+    ? view.fen
+    : cursor < 0
+    ? view.moves[0].before
+    : view.moves[cursor].after;
+
+  const shown = useMemo(() => new Chess(shownFen), [shownFen]);
+  const live = useMemo(() => new Chess(view.fen), [view.fen]);
+  const board = useMemo(() => shown.board(), [shown]);
+  const material = useMemo(() => materialFrom(board), [board]);
+
+  const shownCheck = shown.isCheck() ? kingSquare(shown, shown.turn()) : null;
+  const lastMove =
+    cursor >= 0 && view.moves[cursor]
+      ? { from: view.moves[cursor].from, to: view.moves[cursor].to }
+      : null;
+
+  const yourTurn = view.mySide == null || view.turn === view.mySide;
+  const roomReady = mode !== "online" || online?.status === "playing";
+  const canPlay = atLive && !view.over && yourTurn && roomReady && !botThinking;
+
+  const targets = useMemo(() => {
+    if (!selected || !canPlay) return [];
+    return live.moves({ square: selected, verbose: true });
+  }, [selected, canPlay, live]);
+
+  const playSound = useCallback((move) => {
+    const bank = sounds.current;
+    if (!bank || !move) return;
+    const clip = move.flags?.includes("k") || move.flags?.includes("q")
+      ? bank.castle
+      : move.captured
+      ? bank.capture
+      : bank.move;
+    clip.currentTime = 0;
+    clip.play().catch(() => {
+      /* browsers refuse audio until the page has been clicked once */
+    });
+  }, []);
+
+  useEffect(() => {
+    const moves = view.moves;
+    if (moves.length > seen.current) playSound(moves[moves.length - 1]);
+    seen.current = moves.length;
+  }, [view.moves, playSound]);
+
+  /* ------------------------------------------------------------- moving --- */
+
+  const applyLocal = useCallback((from, to, promote) => {
+    const game = gameRef.current;
+    try {
+      game.move({ from, to, promotion: promote });
+    } catch {
+      return false;
+    }
+    setLocal(snapshot(game));
+    return true;
+  }, []);
+
+  const attemptMove = useCallback(
+    (from, to, promote) => {
+      if (!canPlay) return;
+      const legal = live.moves({ square: from, verbose: true }).filter((m) => m.to === to);
+      if (!legal.length) return;
+      if (legal[0].promotion && !promote) {
+        setPromotion({ from, to, color: legal[0].color });
+        return;
+      }
+      setSelected(null);
+      setPromotion(null);
+      setArrows([]);
+      setMarks([]);
+      if (mode === "online") room.act("move", { from, to, promotion: promote });
+      else applyLocal(from, to, promote);
+    },
+    [canPlay, live, mode, room, applyLocal]
+  );
+
+  const pressSquare = useCallback(
+    (square) => {
+      if (!canPlay) {
+        setSelected(null);
+        return;
+      }
+      if (selected && targets.some((move) => move.to === square)) {
+        attemptMove(selected, square);
+        return;
+      }
+      const piece = live.get(square);
+      const mine = piece && piece.color === view.turn && (view.mySide == null || piece.color === view.mySide);
+      setSelected(mine ? square : null);
+    },
+    [canPlay, selected, targets, attemptMove, live, view.turn, view.mySide]
+  );
+
+  const toggleMark = (square) =>
+    setMarks((current) =>
+      current.includes(square) ? current.filter((s) => s !== square) : [...current, square]
+    );
+
+  const toggleArrow = ({ from, to }) =>
+    setArrows((current) =>
+      current.some((a) => a.from === from && a.to === to)
+        ? current.filter((a) => !(a.from === from && a.to === to))
+        : [...current, { from, to }]
+    );
+
+  /* ------------------------------------------------------------- engine --- */
+
+  const engineIdle = engineOn && engine.ready && review.status !== "running";
+
+  useEffect(() => {
+    if (!engineIdle || (mode === "bot" && !view.over && botThinking)) return undefined;
+    let alive = true;
+    setThinking(true);
+    engine.cancel();
+    engine
+      .analyse(shownFen, {
+        depth: LIVE_DEPTH,
+        onInfo: (info) => {
+          if (!alive) return;
+          setScore(whiteScore(info.score, fenTurn(shownFen)));
+          setPv(info.pv);
+        },
+      })
+      .then(() => {
+        if (alive) setThinking(false);
+      });
+    return () => {
+      alive = false;
+    };
+  }, [shownFen, engineIdle, engine, mode, view.over, botThinking]);
+
+  useEffect(() => {
+    if (!engineOn) {
+      setScore(null);
+      setPv([]);
+    }
+  }, [engineOn]);
+
+  // the bot answers
+  useEffect(() => {
+    if (mode !== "bot" || !engine.ready || local.outcome.over || local.turn !== botSide) {
+      return undefined;
+    }
+    let alive = true;
+    setBotThinking(true);
+    engine.play(local.fen, { skill: level.skill, depth: level.depth }).then((result) => {
+      if (!alive) return;
+      setBotThinking(false);
+      if (!result?.best) return;
+      applyLocal(result.best.slice(0, 2), result.best.slice(2, 4), result.best[4] || undefined);
+    });
+    return () => {
+      alive = false;
+    };
+  }, [mode, engine, local.fen, local.turn, local.outcome.over, botSide, level, applyLocal]);
+
+  const hintArrow = useMemo(() => {
+    if (!engineOn || !pv.length || !atLive || view.over) return null;
+    const best = pv[0];
+    if (!best || best.length < 4) return null;
+    return { from: best.slice(0, 2), to: best.slice(2, 4) };
+  }, [engineOn, pv, atLive, view.over]);
+
+  /* -------------------------------------------------------------- setup --- */
+
+  const newLocalGame = useCallback(
+    () => {
+      gameRef.current = new Chess();
+      setLocal(snapshot(gameRef.current));
+      setSelected(null);
+      setPromotion(null);
+      setMarks([]);
+      setArrows([]);
+      setScore(null);
+      setPv([]);
+      setShowReview(false);
+      review.clear();
+      seen.current = 0;
+      reported.current = null;
+    },
+    [review]
+  );
+
+  const startBotGame = () => {
+    const side = sideChoice === "random" ? (Math.random() < 0.5 ? "w" : "b") : sideChoice;
+    newLocalGame();
+    setBotSide(side === "w" ? "b" : "w");
+    setOrientation(side);
+    setEngineOn(false);
+  };
+
+  useEffect(() => {
+    setSelected(null);
+    setPromotion(null);
+    setMarks([]);
+    setArrows([]);
+    setShowReview(false);
+    review.clear();
+    if (mode === "analysis") setEngineOn(true);
+    if (mode === "bot") setEngineOn(false);
+    if (mode === "online") setEngineOn(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mode]);
+
+  const takeback = () => {
+    const game = gameRef.current;
+    game.undo();
+    if (mode === "bot") game.undo(); // both halves, so it is your move again
+    setLocal(snapshot(game));
+    setSelected(null);
+    seen.current = game.history().length;
+  };
+
+  const loadPosition = () => {
+    const text = loadText.trim();
+    if (!text) return;
+    const game = new Chess();
+    try {
+      if (text.includes("/") && text.split(" ").length >= 4) game.load(text);
+      else game.loadPgn(text);
+    } catch {
+      setLoadError("That is not a FEN or a PGN this board can read.");
+      return;
+    }
+    gameRef.current = game;
+    setLocal(snapshot(game));
+    setLoadError(null);
+    setLoadText("");
+    setSelected(null);
+    setShowReview(false);
+    review.clear();
+    seen.current = game.history().length;
+  };
+
+  const copyText = async (text) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1800);
+    } catch {
+      setCopied(false);
+    }
+  };
+
+  /* -------------------------------------------------------------- online --- */
+
+  const shareLink =
+    typeof window !== "undefined" && room.code
+      ? `${window.location.origin}/play/chess?room=${room.code}`
+      : "";
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const invited = new URLSearchParams(window.location.search).get("room");
+    if (!invited) return;
+    setMode("online");
+    setJoinCode(invited.toUpperCase());
+  }, []);
+
+  useEffect(() => {
+    if (online?.seat) setOrientation(online.seat);
+  }, [online?.seat]);
+
+  /* -------------------------------------------------------------- result --- */
+
+  useEffect(() => {
+    if (!view.over) return;
+    const stamp =
+      mode === "online" ? `${online?.code}-${online?.version}` : `${mode}-${view.moves.length}`;
+    if (reported.current === stamp) return;
+    reported.current = stamp;
+    onResult?.({
+      outcome:
+        view.status === "draw"
+          ? "drawn"
+          : view.mySide == null
+          ? "played"
+          : view.winner === view.mySide
+          ? "won"
+          : "lost",
+      meta: {
+        mode,
+        moves: view.moves.length,
+        level: mode === "bot" ? level.id : null,
+        room: online?.code ?? null,
+      },
+    });
+  }, [view, mode, online, level, onResult]);
+
+  /* ---------------------------------------------------------------- keys --- */
+
+  useEffect(() => {
+    const onKey = (event) => {
+      if (event.target instanceof HTMLInputElement) return;
+      if (event.key === "ArrowLeft") setCursor((c) => Math.max(-1, c - 1));
+      if (event.key === "ArrowRight") setCursor((c) => Math.min(view.moves.length - 1, c + 1));
+      if (event.key === "f") setOrientation((o) => (o === "w" ? "b" : "w"));
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [view.moves.length]);
+
+  /* ---------------------------------------------------------------- copy --- */
+
+  const statusLine = () => {
+    if (view.over) return resultLine(view, view.names);
+    if (mode === "online") {
+      if (!online) return "Open a room, or join one with a code.";
+      if (online.status === "waiting") return "Waiting for someone to take the other seat.";
+      return yourTurn ? "Your move." : `Waiting on ${view.names[view.turn]}.`;
+    }
+    if (mode === "bot") {
+      if (botThinking) return `${level.label} is thinking.`;
+      return yourTurn ? "Your move." : `${level.label} to move.`;
+    }
+    if (view.check) return `${view.turn === "w" ? "White" : "Black"} is in check.`;
+    return `${view.turn === "w" ? "White" : "Black"} to move.`;
+  };
+
+  const away = orientation === "w" ? "b" : "w";
+  const drawOffered = online?.drawOffer && online.drawOffer !== online.seat;
+  const canReview = view.moves.length > 1 && engine.ready;
+  const currentVerdict = review.report?.verdicts?.[cursor] || null;
+
   return (
-    <>
-      <div className='mx-auto h-full w-full  px-2 mt-2 sm:px-6 lg:px-8 select-none'>
-        <Menu
-          as='div'
-          className='relative inline-block'
-        >
-          <div>
-            <Menu.Button
-              className={`inline-flex text-2xl transition-all ease-in duration-300 ${
-                theme == "dark" ? "text-white" : "text-neutral-900"
-              }`}
-            >
-              Chess
-              <ChevronDownIcon className='ml-2 mt-2 h-5 w-5' />
-            </Menu.Button>
+    <div className="chess">
+      <div className="chess__field">
+        <EvalBar
+          score={score}
+          orientation={orientation}
+          thinking={thinking}
+          hidden={!engineOn || !engine.ready}
+        />
+
+        <div className="chess__stack">
+          <div className="chess__player">
+            <span className="chess__who">{view.names[away]}</span>
+            <Taken seat={away} material={material} />
           </div>
-          <Transition
-            as={Fragment}
-            enter='transition ease-in-out duration-300'
-            enterFrom='transform opacity-0 scale-0'
-            enterTo='transform opacity-100 scale-100'
-            leave='transition ease-in-out duration-300'
-            leaveFrom='transform opacity-100 scale-100'
-            leaveTo='transform opacity-0 scale-0'
-          >
-            <Menu.Items
-              className={`absolute left-0 mt-2 ml-4 w-40 origin-top rounded-md shadow ${
-                theme == "dark" ? "bg-slate-800" : "bg-slate-100"
-              }`}
-            >
-              <Menu.Item
-                className={` w-full cursor-pointer text-left rounded transition-colors ease-in-out duration-300 ${
-                  theme == "dark"
-                    ? "text-white hover:bg-gray-700"
-                    : "text-neutral-600 hover:text-neutral-900 hover:bg-slate-300"
-                }`}
-              >
-                <button className='text-sm '>New game (1P)</button>
-              </Menu.Item>
-              <Menu.Item
-                className={` w-full cursor-pointer text-left rounded transition-colors ease-in-out duration-300 ${
-                  theme == "dark"
-                    ? "text-white hover:bg-gray-700"
-                    : "text-neutral-600 hover:text-neutral-900 hover:bg-slate-300"
-                }`}
-              >
-                <button className='text-sm '>New game (2P)</button>
-              </Menu.Item>
-              <Menu.Item
-                className={` w-full cursor-pointer text-left rounded transition-colors ease-in-out duration-300 ${
-                  theme == "dark"
-                    ? "text-white hover:bg-gray-700"
-                    : "text-neutral-600 hover:text-neutral-900 hover:bg-slate-300"
-                }`}
-              >
-                <button className='text-sm '>Analysis</button>
-              </Menu.Item>
-            </Menu.Items>
-          </Transition>
-        </Menu>
-        <div className='flex justify-center h-4/6 mt-6 lg:h-5/6 lg:mt-0 space-x-4'>
-          <ChessBoard
+
+          <Board
             board={board}
-            chessboard={chessboardRef}
-            grabPiece={grabPiece}
-            letPiece={letPiece}
-            movePiece={movePiece}
-            rightClickHandler={rightClickHandler}
+            orientation={orientation}
+            interactive={canPlay}
+            selected={selected}
+            targets={targets}
+            lastMove={lastMove}
+            checkSquare={shownCheck}
+            marks={marks}
+            arrows={arrows}
+            hintArrow={hintArrow}
+            promotion={promotion}
+            onSelect={pressSquare}
+            onMove={(from, to) => attemptMove(from, to)}
+            onMark={toggleMark}
+            onArrow={toggleArrow}
+            onPromote={(type) => attemptMove(promotion.from, promotion.to, type)}
+            onCancelPromotion={() => setPromotion(null)}
           />
-          <Moves moves={movesHistory} />
+
+          <div className="chess__player">
+            <span className="chess__who">{view.names[orientation]}</span>
+            <Taken seat={orientation} material={material} />
+          </div>
         </div>
       </div>
-    </>
+
+      <div className="chess__side">
+        <div className="stack" style={{ gap: 10 }}>
+          <span className="zone-label" style={{ margin: 0 }}>
+            Table
+          </span>
+          <Peg options={MODES} value={mode} onChange={setMode} label="How you are playing" />
+        </div>
+
+        <p className="status">
+          {mode === "bot" ? <Cpu size={16} /> : mode === "online" ? <Users size={16} /> : <Bulb size={16} />}
+          <span>{statusLine()}</span>
+        </p>
+
+        {engine.failed && (
+          <p className="notice" role="alert">
+            The engine did not load, so the bot and the eval bar are off. Run
+            <code> npm install </code> to fetch it.
+          </p>
+        )}
+
+        <MoveList
+          moves={view.moves}
+          cursor={cursor}
+          onJump={(index) => setCursor(Math.max(-1, Math.min(view.moves.length - 1, index)))}
+          verdicts={review.report?.verdicts || null}
+          result={view.over ? resultLine(view, view.names) : null}
+        />
+
+        {currentVerdict?.bestSan && (
+          <p className="chalk chalk--tight">
+            Best was <b>{currentVerdict.bestSan}</b>.
+          </p>
+        )}
+
+        {(showReview || review.status === "running") && (
+          <ReviewPanel review={review} names={view.names} onClose={() => setShowReview(false)} />
+        )}
+
+        <div className="tools">
+          <button type="button" className="tool" onClick={() => setOrientation((o) => (o === "w" ? "b" : "w"))}>
+            <Undo size={16} />
+            <em>Flip</em>
+          </button>
+          <button
+            type="button"
+            className={`tool ${engineOn ? "is-on" : ""}`}
+            onClick={() => setEngineOn((on) => !on)}
+            disabled={!engine.ready}>
+            <Bulb size={16} />
+            <em>Engine</em>
+          </button>
+          {mode !== "online" && (
+            <button
+              type="button"
+              className="tool"
+              onClick={takeback}
+              disabled={!view.moves.length}>
+              <Undo size={16} />
+              <em>Take back</em>
+            </button>
+          )}
+        </div>
+
+        {view.over && canReview && (
+          <button
+            type="button"
+            className="key"
+            style={{ width: "100%" }}
+            onClick={() => {
+              setShowReview(true);
+              review.run(view.moves);
+            }}
+            disabled={review.status === "running"}>
+            {review.status === "done" ? "Review again" : "Review the game"}
+          </button>
+        )}
+
+        {mode === "analysis" && (
+          <div className="stack">
+            <label className="field">
+              <span className="field__label">Load a FEN or a PGN</span>
+              <input
+                className="field__input"
+                value={loadText}
+                placeholder="rnbq… or 1. e4 e5"
+                onChange={(event) => {
+                  setLoadText(event.target.value);
+                  setLoadError(null);
+                }}
+              />
+            </label>
+            <div className="row" style={{ gap: 8 }}>
+              <button type="button" className="key key--quiet" onClick={loadPosition}>
+                Load
+              </button>
+              <button type="button" className="key key--quiet" onClick={() => copyText(gameRef.current.pgn())}>
+                <Copy size={14} /> PGN
+              </button>
+              <button type="button" className="key key--quiet" onClick={() => copyText(view.fen)}>
+                <Copy size={14} /> FEN
+              </button>
+            </div>
+            {loadError && (
+              <p className="notice" role="alert">
+                {loadError}
+              </p>
+            )}
+            <button type="button" className="key" style={{ width: "100%" }} onClick={newLocalGame}>
+              Clear the board
+            </button>
+          </div>
+        )}
+
+        {mode === "bot" && (
+          <div className="stack">
+            <div className="stack" style={{ gap: 10 }}>
+              <span className="zone-label" style={{ margin: 0 }}>
+                Machine
+              </span>
+              <Peg options={LEVELS} value={levelId} onChange={setLevelId} label="Machine level" />
+            </div>
+            <div className="stack" style={{ gap: 10 }}>
+              <span className="zone-label" style={{ margin: 0 }}>
+                You play
+              </span>
+              <Peg options={SIDES} value={sideChoice} onChange={setSideChoice} label="Your colour" />
+            </div>
+            <button type="button" className="key" style={{ width: "100%" }} onClick={startBotGame}>
+              New game
+            </button>
+          </div>
+        )}
+
+        {mode === "online" && (
+          <div className="stack">
+            {!online ? (
+              <>
+                <label className="field">
+                  <span className="field__label">Your name</span>
+                  <input
+                    className="field__input"
+                    value={name}
+                    maxLength={18}
+                    placeholder="Optional"
+                    onChange={(event) => setName(event.target.value)}
+                  />
+                </label>
+
+                <div className="stack" style={{ gap: 10 }}>
+                  <span className="zone-label" style={{ margin: 0 }}>
+                    You play
+                  </span>
+                  <Peg options={SIDES} value={sideChoice} onChange={setSideChoice} label="Your colour" />
+                </div>
+
+                <button
+                  type="button"
+                  className="key"
+                  style={{ width: "100%" }}
+                  disabled={room.busy}
+                  onClick={() => room.host(name, { seat: sideChoice === "random" ? undefined : sideChoice })}>
+                  {room.busy ? "Opening…" : "Open a room"}
+                </button>
+
+                <div className="rule">
+                  <span>or</span>
+                </div>
+
+                <label className="field">
+                  <span className="field__label">Room code</span>
+                  <input
+                    className="field__input field__input--code"
+                    value={joinCode}
+                    maxLength={4}
+                    placeholder="ABCD"
+                    onChange={(event) => setJoinCode(event.target.value.toUpperCase())}
+                  />
+                </label>
+
+                <button
+                  type="button"
+                  className="key key--quiet"
+                  style={{ width: "100%" }}
+                  disabled={room.busy || joinCode.length !== 4}
+                  onClick={() => room.join(joinCode, name)}>
+                  Join that room
+                </button>
+              </>
+            ) : (
+              <>
+                <div className="roomcode">
+                  <span className="roomcode__label">Room</span>
+                  <strong className="roomcode__value">{online.code}</strong>
+                  <button
+                    type="button"
+                    className="roomcode__copy"
+                    onClick={() => copyText(shareLink)}
+                    title="Copy the invite link">
+                    <Copy size={16} />
+                    <span className="sr-only">Copy the invite link</span>
+                  </button>
+                </div>
+
+                {copied && (
+                  <p className="chalk chalk--tight" role="status">
+                    Invite link copied. Send it to whoever you want to play.
+                  </p>
+                )}
+
+                <div className="seats">
+                  {["w", "b"].map((seat) => (
+                    <div key={seat} className={`seat ${online.seat === seat ? "is-you" : ""}`}>
+                      <span className="seat__mark">{seat === "w" ? "White" : "Black"}</span>
+                      <span className="seat__name">
+                        {online.names[seat] || (online.status === "waiting" ? "Open seat" : "—")}
+                      </span>
+                      {online.turn === seat && online.status === "playing" && (
+                        <Tag tone="live" mark="live">
+                          Turn
+                        </Tag>
+                      )}
+                    </div>
+                  ))}
+                </div>
+
+                <div className="readout">
+                  <div className="readout__item">
+                    <span className="readout__label">White</span>
+                    <span className="readout__value">{online.score.w}</span>
+                  </div>
+                  <div className="readout__item">
+                    <span className="readout__label">Drawn</span>
+                    <span className="readout__value">{online.score.draw}</span>
+                  </div>
+                  <div className="readout__item">
+                    <span className="readout__label">Black</span>
+                    <span className="readout__value">{online.score.b}</span>
+                  </div>
+                </div>
+
+                {drawOffered && (
+                  <div className="stack" style={{ gap: 8 }}>
+                    <p className="chalk chalk--tight">
+                      {view.names[online.drawOffer]} offers a draw.
+                    </p>
+                    <div className="row" style={{ gap: 8 }}>
+                      <button type="button" className="key" onClick={() => room.act("accept-draw")}>
+                        Accept
+                      </button>
+                      <button
+                        type="button"
+                        className="key key--quiet"
+                        onClick={() => room.act("decline-draw")}>
+                        Decline
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {online.status === "playing" && (
+                  <div className="row" style={{ gap: 8 }}>
+                    <button
+                      type="button"
+                      className="key key--quiet"
+                      onClick={() => room.act("offer-draw")}
+                      disabled={online.drawOffer === online.seat}>
+                      {online.drawOffer === online.seat ? "Draw offered" : "Offer a draw"}
+                    </button>
+                    <button type="button" className="key key--quiet" onClick={() => room.act("resign")}>
+                      Resign
+                    </button>
+                  </div>
+                )}
+
+                {view.over && (
+                  <button type="button" className="key" style={{ width: "100%" }} onClick={room.rematch}>
+                    {online.rematch[online.seat] ? "Waiting for them…" : "Play again"}
+                  </button>
+                )}
+
+                <div className="row" style={{ gap: 8 }}>
+                  <Tag tone={room.live ? "live" : "off"} mark={room.live ? "live" : "off"}>
+                    {room.live ? "Connected" : "Reconnecting"}
+                  </Tag>
+                  <button type="button" className="key key--quiet" onClick={room.leave}>
+                    Leave
+                  </button>
+                </div>
+              </>
+            )}
+
+            {room.error && (
+              <p className="notice" role="alert">
+                {room.error}
+              </p>
+            )}
+
+            <p className="chalk chalk--tight">
+              Rooms live in the server that is running this site, and close two hours after the
+              last move. Nothing is stored anywhere else.
+            </p>
+          </div>
+        )}
+
+        <p className="chalk chalk--tight">
+          Drag or click to move. Right-click marks a square, right-drag draws an arrow. Arrow keys
+          walk the moves, F flips the board.
+        </p>
+      </div>
+    </div>
   );
 }

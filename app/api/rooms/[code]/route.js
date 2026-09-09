@@ -1,23 +1,20 @@
-import {
-  getRoom,
-  joinRoom,
-  leaveRoom,
-  playMove,
-  publicState,
-  requestRematch,
-} from "../../../../lib/rooms";
+import { act, getRoom, joinRoom, leaveRoom, publicState, requestRematch } from "../../../../lib/rooms";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 const ERRORS = {
   "no-room": [404, "That room has closed or never existed."],
+  "no-game": [400, "That game has no rooms."],
   full: [409, "That room already has two players."],
   "not-seated": [403, "You are not seated in this room."],
   "not-playing": [409, "The game is not running."],
   "not-your-turn": [409, "It is not your turn."],
   "bad-square": [400, "That square is not on the board."],
+  "bad-action": [400, "Unknown action."],
   taken: [409, "That square is taken."],
+  "illegal-move": [409, "That move is not legal here."],
+  "no-offer": [409, "There is no draw on the table."],
   "still-playing": [409, "The game is still running."],
 };
 
@@ -49,12 +46,6 @@ export async function POST(request, { params }) {
     });
   }
 
-  if (action === "move") {
-    const result = playMove(code, token, body.index);
-    if (result.error) return fail(result.error);
-    return Response.json({ state: publicState(result.room, token) });
-  }
-
   if (action === "rematch") {
     const result = requestRematch(code, token);
     if (result.error) return fail(result.error);
@@ -66,5 +57,8 @@ export async function POST(request, { params }) {
     return Response.json({ ok: true });
   }
 
-  return Response.json({ error: "bad-action", message: "Unknown action." }, { status: 400 });
+  // everything else is the game's own business
+  const result = act(code, token, action, body);
+  if (result.error) return fail(result.error);
+  return Response.json({ state: publicState(result.room, token) });
 }

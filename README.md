@@ -17,7 +17,7 @@ Games:
 
 - [x] **Sudoku** — a fresh puzzle every game, generated in the browser, at four difficulties
 - [x] **Tic-Tac-Toe** — against the machine, against the next chair, or online by room code
-- [ ] **Chess** — playable, but still on the pre-rebuild interface and with no endgame detection
+- [x] **Chess** — an analysis board, a Stockfish opponent at five strengths, or online by room code
 
 ## Routes
 
@@ -30,8 +30,22 @@ Games:
 | `/standings`     | The ladder and your card — recent games, wins, day run             |
 | `/api/health`    | Health check                                                       |
 | `/api/rooms`     | Opens an online room                                               |
-| `/api/rooms/:code` | Join, move, rematch, leave                                       |
+| `/api/rooms/:code` | Join, move, resign, draw, rematch, leave                        |
 | `/api/rooms/:code/stream` | Server-sent events: the room pushes every change         |
+
+## Chess
+
+Three tables, one board: **Analysis** (both sides yours, load a FEN or PGN, engine lines on),
+**Bot** (Stockfish at Learner / Casual / Club / Sharp / Brutal, pick your colour), and
+**Online** (open a room, send the invite link, the server validates every move). Move list with
+navigation, eval bar, captured material, promotion picker, draw offers and resignation, and a
+post-game review that scores each move against the engine and gives both sides an accuracy.
+
+Rules come from [chess.js](https://github.com/jhlywa/chess.js). The engine is
+[Stockfish.js](https://github.com/nmrugg/stockfish.js) (GPLv3), the lite single-threaded wasm
+build, which needs no cross-origin isolation headers. `npm install` copies it into
+`public/engine/` — it is 7 MB and is not in git, so a fresh clone needs that install before the
+bot or the eval bar will run.
 
 ## Sudoku
 

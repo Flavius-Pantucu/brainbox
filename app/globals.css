@@ -2269,26 +2269,523 @@ button {
   }
 }
 
-/* A game still on the pre-rebuild interface sits on its own panel until its
-   turn comes. */
-.legacy {
-  grid-column: 1 / -1;
-  background: var(--plate-face);
-  border: 1px solid var(--keyline-strong);
-  border-radius: var(--radius-plate);
+
+
+/* =========================================================================
+   CHESS
+   ========================================================================= */
+
+.chess {
+  display: contents;
+}
+
+.chess__field {
+  grid-column: 1;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  gap: var(--u);
+  align-content: center;
+  justify-content: center;
+  min-height: 0;
+  min-width: 0;
+}
+
+/* the stack is only there to group the board with its two nameplates; the
+   grid above does the placing */
+.chess__stack {
+  display: contents;
+}
+
+.chess__side {
+  grid-column: 2;
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--u) * 2);
+  min-height: 0;
+  overflow: auto;
+  padding-bottom: var(--u);
+}
+
+.chess__player {
+  grid-column: 2;
+  display: flex;
+  align-items: center;
+  gap: var(--u);
+  min-height: 24px;
+}
+
+.chess__who {
+  font-family: var(--font-label);
+  font-size: 0.74rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-quiet);
+}
+
+.taken {
+  display: inline-flex;
+  align-items: center;
+  min-height: 16px;
+}
+
+.taken img {
+  width: 15px;
+  height: 15px;
+  margin-right: -5px;
+  opacity: 0.85;
+}
+
+.taken em {
+  margin-left: calc(var(--u) * 1.25);
+  font-style: normal;
+  font-size: 0.72rem;
+  color: var(--ink-faint);
+}
+
+/* ---------- the board ---------- */
+
+.chessboard__wrap {
+  grid-column: 2;
+  grid-row: 2;
+  position: relative;
+  height: 100%;
+  aspect-ratio: 1;
+  max-height: min(100%, 72vh);
+  max-width: 100%;
+  margin: auto;
+}
+
+.chessboard {
+  --sq-light: color-mix(in srgb, var(--paint-bone) 90%, var(--paint-steel));
+  --sq-dark: color-mix(in srgb, var(--paint-steel) 58%, var(--paint-navy));
+  --sq-last: color-mix(in srgb, var(--paint-cobalt) 42%, transparent);
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: grid;
+  grid-template-columns: repeat(8, minmax(0, 1fr));
+  grid-template-rows: repeat(8, minmax(0, 1fr));
+  border-radius: var(--radius-sm);
+  overflow: hidden;
   box-shadow: var(--lift-2);
-  padding: calc(var(--u) * 2);
+  touch-action: none;
+}
+
+.chesssq {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.chesssq--light {
+  background: var(--sq-light);
+}
+
+.chesssq--dark {
+  background: var(--sq-dark);
+}
+
+.chesssq.is-last {
+  background-image: linear-gradient(var(--sq-last), var(--sq-last));
+}
+
+.chesssq.is-selected {
+  box-shadow: inset 0 0 0 3px var(--paint-cobalt);
+}
+
+.chesssq.is-marked {
+  box-shadow: inset 0 0 0 3px #c8622a;
+}
+
+.chesssq.is-check {
+  background-image: radial-gradient(circle, #d8483a 0%, rgba(216, 72, 58, 0) 72%);
+}
+
+.chesssq.is-lifted .chesspiece {
+  opacity: 0.25;
+}
+
+.chesssq__rank,
+.chesssq__file {
+  position: absolute;
+  font-family: var(--font-label);
+  font-size: 0.56rem;
+  letter-spacing: 0.04em;
+  color: var(--paint-navy);
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.chesssq__rank {
+  top: 2px;
+  left: 3px;
+}
+
+.chesssq__file {
+  bottom: 1px;
+  right: 4px;
+}
+
+.chesspiece {
+  width: 88%;
+  height: 88%;
+  pointer-events: none;
+  user-select: none;
+}
+
+.chesspiece--drag {
+  position: fixed;
+  z-index: 60;
+  transform: translate(-50%, -50%);
+  filter: drop-shadow(0 6px 10px rgba(0, 0, 0, 0.45));
+}
+
+.chessdot {
+  position: absolute;
+  width: 28%;
+  height: 28%;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--paint-navy) 34%, transparent);
+  pointer-events: none;
+}
+
+.chessdot--take {
+  width: 88%;
+  height: 88%;
+  background: none;
+  border: 5px solid color-mix(in srgb, var(--paint-navy) 30%, transparent);
+}
+
+.chessoverlay {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.chessarrow line {
+  stroke-width: 1.6;
+  stroke-linecap: round;
+}
+
+.chessarrow--drawn line,
+.chessarrow--drawn polygon {
+  stroke: #c8622a;
+  fill: #c8622a;
+  opacity: 0.72;
+}
+
+.chessarrow--hint line,
+.chessarrow--hint polygon {
+  stroke: var(--paint-cobalt);
+  fill: var(--paint-cobalt);
+  opacity: 0.55;
+}
+
+/* ---------- promotion ---------- */
+
+.chesspromo {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: color-mix(in srgb, var(--paint-navy) 62%, transparent);
+  z-index: 40;
+}
+
+.chesspromo__card {
   display: flex;
   flex-direction: column;
   align-items: center;
-  overflow: auto;
+  gap: var(--u);
+  padding: calc(var(--u) * 2);
+  border-radius: var(--radius);
+  background: var(--plate-face);
+  box-shadow: var(--lift-2);
 }
 
-.legacy__note {
-  margin: calc(var(--u) * 2) 0 0;
+.chesspromo__label {
+  font-family: var(--font-label);
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
   color: var(--plate-ink-quiet);
 }
 
-.legacy :is(.text-white, .text-slate-100) {
-  color: var(--paint-navy) !important;
+.chesspromo__row {
+  display: flex;
+  gap: var(--u);
+}
+
+.chesspromo__pick {
+  width: 48px;
+  height: 48px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--keyline-strong);
+  border-radius: var(--radius-xs);
+  background: color-mix(in srgb, var(--paint-bone) 92%, var(--paint-steel));
+  cursor: pointer;
+  transition: transform 140ms var(--swing);
+}
+
+.chesspromo__pick:hover {
+  transform: translateY(-2px);
+}
+
+.chesspromo__pick img {
+  width: 80%;
+  height: 80%;
+}
+
+/* ---------- eval bar ---------- */
+
+.evalbar {
+  grid-column: 1;
+  grid-row: 2;
+  position: relative;
+  width: 14px;
+  height: 100%;
+  max-height: min(100%, 72vh);
+  margin: auto 0;
+  border-radius: var(--radius-pill);
+  overflow: hidden;
+  background: var(--paint-navy);
+  border: 1px solid var(--keyline-strong);
+}
+
+.evalbar__white {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--paint-bone);
+  transition: height 320ms var(--swing);
+}
+
+.evalbar--flipped .evalbar__white {
+  bottom: auto;
+  top: 0;
+}
+
+.evalbar.is-thinking {
+  border-color: var(--signal);
+}
+
+.evalbar__value {
+  position: absolute;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-family: var(--font-label);
+  font-size: 0.5rem;
+  letter-spacing: 0.02em;
+}
+
+.evalbar__value.is-white {
+  bottom: 3px;
+  color: var(--paint-navy);
+}
+
+.evalbar__value.is-black {
+  top: 3px;
+  color: var(--paint-bone);
+}
+
+.evalbar--flipped .evalbar__value.is-white {
+  bottom: auto;
+  top: 3px;
+}
+
+.evalbar--flipped .evalbar__value.is-black {
+  top: auto;
+  bottom: 3px;
+}
+
+/* ---------- the scoresheet ---------- */
+
+.movelist {
+  display: flex;
+  flex-direction: column;
+  gap: var(--u);
+  border: 1px solid var(--keyline);
+  border-radius: var(--radius-sm);
+  background: var(--routed);
+  padding: var(--u);
+}
+
+.movelist__scroll {
+  max-height: 30vh;
+  overflow: auto;
+}
+
+.movelist__empty {
+  margin: 0;
+  padding: var(--u);
+}
+
+.movelist__row {
+  display: grid;
+  grid-template-columns: 26px minmax(0, 1fr) minmax(0, 1fr);
+  align-items: center;
+  gap: 2px;
+}
+
+.movelist__no {
+  font-family: var(--font-label);
+  font-size: 0.68rem;
+  color: var(--ink-faint);
+  text-align: right;
+  padding-right: var(--u);
+}
+
+.movelist__half {
+  display: flex;
+  align-items: baseline;
+  gap: 3px;
+  min-height: 22px;
+  padding: 2px var(--u);
+  border: 0;
+  border-radius: var(--radius-xs);
+  background: none;
+  color: var(--ink);
+  font-size: 0.82rem;
+  text-align: left;
+  cursor: pointer;
+}
+
+button.movelist__half:hover {
+  background: color-mix(in srgb, var(--ink) 10%, transparent);
+}
+
+.movelist__half.is-current {
+  background: var(--signal);
+  color: var(--signal-on);
+}
+
+.movelist__mark {
+  font-style: normal;
+  font-weight: 700;
+  font-size: 0.72rem;
+}
+
+.movelist__half.is-good .movelist__mark,
+.movelist__half.is-best .movelist__mark {
+  color: #2f8f5b;
+}
+
+.movelist__half.is-warn .movelist__mark {
+  color: #c8862a;
+}
+
+.movelist__half.is-bad .movelist__mark,
+.movelist__half.is-worst .movelist__mark {
+  color: #c8422a;
+}
+
+.movelist__result {
+  margin: 0;
+  padding: 0 var(--u);
+  font-size: 0.78rem;
+  color: var(--ink-quiet);
+}
+
+.movelist__nav {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 4px;
+}
+
+.movelist__nav .tool {
+  justify-content: center;
+  padding: 4px;
+}
+
+/* ---------- the review ---------- */
+
+.review {
+  display: flex;
+  flex-direction: column;
+  gap: var(--u);
+  border: 1px solid var(--keyline);
+  border-radius: var(--radius-sm);
+  background: var(--routed);
+  padding: calc(var(--u) * 1.5);
+}
+
+.review__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--u);
+}
+
+.review__meter {
+  height: 6px;
+  border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--ink) 14%, transparent);
+  overflow: hidden;
+}
+
+.review__meter span {
+  display: block;
+  height: 100%;
+  background: var(--signal);
+  transition: width 240ms ease-out;
+}
+
+.review__curve {
+  width: 100%;
+  height: 64px;
+  background: var(--paint-navy);
+  border-radius: var(--radius-xs);
+}
+
+.review__fill {
+  fill: color-mix(in srgb, var(--paint-bone) 82%, transparent);
+}
+
+.review__line {
+  fill: none;
+  stroke: var(--paint-bone);
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+
+.review__mid {
+  stroke: var(--paint-steel);
+  stroke-width: 1;
+  stroke-dasharray: 3 3;
+  vector-effect: non-scaling-stroke;
+  opacity: 0.6;
+}
+
+.review__table {
+  margin: 0;
+}
+
+@media (max-width: 900px) {
+  .chess__field,
+  .chess__side {
+    grid-column: 1;
+  }
+
+  .chessboard__wrap {
+    height: auto;
+    width: min(100%, 62vh);
+    max-height: none;
+  }
+
+  .evalbar {
+    height: auto;
+    align-self: stretch;
+  }
+}
+
+span.movelist__half {
+  cursor: default;
 }
