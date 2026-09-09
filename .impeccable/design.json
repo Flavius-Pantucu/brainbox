@@ -4,53 +4,249 @@
   "title": "Design System: BrainBox",
   "extensions": {
     "colorMeta": {
-      "paint-navy": { "role": "neutral", "displayName": "Board Navy", "canonical": "#0c1725", "tonalRamp": ["#05090f", "#0c1725", "#152437", "#24384f", "#3c5470", "#5c7691", "#8fa2b8", "#e8edf4"] },
-      "paint-slate": { "role": "neutral", "displayName": "Panel Slate", "canonical": "#24384f", "tonalRamp": ["#0a1017", "#111c28", "#1a2a3b", "#24384f", "#3a5470", "#5b7691", "#93a8bd", "#d5dfea"] },
-      "paint-steel": { "role": "neutral", "displayName": "Steel", "canonical": "#8fa2b8", "tonalRamp": ["#1a2430", "#2c3a49", "#425364", "#5c6e81", "#78899e", "#8fa2b8", "#b4c2d2", "#dde4ed"] },
-      "paint-bone": { "role": "neutral", "displayName": "Bone", "canonical": "#e8edf4", "tonalRamp": ["#1d232b", "#333c47", "#4d5865", "#6b7783", "#8f99a5", "#b4bdc7", "#d3dae3", "#e8edf4"] },
-      "paint-cobalt": { "role": "primary", "displayName": "Signal Cobalt", "canonical": "#4f8ce8", "tonalRamp": ["#0a1b33", "#123058", "#1a457f", "#2560a8", "#3574cc", "#4f8ce8", "#84b0f0", "#c2d7f8"] },
-      "fault": { "role": "tertiary", "displayName": "Fault Red", "canonical": "#b3241a", "tonalRamp": ["#2a0806", "#460e0a", "#66150f", "#8a1c14", "#b3241a", "#d24a3f", "#e5847c", "#f5c8c4"] },
-      "signal-ink": { "role": "primary", "displayName": "Signal Ink (text-safe cobalt)", "canonical": "color-mix(in srgb, var(--paint-cobalt) 88%, var(--paint-bone))" },
-      "routed": { "role": "neutral", "displayName": "Routed Channel", "canonical": "color-mix(in srgb, var(--paint-navy) 64%, #000)" },
-      "plate-face": { "role": "neutral", "displayName": "Enamel Plate Face", "canonical": "color-mix(in srgb, var(--paint-bone) 90%, var(--paint-steel))" }
+      "paint-navy": {
+        "role": "neutral",
+        "displayName": "Board Navy",
+        "canonical": "#0c1725",
+        "tonalRamp": [
+          "#05090f",
+          "#0c1725",
+          "#152437",
+          "#24384f",
+          "#3c5470",
+          "#5c7691",
+          "#8fa2b8",
+          "#e8edf4"
+        ]
+      },
+      "paint-slate": {
+        "role": "neutral",
+        "displayName": "Panel Slate",
+        "canonical": "#24384f",
+        "tonalRamp": [
+          "#0a1017",
+          "#111c28",
+          "#1a2a3b",
+          "#24384f",
+          "#3a5470",
+          "#5b7691",
+          "#93a8bd",
+          "#d5dfea"
+        ]
+      },
+      "paint-steel": {
+        "role": "neutral",
+        "displayName": "Steel",
+        "canonical": "#8fa2b8",
+        "tonalRamp": [
+          "#1a2430",
+          "#2c3a49",
+          "#425364",
+          "#5c6e81",
+          "#78899e",
+          "#8fa2b8",
+          "#b4c2d2",
+          "#dde4ed"
+        ]
+      },
+      "paint-bone": {
+        "role": "neutral",
+        "displayName": "Bone",
+        "canonical": "#e8edf4",
+        "tonalRamp": [
+          "#1d232b",
+          "#333c47",
+          "#4d5865",
+          "#6b7783",
+          "#8f99a5",
+          "#b4bdc7",
+          "#d3dae3",
+          "#e8edf4"
+        ]
+      },
+      "paint-cobalt": {
+        "role": "primary",
+        "displayName": "Signal Cobalt",
+        "canonical": "#4f8ce8",
+        "tonalRamp": [
+          "#0a1b33",
+          "#123058",
+          "#1a457f",
+          "#2560a8",
+          "#3574cc",
+          "#4f8ce8",
+          "#84b0f0",
+          "#c2d7f8"
+        ]
+      },
+      "fault": {
+        "role": "tertiary",
+        "displayName": "Fault Red",
+        "canonical": "#b3241a",
+        "tonalRamp": [
+          "#2a0806",
+          "#460e0a",
+          "#66150f",
+          "#8a1c14",
+          "#b3241a",
+          "#d24a3f",
+          "#e5847c",
+          "#f5c8c4"
+        ]
+      },
+      "signal-ink": {
+        "role": "primary",
+        "displayName": "Signal Ink (text-safe cobalt)",
+        "canonical": "color-mix(in srgb, var(--paint-cobalt) 88%, var(--paint-bone))"
+      },
+      "routed": {
+        "role": "neutral",
+        "displayName": "Routed Channel",
+        "canonical": "color-mix(in srgb, var(--paint-navy) 64%, #000)"
+      },
+      "plate-face": {
+        "role": "neutral",
+        "displayName": "Enamel Plate Face",
+        "canonical": "color-mix(in srgb, var(--paint-bone) 90%, var(--paint-steel))"
+      }
     },
     "typographyMeta": {
-      "display": { "displayName": "Display", "purpose": "The day's game on the oversized dashboard plate. Fredoka, capped at 600. One per screen." },
-      "headline": { "displayName": "Headline", "purpose": "Play title and the game-over verdict on a stage veil." },
-      "numeral-wide": { "displayName": "Numeral Wide", "purpose": "The streak count on the dashboard." },
-      "numeral": { "displayName": "Numeral", "purpose": "Personal-best values on plates." },
-      "numeral-small": { "displayName": "Numeral Small", "purpose": "Number-pad digits and fixed readout figures." },
-      "stage-title": { "displayName": "Stage Title", "purpose": "Game name in the stage bar; deliberately smaller than the dashboard display." },
-      "wordmark": { "displayName": "Wordmark", "purpose": "The rail mark only. Fredoka 500, mixed case, near-neutral tracking." },
-      "title": { "displayName": "Title", "purpose": "Game names on slot plates and ladder names." },
-      "body": { "displayName": "Body", "purpose": "Document default, Nunito, tabular figures." },
-      "chalk": { "displayName": "Chalk", "purpose": "The annotation voice: one-liners, notes, empty-state explanation. 46-62ch measure." },
-      "label": { "displayName": "Label", "purpose": "Zone labels: the body face uppercased and tracked via --font-label." },
-      "micro": { "displayName": "Micro", "purpose": "Tags, table headers, foot, peg options, key faces, tools." },
-      "nano": { "displayName": "Nano", "purpose": "Readout labels, field labels, room-code label, divider rules." },
-      "cell": { "displayName": "Cell", "purpose": "Sudoku digits sized in cqmin against the board's own container." }
+      "display": {
+        "displayName": "Display",
+        "purpose": "The day's game on the oversized dashboard plate. Fredoka, capped at 600. One per screen."
+      },
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "Play title and the game-over verdict on a stage veil."
+      },
+      "numeral-wide": {
+        "displayName": "Numeral Wide",
+        "purpose": "The streak count on the dashboard."
+      },
+      "numeral": {
+        "displayName": "Numeral",
+        "purpose": "Personal-best values on plates."
+      },
+      "numeral-small": {
+        "displayName": "Numeral Small",
+        "purpose": "Number-pad digits and fixed readout figures."
+      },
+      "stage-title": {
+        "displayName": "Stage Title",
+        "purpose": "Game name in the stage bar; deliberately smaller than the dashboard display."
+      },
+      "wordmark": {
+        "displayName": "Wordmark",
+        "purpose": "The rail mark only. Fredoka 500, mixed case, near-neutral tracking."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "Game names on slot plates and ladder names."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Document default, Nunito, tabular figures."
+      },
+      "chalk": {
+        "displayName": "Chalk",
+        "purpose": "The annotation voice: one-liners, notes, empty-state explanation. 46-62ch measure."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Zone labels: the body face uppercased and tracked via --font-label."
+      },
+      "micro": {
+        "displayName": "Micro",
+        "purpose": "Tags, table headers, foot, peg options, key faces, tools."
+      },
+      "nano": {
+        "displayName": "Nano",
+        "purpose": "Readout labels, field labels, room-code label, divider rules."
+      },
+      "cell": {
+        "displayName": "Cell",
+        "purpose": "Sudoku digits sized in cqmin against the board's own container."
+      }
     },
     "shadows": [
-      { "name": "lift-1", "value": "0 2px 0 rgba(0, 0, 0, 0.34), 0 6px 12px -6px rgba(0, 0, 0, 0.62)", "purpose": "Resting elevation: plates, nameplate, room-code fitting. Day coat rebuilds it from navy mixes." },
-      { "name": "lift-2", "value": "0 3px 0 rgba(0, 0, 0, 0.38), 0 14px 26px -12px rgba(0, 0, 0, 0.7)", "purpose": "A whole game surface: sudoku board, play surface, legacy panel." },
-      { "name": "cut", "value": "inset 0 3px 7px rgba(0, 0, 0, 0.62), inset 0 -1px 0 rgba(232, 237, 244, 0.07)", "purpose": "Every routed channel: slot, readout, status, field, peg groove." },
-      { "name": "key-rest", "value": "0 3px 0 rgba(0, 0, 0, 0.4), 0 10px 18px -10px rgba(0, 0, 0, 0.8)", "purpose": "The primary key at rest; 4px on hover, 1px on active." },
-      { "name": "rail-seat", "value": "0 1px 0 rgba(0, 0, 0, 0.3), 0 10px 20px -18px rgba(0, 0, 0, 0.9)", "purpose": "The sticky rail seated on the board." }
+      {
+        "name": "lift-1",
+        "value": "0 2px 0 rgba(0, 0, 0, 0.34), 0 6px 12px -6px rgba(0, 0, 0, 0.62)",
+        "purpose": "Resting elevation: plates, nameplate, room-code fitting. Day coat rebuilds it from navy mixes."
+      },
+      {
+        "name": "lift-2",
+        "value": "0 3px 0 rgba(0, 0, 0, 0.38), 0 14px 26px -12px rgba(0, 0, 0, 0.7)",
+        "purpose": "A whole game surface: sudoku board, play surface, legacy panel."
+      },
+      {
+        "name": "cut",
+        "value": "inset 0 3px 7px rgba(0, 0, 0, 0.62), inset 0 -1px 0 rgba(232, 237, 244, 0.07)",
+        "purpose": "Every routed channel: slot, readout, status, field, peg groove."
+      },
+      {
+        "name": "key-rest",
+        "value": "0 3px 0 rgba(0, 0, 0, 0.4), 0 10px 18px -10px rgba(0, 0, 0, 0.8)",
+        "purpose": "The primary key at rest; 4px on hover, 1px on active."
+      },
+      {
+        "name": "rail-seat",
+        "value": "0 1px 0 rgba(0, 0, 0, 0.3), 0 10px 20px -18px rgba(0, 0, 0, 0.9)",
+        "purpose": "The sticky rail seated on the board."
+      }
     ],
     "motion": [
-      { "name": "swing", "value": "cubic-bezier(0.16, 1, 0.3, 1)", "purpose": "The board's easing: plate drops, key presses, peg slides." },
-      { "name": "hang-drop", "value": "620ms var(--swing), 55ms per-index stagger", "purpose": "A plate landing on its hook. Under review; do not extend to new surfaces." },
-      { "name": "hang-lift", "value": "340ms cubic-bezier(0.4, 0, 0.7, 0.2)", "purpose": "The outgoing plate leaving the hook; the replacement waits 200ms for the hook to clear." },
-      { "name": "draw-mark", "value": "340ms cubic-bezier(0.22, 1, 0.36, 1) dash reveal; strike 420ms with 160ms delay", "purpose": "Stroked SVG marks drawing themselves in. Disabled under prefers-reduced-motion." },
-      { "name": "state-fade", "value": "140ms-160ms ease-out", "purpose": "Color and border transitions on controls." }
+      {
+        "name": "swing",
+        "value": "cubic-bezier(0.16, 1, 0.3, 1)",
+        "purpose": "The board's easing: plate drops, key presses, peg slides."
+      },
+      {
+        "name": "hang-drop",
+        "value": "620ms var(--swing), 55ms per-index stagger",
+        "purpose": "A plate landing on its hook. Under review; do not extend to new surfaces."
+      },
+      {
+        "name": "hang-lift",
+        "value": "340ms cubic-bezier(0.4, 0, 0.7, 0.2)",
+        "purpose": "The outgoing plate leaving the hook; the replacement waits 200ms for the hook to clear."
+      },
+      {
+        "name": "draw-mark",
+        "value": "340ms cubic-bezier(0.22, 1, 0.36, 1) dash reveal; strike 420ms with 160ms delay",
+        "purpose": "Stroked SVG marks drawing themselves in. Disabled under prefers-reduced-motion."
+      },
+      {
+        "name": "state-fade",
+        "value": "140ms-160ms ease-out",
+        "purpose": "Color and border transitions on controls."
+      }
     ],
     "breakpoints": [
-      { "name": "narrow", "value": "620px" },
-      { "name": "short", "value": "620px (height)" },
-      { "name": "compact", "value": "720px" },
-      { "name": "stage-stack", "value": "900px" },
-      { "name": "deck-stack", "value": "1000px" },
-      { "name": "board-max", "value": "1360px" }
+      {
+        "name": "narrow",
+        "value": "620px"
+      },
+      {
+        "name": "short",
+        "value": "620px (height)"
+      },
+      {
+        "name": "compact",
+        "value": "720px"
+      },
+      {
+        "name": "stage-stack",
+        "value": "900px"
+      },
+      {
+        "name": "deck-stack",
+        "value": "1000px"
+      },
+      {
+        "name": "board-max",
+        "value": "1360px"
+      }
     ]
   },
   "components": [
@@ -58,7 +254,7 @@
       "name": "BrainBox Mark",
       "kind": "custom",
       "refersTo": null,
-      "description": "A brain in a box. Soft-cornered box in currentColor, brain in the signal paint, interior held to three strokes so it survives at 16px.",
+      "description": "A solid brain. Two mirrored halves of one silhouette filled in the signal paint, with the hemisphere division and four folds cut out of the fill by a mask so the ground shows through and the mark needs no second colour.",
       "html": "<span class=\"ds-mark\"><svg viewBox=\"0 0 32 32\" width=\"30\" height=\"30\" fill=\"none\" aria-hidden=\"true\"><rect x=\"2.8\" y=\"2.8\" width=\"26.4\" height=\"26.4\" rx=\"8.6\" stroke=\"currentColor\" stroke-width=\"2.3\"/><g stroke=\"var(--signal, #4f8ce8)\" stroke-width=\"2.1\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M16 10.9v11.2\"/><path d=\"M16 11.7a4.1 4.1 0 0 0-6.8 2.7 3.4 3.4 0 0 0 .6 6.2 3.9 3.9 0 0 0 6.2 1.3\"/><path d=\"M16 11.7a4.1 4.1 0 0 1 6.8 2.7 3.4 3.4 0 0 1-.6 6.2 3.9 3.9 0 0 1-6.2 1.3\"/></g></svg><span class=\"ds-mark-word\">BrainBox</span></span>",
       "css": ".ds-mark { display: inline-flex; align-items: center; gap: 10px; color: var(--ink, #e8edf4); } .ds-mark svg { flex-shrink: 0; } .ds-mark-word { font-family: var(--font-display), sans-serif; font-weight: 500; letter-spacing: 0.005em; font-size: clamp(1.3rem, 2.3vw, 1.6rem); line-height: 1; }"
     },
@@ -161,35 +357,99 @@
   ],
   "narrative": {
     "northStar": "The Club Scoreboard",
-    "overview": "BrainBox is a hand-operated board in a club back room, painted in navy and cobalt. Nothing on it is generated: every figure sits on an enamel plate that somebody screwed to a hook, every region is a channel routed into the panel, every label is painted on. The interface reads as fabricated hardware rather than rendered software.\n\nThe hardware is rounded, not machined. Corners run on a soft scale (8/12/16/20px), the display face is curvy and capped at semibold, and the mark is a brain in a soft-cornered box. The board is friendly and it does not shout — the tone commitment is carried by the corner scale and the weight ceiling, not by adding color.\n\nThe board is lit two ways. The night coat is the navy ground with bone ink; the day coat relights the same board without touching the paint tin — roles swap, paints do not. There are five paints and no sixth. Every tone between them is a color-mix of two paints, never a new pigment and never a gradient.\n\nDensity is high but the voice is warm. Numbers are large, rounded and tabular; supporting text is small, quiet and short. Game play takes the whole window: a route that plays something claims the full viewport below the rail and sizes its board to that space rather than growing the page. Confirmed rejection: no gradients, no soft glassy translucency as a surface, no decorative color that is not also a fitting.",
+    "overview": "BrainBox is a hand-operated board in a club back room, painted in navy and cobalt. Nothing on it is generated: every figure sits on an enamel plate that somebody screwed to a hook, every region is a channel routed into the panel, every label is painted on. The interface reads as fabricated hardware rather than rendered software.\n\nThe hardware is rounded, not machined. Corners run on a soft scale (8/12/16/20px), the display face is curvy and capped at semibold, and the mark is a solid brain with its folds cut out. The board is friendly and it does not shout \u2014 the tone commitment is carried by the corner scale and the weight ceiling, not by adding color.\n\nThe board is lit two ways. The night coat is the navy ground with bone ink; the day coat relights the same board without touching the paint tin \u2014 roles swap, paints do not. There are five paints and no sixth. Every tone between them is a color-mix of two paints, never a new pigment and never a gradient.\n\nDensity is high but the voice is warm. Numbers are large, rounded and tabular; supporting text is small, quiet and short. Game play takes the whole window: a route that plays something claims the full viewport below the rail and sizes its board to that space rather than growing the page. Confirmed rejection: no gradients, no soft glassy translucency as a surface, no decorative color that is not also a fitting.",
     "keyCharacteristics": [
       "Five paints, closed; every other tone is a mix of two of them",
       "Two coats that swap roles, not paints (night is default; day is a relight)",
       "One rounded corner scale (8/12/16/20/999px); nothing gets a bespoke radius",
       "Two faces, two-and-a-half roles: Fredoka is the voice, Nunito is the reading and, set in caps and tracked, the labels",
-      "Display weight is capped at 600 — the board never shouts",
-      "Depth is offset-plus-blur shadow standing off the board, or an inset routed channel cut into it — never both directions in one element",
+      "Display weight is capped at 600 \u2014 the board never shouts",
+      "Depth is offset-plus-blur shadow standing off the board, or an inset routed channel cut into it \u2014 never both directions in one element",
       "A single fixed speckle layer over the whole window; no per-element texture",
       "State is a written word plus a drawn mark, never color alone",
       "Play routes own the window: a fixed-height stage, a board that fits it"
     ],
     "rules": [
-      { "name": "The Five Paints Rule", "body": "The palette is closed at five: navy, slate, steel, bone, cobalt. Any new tone is a color-mix of two of them. A sixth pigment requires a palette decision, not a component decision. Fault red is the single documented exception and is reserved for error.", "section": "colors" },
-      { "name": "The Repaint Rule", "body": "The day coat swaps roles, not paints. [data-paint=\"day\"] reassigns --ground, --ink, --signal, --signal-on, --panel, --routed and the shadow tokens; it never introduces a hex. Audit test: if a component reads --paint-* directly for a fill or a text color, it must look right in both coats or be rewritten onto a role token. The one licensed exception is a static asset that cannot read a variable: app/icon.svg and app/apple-icon.svg hardcode navy, bone and cobalt because a favicon has no CSS context.", "section": "colors" },
-      { "name": "The Signal Is Not Text Rule", "body": "Cobalt at ~4.4:1 on navy is a fill, a stroke, and large display type — never body text, never a small label. Words in the accent use --signal-ink.", "section": "colors" },
-      { "name": "The Computed Contrast Rule", "body": "--ink-quiet, --ink-faint, --plate-ink-quiet and every keyline mix are computed to clear 4.5:1 against their own ground in both coats. Changing a mix percentage means recomputing, not eyeballing.", "section": "colors" },
-      { "name": "The Two Faces Rule", "body": "Fredoka and Nunito, both self-hosted through next/font, no third family and no system display stack. --font-label is an alias of --font-text, not a new face. A new weight inside the loaded set is allowed; a new family is a system change.", "section": "typography" },
-      { "name": "The Quiet Ceiling Rule", "body": "Display type stops at 600. No 700, 800 or 900 anywhere in the display role — the ramp gets its emphasis from size, never from mass. Nunito's 700 exists for inline body emphasis only.", "section": "typography" },
-      { "name": "The Caps-For-Labels Rule", "body": "The label role is the body face uppercased and tracked: zone labels, tags, button faces, column headers, unit lines. It is always uppercase, always letterspaced between 0.12em and 0.16em, and never sets a sentence.", "section": "typography" },
-      { "name": "The Tabular Rule", "body": "Figures are tabular. font-variant-numeric: tabular-nums is set on body and re-asserted on every numeral class, so a score never shifts width as it changes.", "section": "typography" },
-      { "name": "The Every-Zone-Names-Itself Rule", "body": "Every region of the board opens with a zone label whose trailing hairline runs to the edge of the region. Wayfinding is reading, not iconography.", "section": "typography" },
-      { "name": "The Stage Owns The Window Rule", "body": "A play route claims the window below the rail and nothing inside it may grow that height. Boards fit the stage; the stage never fits the board. Audit test: with the game running at 1280x800, the page must not scroll.", "section": "layout" },
-      { "name": "The Page Owns Its Container Rule", "body": "The layout supplies no width and no padding. Every page states its own container — .board__inner for reading surfaces, .stage for play.", "section": "layout" },
-      { "name": "The Two Directions Rule", "body": "Every depth effect either stands off the board (offset + blur) or is cut into it (inset). Never both on one element, and never a shadow with zero offset.", "section": "elevation" },
-      { "name": "The No-Gradient Rule", "body": "No gradient anywhere. An apparent tone shift is a color-mix of two paints, the speckle layer, or a shadow.", "section": "elevation" },
-      { "name": "The One Speckle Rule", "body": "One fixed speckle layer for the whole window. Components do not carry their own texture, noise, or backdrop except the stage veil's single 3px blur.", "section": "elevation" },
-      { "name": "The One Corner Scale Rule", "body": "Every corner on the board comes from --radius-xs / -sm / --radius / -lg / -pill. No component declares its own radius literal. Audit test: a border-radius in the sheet that is not a var(--radius*) reference is a bug, with the two documented exceptions — the 12px concentric inner keyline and the 50% drilled hole in the hung plate.", "section": "shapes" },
-      { "name": "The One Stroke Rule", "body": "Every mark on the board is drawn at one weight in one file, so hardware and game marks read as a single set of fittings. A new icon is added there or not at all.", "section": "shapes" }
+      {
+        "name": "The Five Paints Rule",
+        "body": "The palette is closed at five: navy, slate, steel, bone, cobalt. Any new tone is a color-mix of two of them. A sixth pigment requires a palette decision, not a component decision. Fault red is the single documented exception and is reserved for error.",
+        "section": "colors"
+      },
+      {
+        "name": "The Repaint Rule",
+        "body": "The day coat swaps roles, not paints. [data-paint=\"day\"] reassigns --ground, --ink, --signal, --signal-on, --panel, --routed and the shadow tokens; it never introduces a hex. Audit test: if a component reads --paint-* directly for a fill or a text color, it must look right in both coats or be rewritten onto a role token. The one licensed exception is a static asset that cannot read a variable: app/icon.svg and app/apple-icon.svg hardcode navy, bone and cobalt because a favicon has no CSS context.",
+        "section": "colors"
+      },
+      {
+        "name": "The Signal Is Not Text Rule",
+        "body": "Cobalt at ~4.4:1 on navy is a fill, a stroke, and large display type \u2014 never body text, never a small label. Words in the accent use --signal-ink.",
+        "section": "colors"
+      },
+      {
+        "name": "The Computed Contrast Rule",
+        "body": "--ink-quiet, --ink-faint, --plate-ink-quiet and every keyline mix are computed to clear 4.5:1 against their own ground in both coats. Changing a mix percentage means recomputing, not eyeballing.",
+        "section": "colors"
+      },
+      {
+        "name": "The Two Faces Rule",
+        "body": "Fredoka and Nunito, both self-hosted through next/font, no third family and no system display stack. --font-label is an alias of --font-text, not a new face. A new weight inside the loaded set is allowed; a new family is a system change.",
+        "section": "typography"
+      },
+      {
+        "name": "The Quiet Ceiling Rule",
+        "body": "Display type stops at 600. No 700, 800 or 900 anywhere in the display role \u2014 the ramp gets its emphasis from size, never from mass. Nunito's 700 exists for inline body emphasis only.",
+        "section": "typography"
+      },
+      {
+        "name": "The Caps-For-Labels Rule",
+        "body": "The label role is the body face uppercased and tracked: zone labels, tags, button faces, column headers, unit lines. It is always uppercase, always letterspaced between 0.12em and 0.16em, and never sets a sentence.",
+        "section": "typography"
+      },
+      {
+        "name": "The Tabular Rule",
+        "body": "Figures are tabular. font-variant-numeric: tabular-nums is set on body and re-asserted on every numeral class, so a score never shifts width as it changes.",
+        "section": "typography"
+      },
+      {
+        "name": "The Every-Zone-Names-Itself Rule",
+        "body": "Every region of the board opens with a zone label whose trailing hairline runs to the edge of the region. Wayfinding is reading, not iconography.",
+        "section": "typography"
+      },
+      {
+        "name": "The Stage Owns The Window Rule",
+        "body": "A play route claims the window below the rail and nothing inside it may grow that height. Boards fit the stage; the stage never fits the board. Audit test: with the game running at 1280x800, the page must not scroll.",
+        "section": "layout"
+      },
+      {
+        "name": "The Page Owns Its Container Rule",
+        "body": "The layout supplies no width and no padding. Every page states its own container \u2014 .board__inner for reading surfaces, .stage for play.",
+        "section": "layout"
+      },
+      {
+        "name": "The Two Directions Rule",
+        "body": "Every depth effect either stands off the board (offset + blur) or is cut into it (inset). Never both on one element, and never a shadow with zero offset.",
+        "section": "elevation"
+      },
+      {
+        "name": "The No-Gradient Rule",
+        "body": "No gradient anywhere. An apparent tone shift is a color-mix of two paints, the speckle layer, or a shadow.",
+        "section": "elevation"
+      },
+      {
+        "name": "The One Speckle Rule",
+        "body": "One fixed speckle layer for the whole window. Components do not carry their own texture, noise, or backdrop except the stage veil's single 3px blur.",
+        "section": "elevation"
+      },
+      {
+        "name": "The One Corner Scale Rule",
+        "body": "Every corner on the board comes from --radius-xs / -sm / --radius / -lg / -pill. No component declares its own radius literal. Audit test: a border-radius in the sheet that is not a var(--radius*) reference is a bug, with the two documented exceptions \u2014 the 12px concentric inner keyline and the 50% drilled hole in the hung plate.",
+        "section": "shapes"
+      },
+      {
+        "name": "The One Stroke Rule",
+        "body": "Every mark on the board is drawn at one weight in one file, so hardware and game marks read as a single set of fittings. A new icon is added there or not at all.",
+        "section": "shapes"
+      }
     ],
     "dos": [
       "Do build from role tokens (--ground, --ink, --signal, --signal-on, --panel, --routed) so a component relights in both coats for free.",
@@ -198,7 +458,7 @@
       "Do express every space as a calc(var(--u) * n) multiple of the 8px unit.",
       "Do set labels in the body face, uppercased and tracked 0.12em-0.16em, via --font-label.",
       "Do give each new game a .stage with a .stage__bar and a .stage__body, and assemble its side rail from the existing furniture (.readout, .pad, .tools, .status, .field, .notice).",
-      "Do size a game board to the stage — container queries or cqmin type, min-height: 0 on the grid track — so the page never scrolls during play.",
+      "Do size a game board to the stage \u2014 container queries or cqmin type, min-height: 0 on the grid track \u2014 so the page never scrolls during play.",
       "Do state every status with a word plus a drawn form; color confirms it, it does not carry it.",
       "Do draw new marks in components/board/icons.js at the 1.6 stroke weight on the 24x24 box.",
       "Do open every region with a zone label.",
