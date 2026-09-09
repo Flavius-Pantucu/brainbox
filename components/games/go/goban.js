@@ -46,6 +46,15 @@ export function Goban({
           </g>
         ))}
 
+        {/* a real board's outer line is the heavy one */}
+        <rect
+          className="goban__border"
+          x={PAD}
+          y={PAD}
+          width={size - 1}
+          height={size - 1}
+        />
+
         {stars.map((point) => {
           const { x, y } = at(point);
           return <circle key={`s${point}`} className="goban__star" cx={x} cy={y} r="0.09" />;
