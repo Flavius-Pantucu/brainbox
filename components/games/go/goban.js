@@ -153,7 +153,10 @@ export function Goban({
               aria-label={`${LETTERS[point % size]}${size - Math.floor(point / size)}${
                 stone ? (stone === "b" ? ", black" : ", white") : ", empty"
               }`}
-              onPointerEnter={() => setHover(point)}
+              onPointerEnter={(event) => {
+                // a finger leaves no cursor behind, so it leaves no ghost stone
+                if (event.pointerType !== "touch") setHover(point);
+              }}
               onClick={() => !disabled && onPlay?.(point)}
             />
           );

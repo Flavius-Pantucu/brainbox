@@ -86,13 +86,19 @@ export function Board({
     const move = (event) =>
       setDrag((active) => (active ? { ...active, x: event.clientX, y: event.clientY } : null));
     const drop = () => setDrag(null);
+    // touch-action alone has let the page scroll out from under a drag on some
+    // phones; refusing the touchmove outright cannot
+    const hold = (event) => event.preventDefault();
+
     window.addEventListener("pointermove", move);
     window.addEventListener("pointerup", endDrag);
     window.addEventListener("pointercancel", drop);
+    document.addEventListener("touchmove", hold, { passive: false });
     return () => {
       window.removeEventListener("pointermove", move);
       window.removeEventListener("pointerup", endDrag);
       window.removeEventListener("pointercancel", drop);
+      document.removeEventListener("touchmove", hold);
     };
   }, [drag, endDrag]);
 
@@ -114,6 +120,12 @@ export function Board({
     onSelect?.(square);
     if (piece && dragging) {
       event.preventDefault();
+      // keep the moves coming to this square even once the finger leaves it
+      try {
+        event.currentTarget.setPointerCapture(event.pointerId);
+      } catch {
+        /* a mouse that has already released has nothing to capture */
+      }
       setDrag({
         from: square,
         piece,

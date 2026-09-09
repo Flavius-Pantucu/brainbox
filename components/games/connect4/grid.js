@@ -32,7 +32,10 @@ export function Grid({ board, line, last, onDrop, disabled, ghost, children }) {
                 .filter(Boolean)
                 .join(" ")}
               disabled={disabled || landingRow(board, col) < 0}
-              onPointerEnter={() => setOver(col)}
+              onPointerEnter={(event) => {
+                // a finger leaves no cursor behind, so it leaves no hover either
+                if (event.pointerType !== "touch") setOver(col);
+              }}
               onFocus={() => setOver(col)}
               onClick={() => onDrop(col)}
               aria-label={`Column ${col + 1}, row ${ROWS - row}${
