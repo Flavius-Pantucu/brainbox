@@ -977,14 +977,14 @@ PASS TURN ───────────► turn = next seat; phase = "draw";
 
 ## PART 20 — COMPLETE SIMULATED ROUND
 
-Four players. Notation `5r` = red 5, `J` = joker. Under A4(a): 14 tiles each, stock 50.
+Four players. Notation `5r` = red 5, `J` = joker. Values are banded (§0.1). **P1 is the dealer**, so P1 holds 15 and opens the round by throwing without drawing; everyone else holds 14. Stock = 106 − 57 = 49 = 7 × 7 exactly.
 
 ### Initial state
 
 ```
 players  P1 SweetGirl44 · P2 alina17 · P3 Madalina8731 · P4 CalinTomi(you)
 round 1   turn 1   turn = P1   phase = draw   opened: none
-stock 50  → 7 stacks of seven and 1 loose
+stock 49  → 7 stacks of seven, no loose
 discard   (empty)
 table     (empty)
 trump     — none —
@@ -993,15 +993,15 @@ trump     — none —
   └─┘└─┘└─┘└─┘└─┘└─┘└─┘└─┘
 
 YOUR RACK
- A [ 5r 6r 7r ·  11k 11r ·  ·  13k ·  ·  ·  · ]   brackets: 5r6r7r = 18
+ A [ 5r 6r 7r ·  11k 11r ·  ·  13k ·  ·  ·  · ]   brackets: 5r6r7r = 15
  B [ 12y ·  1y ·  2r ·  9b ·  3y ·  ·  ·  · ]     no other group yet
- hand_count 14   opened: no   best lay: 18  (needs 27 more)
+ hand_count 14   opened: no   best lay: 15  (needs 30 more — i.e. one 10-band meld)
 ```
 
-### Turn 1 — P1 draws stock, discards `1r`
+### Turn 1 — P1 is the dealer: no draw, discards `1r`
 
 ```
-stock 49 (7×7 exactly)   discard [1r]   table (empty)
+stock 49 (untouched — the dealer's 15th tile IS their draw)   discard [1r]   table (empty)
 visible to you: P1 threw a low red. Nothing inferable yet.
 turn → P2, phase draw
 ```
@@ -1032,19 +1032,21 @@ phase draw.  Legal: DRAW_STOCK | DRAW_DISCARD(0..2)
 hand: 5r 6r 7r 11k 11r 11b 13k 12y 1y 2r 9b 3y + 2 others   (15 tiles)
 
  A [ 5r 6r 7r ·  11k 11r 11b ·  13k ·  ·  ·  · ]
-      └──18──┘     └────33────┘
- opening total = 18 + 33 = 51 ≥ 45  ✓  YOU CAN OPEN
+      └──15──┘     └────30────┘
+ opening total = 15 + 30 = 45 ≥ 45  ✓  YOU CAN OPEN — exactly, with nothing to spare
 
 phase play.  Legal: MELD([5r6r7r],[11k11r11b]) | DISCARD(any) | REARRANGE
 → MELD both.  has_opened[P4] = true.
-→ DISCARD 13k  (highest tile doing nothing; 13 is the worst thing to be caught with)
+→ DISCARD 13k  (high band, doing nothing: costs 10 in hand, versus 5 for any of your
+                low tiles. Not the 1y — that one costs 25, but it is also live in two
+                runs, so it is worth holding one more turn.)
 ```
 
 ```
 BOARD AFTER TURN 4
 
  header   SweetGirl44 · alina17 · Madalina8731 · CalinTomi (45 p)
- table    [11k 11r 11b]=33  [5r 6r 7r]=18        ← both yours
+ table    [11k 11r 11b]=30  [5r 6r 7r]=15        ← both yours, 45 total
  discard  [1r, 4b, 9b, 13k]
  stock    46  (6 of seven and 4)
 
@@ -1054,10 +1056,10 @@ BOARD AFTER TURN 4
  turn → P1, phase draw
 ```
 
-### Turn 5 — P1 takes `13k` from the discard (index 3, cost 1), opens with `13r 13y 13k` (39) + `2k 3k 4k` (9) = 48
+### Turn 5 — P1 takes `13k` from the discard (index 3, cost 1), opens with `13r 13y 13k` (30) + `2k 3k 4k` (15) = 45
 
 ```
-table    [11k 11r 11b] [5r 6r 7r] [13r 13y 13k]=39 [2k 3k 4k]=9
+table    [11k 11r 11b] [5r 6r 7r] [13r 13y 13k]=30 [2k 3k 4k]=15
 discard  [1r, 4b, 9b]           ← 13k was taken off the end
 header   SweetGirl44 (45 p) …
 P1 discards 6y  →  discard [1r, 4b, 9b, 6y]
@@ -1130,11 +1132,13 @@ Evaluate:
   1. Go out? hand would be 4r,2r,12y,3y,6r = 5; lay 4r, throw one → 3 left. No.
   2. Open? already open.
   3. Joker safety? no joker held.
-  4. Shed? YES — ADD_TO_MELD(1, 4r) removes 4 penalty points for free.
-  5. Discard: 12y is the highest and helps nothing → throw 12y (12 points saved).
+  4. Shed? YES — ADD_TO_MELD(1, 4r) removes 5 penalty points for free.
+  5. Discard: 12y is your only high-band tile and helps nothing → throw 12y (saves 10).
+                 2r, 3y and 6r all cost 5 each, so which of THEM you keep is worth
+                 nothing in points — keep whichever is likeliest to find a meld.
 
 → ADD_TO_MELD(1, 4r);  DISCARD 12y
-   hand: 2r, 3y, 6r   =  2 + 3 + 6 = 11 penalty if the round dies now
+   hand: 2r, 3y, 6r   =  5 + 5 + 5 = 15 penalty if the round dies now
    stock 5
 ```
 
@@ -1143,16 +1147,29 @@ Evaluate:
 ```
 ROUND OVER.  winner = P1.
 
-SCORING  (penalty = sum of tiles left on the rack; joker = 25; winner scores 0)
+SCORING  (2–9 → 5,  10–13 → 10,  the 1 → 25,  joker → 25,  winner → 0)
 
-  P1 SweetGirl44   went out                                        +0    total  0
-  P2 alina17       6y 8b 10k 11y 1k 4y      = 6+8+10+11+1+4        +40   total 40
-  P3 Madalina8731  never opened; 8 tiles incl. a joker
-                   3r 7k 9y 10y 12b 13y 2b J = 3+7+9+10+12+13+2+25 +81   total 81
-  P4 CalinTomi     2r 3y 6r                 = 2+3+6                +11   total 11
+  P1 SweetGirl44   went out                                          +0    total  0
 
-  LIMIT = 100.  Nobody has passed 100.  Deal round 2; scores carry.
-  If P3 passes 100 next round, the game ends and the LOWEST total wins.
+  P2 alina17       6y  8b  10k 11y 1k  4y
+                   5 + 5 + 10 + 10 + 25 + 5                         +60   total 60
+                   ← the 1k alone is 25 of that. Holding a 1 to the end is the
+                     most expensive mistake in the game.
+
+  P3 Madalina8731  never opened, so nothing could leave their rack:
+                   3r  7k  9y  10y 12b 13y 2b  J
+                   5 + 5 + 5 + 10 + 10 + 10 + 5 + 25                +75   total 75
+
+  P4 CalinTomi     2r  3y  6r
+                   5 + 5 + 5                                        +15   total 15
+
+  LIMIT = 100.  Nobody has passed 100.  Deal round 2; scores carry; P2 deals.
+  P3 needs only 25 more — one joker, or one stranded 1 — to end the game.
+  When someone passes 100 the game stops and the LOWEST total wins, so P1 leads.
+
+  Note how flat the banded scale is: P2's six tiles cost 60 and P4's three cost 15,
+  a 4x gap driven almost entirely by ONE tile (the 1k) rather than by tile count.
+  That is the whole endgame strategy in one line — shed 1s and jokers first.
 ```
 
 ---
