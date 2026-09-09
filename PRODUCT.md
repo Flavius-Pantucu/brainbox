@@ -20,7 +20,7 @@ react-hook-form, modulo-x.
 ## Users
 
 Primary user: a person who wants a short, self-contained session of a classic logic game
-(chess, sudoku, tic-tac-toe) in the browser, with no install and no lobby wait. They arrive
+(chess, Connect Four, sudoku, tic-tac-toe) in the browser, with no install and no lobby wait. They arrive
 on a break or in an idle moment, want to be inside a game within a few seconds, and want a
 reason to come back tomorrow.
 
@@ -58,11 +58,16 @@ Shipped and working today (product truth to preserve):
   pause, a clock, three mistakes, and full keyboard control.
 - **Tic-Tac-Toe** — three opponents: the machine (Loose / Fair / Perfect, minimax with
   alpha-beta in `lib/ttt.js`), two people on one device, and **online play by room code**.
+- **Connect Four** — the same three opponents, over `lib/connect4.js` (alpha-beta scored on runs
+  of four, three levels), with online rooms on the same server.
 - **Chess** under `components/games/chess/**`: an analysis board, a Stockfish opponent at five
   strengths, and online play by room code. chess.js holds the rules, Stockfish (wasm, in a
   worker) holds the engine — eval bar, best-move hints, and a post-game review with per-move
   verdicts and accuracy. The analysis board holds a move tree with variations (`lib/chess-tree.js`);
-  clocks are 3+2 / 5+0 / 10+5, run on the server for online games.
+  clocks are 3+2 / 5+0 / 10+5, run on the server for online games; a set-up mode builds any legal
+  position by hand. The engine runs on the analysis table only.
+- Every game ends on the same **verdict overlay** (`components/board/verdict.js`) — a result card
+  lowered over the board, marked and animated by outcome, dismissible so the board stays readable.
 - Light and dark theme, previously persisted in a `site_theme` cookie.
 - Auth, register, and password-reset modals — presentational only, wired to nothing.
 - `pages/api/health.js` is the only endpoint.
@@ -70,7 +75,7 @@ Shipped and working today (product truth to preserve):
 Confirmed constraints (2026-09-08, amended 2026-09-09):
 - **No database and no accounts.** Player stats, streaks, leaderboards and challenge history
   have no server behind them and live in one browser.
-- **One server-side feature exists: online rooms for tic-tac-toe and chess** (`lib/rooms.js`, `app/api/rooms/**`).
+- **One server-side feature exists: online rooms for tic-tac-toe, chess and Connect Four** (`lib/rooms.js`, `app/api/rooms/**`).
   Rooms are held in the node process's memory and pushed to both players over SSE. This works
   under `npm run dev` and a self-hosted `npm start`; a serverless deploy with more than one
   instance would need that one module swapped for a shared store. Rooms hold no identity beyond

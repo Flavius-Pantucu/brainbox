@@ -10,15 +10,21 @@ import { useEngine } from "./use-engine";
 import { useRoom } from "../use-room";
 import { Peg } from "../../board/peg";
 import { Tag } from "../../board/tag";
-import { Bulb, Copy, Cpu, Undo, Users } from "../../board/icons";
+import { Bulb, Copy, Cpu, Eraser, Pencil, Undo, Users } from "../../board/icons";
+import { Verdict } from "../../board/verdict";
 import {
+  FILES,
+  RANKS,
   START_FEN,
   TIME_CONTROLS,
+  fenFrom,
   fenTurn,
   formatClock,
   materialFrom,
   outcomeOf,
   pieceImage,
+  placementOf,
+  placementProblem,
   resultLine,
   timeControl,
   whiteScore,
@@ -56,6 +62,12 @@ const SIDES = [
 ];
 
 const LIVE_DEPTH = 16;
+
+const PALETTE = ["k", "q", "r", "b", "n", "p"];
+const TURNS = [
+  { id: "w", label: "White to move" },
+  { id: "b", label: "Black to move" },
+];
 
 function snapshot(game) {
   return {
@@ -95,20 +107,24 @@ function Clock({ ms, running }) {
   );
 }
 
-// What one side has taken, and by how much they are up. The pile shows the
-// opponent's pieces, so it is drawn in the opponent's colour.
-function Taken({ seat, material }) {
+// One player's line above or below the board: which colour they are, their
+// name, what they have taken, by how much they are up, and their clock.
+function PlayerRow({ seat, name, material, clock, running }) {
   const types = material.taken[seat];
   const colour = seat === "w" ? "b" : "w";
   const lead = seat === "w" ? material.score : -material.score;
-  if (!types.length) return <span className="taken" />;
   return (
-    <span className="taken">
-      {types.map((type, i) => (
-        <img key={`${type}${i}`} src={pieceImage(colour, type)} alt="" />
-      ))}
-      {lead > 0 && <em>+{lead}</em>}
-    </span>
+    <div className="chess__player">
+      <img className="chess__swatch" src={pieceImage(seat, "p")} alt="" />
+      <span className="chess__who">{name}</span>
+      <span className="taken">
+        {types.map((type, i) => (
+          <img key={`${type}${i}`} src={pieceImage(colour, type)} alt="" />
+        ))}
+        {lead > 0 && <em className="taken__lead">+{lead}</em>}
+      </span>
+      <Clock ms={clock} running={running} />
+    </div>
   );
 }
 
@@ -134,6 +150,12 @@ export default function ChessGame({ onResult }) {
   const [loadText, setLoadText] = useState("");
   const [loadError, setLoadError] = useState(null);
   const [showReview, setShowReview] = useState(false);
+  const [dismissed, setDismissed] = useState(false);
+
+  // setting up a position: a square -> piece map, painted with a brush
+  const [setup, setSetup] = useState(null);
+  const [brush, setBrush] = useState(null);
+  const [setupError, setSetupError] = useState(null);
 
   // the analysis board is a tree; the bot game is one chess.js instance
   const [tree, setTree] = useState(() => newTree(START_FEN));
@@ -156,6 +178,7 @@ export default function ChessGame({ onResult }) {
   const level = LEVELS.find((l) => l.id === levelId) || LEVELS[2];
   const online = mode === "online" ? room.state : null;
   const analysis = mode === "analysis";
+  const editing = analysis && !!setup;
 
   useEffect(() => {
     sounds.current = {
@@ -177,7 +200,17 @@ export default function ChessGame({ onResult }) {
   const shownFen = nodeNow.fen;
 
   const position = useMemo(() => new Chess(shownFen), [shownFen]);
-  const board = useMemo(() => position.board(), [position]);
+  const played = useMemo(() => position.board(), [position]);
+  const board = useMemo(() => {
+    if (!setup) return played;
+    return RANKS.map((rank) =>
+      FILES.map((file) => {
+        const square = `${file}${rank}`;
+        const piece = setup.map[square];
+        return piece ? { ...piece, square } : null;
+      })
+    );
+  }, [setup, played]);
   const material = useMemo(() => materialFrom(board), [board]);
   const line = useMemo(() => lineTo(treeNow, nodeNow.id), [treeNow, nodeNow.id]);
 
@@ -234,7 +267,9 @@ export default function ChessGame({ onResult }) {
   const atTip = analysis || nodeNow.id === linear.tip;
   const yourTurn = view.mySide == null || view.turn === view.mySide;
   const roomReady = mode !== "online" || online?.status === "playing";
-  const canPlay = analysis
+  const canPlay = editing
+    ? false
+    : analysis
     ? !outcomeOf(position).over
     : atTip && !view.over && yourTurn && roomReady && !botThinking;
 
@@ -403,7 +438,8 @@ export default function ChessGame({ onResult }) {
 
   /* -------------------------------------------------------------- engine --- */
 
-  const engineIdle = engineOn && engine.ready && review.status !== "running";
+  // the engine only runs the board on the analysis table
+  const engineIdle = analysis && engineOn && engine.ready && !editing && review.status !== "running";
 
   useEffect(() => {
     if (!engineIdle || (mode === "bot" && botThinking)) return undefined;
@@ -530,6 +566,70 @@ export default function ChessGame({ onResult }) {
 
   const promoteLine = () => setTree(promoteNode(treeNow, nodeNow.id));
 
+  /* ------------------------------------------------------------ set-up --- */
+
+  const openSetup = () => {
+    setSetup({ map: placementOf(played), turn: position.turn() });
+    setBrush(null);
+    setSetupError(null);
+    setSelected(null);
+    setMarks([]);
+    setArrows([]);
+  };
+
+  const paintSquare = (square) => {
+    if (!brush) return;
+    setSetup((current) => {
+      const map = { ...current.map };
+      if (brush === "erase") delete map[square];
+      else map[square] = brush;
+      return { ...current, map };
+    });
+    setSetupError(null);
+  };
+
+  const dragInSetup = (from, to) =>
+    setSetup((current) => {
+      const map = { ...current.map };
+      const piece = map[from];
+      if (!piece) return current;
+      delete map[from];
+      map[to] = piece;
+      return { ...current, map };
+    });
+
+  const dropOffBoard = (from) =>
+    setSetup((current) => {
+      const map = { ...current.map };
+      delete map[from];
+      return { ...current, map };
+    });
+
+  const applySetup = () => {
+    const problem = placementProblem(setup.map);
+    if (problem) {
+      setSetupError(problem);
+      return;
+    }
+    const fen = fenFrom(setup.map, setup.turn);
+    try {
+      // eslint-disable-next-line no-new
+      new Chess(fen);
+      // the side that is not to move must not already be standing in check
+      const idle = new Chess(fenFrom(setup.map, setup.turn === "w" ? "b" : "w"));
+      if (idle.isCheck()) {
+        setSetupError("The side that is not to move is already in check.");
+        return;
+      }
+    } catch {
+      setSetupError("That position is not one the rules allow.");
+      return;
+    }
+    resetBoards(fen);
+    setSetup(null);
+    setBrush(null);
+  };
+
   const loadPosition = () => {
     const text = loadText.trim();
     if (!text) return;
@@ -587,6 +687,10 @@ export default function ChessGame({ onResult }) {
   }, [online?.seat]);
 
   /* -------------------------------------------------------------- result --- */
+
+  useEffect(() => {
+    if (!view.over) setDismissed(false);
+  }, [view.over]);
 
   useEffect(() => {
     if (analysis || !view.over) return;
@@ -656,45 +760,85 @@ export default function ChessGame({ onResult }) {
   return (
     <div className="chess">
       <div className="chess__field">
-        <EvalBar
-          score={score}
-          orientation={orientation}
-          thinking={thinking}
-          hidden={!engineOn || !engine.ready}
-        />
+        {analysis && (
+          <EvalBar
+            score={score}
+            orientation={orientation}
+            thinking={thinking}
+            hidden={!engineOn || !engine.ready || editing}
+          />
+        )}
 
         <div className="chess__stack">
-          <div className="chess__player">
-            <span className="chess__who">{view.names[away]}</span>
-            <Taken seat={away} material={material} />
-            <Clock ms={remaining(away)} running={clockBase?.running === away} />
-          </div>
+          <PlayerRow
+            seat={away}
+            name={view.names[away]}
+            material={material}
+            clock={remaining(away)}
+            running={clockBase?.running === away}
+          />
 
           <Board
             board={board}
             orientation={orientation}
-            interactive={canPlay}
+            interactive={canPlay || editing}
+            drag={!editing || !brush}
             selected={selected}
             targets={targets}
-            lastMove={lastMove}
-            checkSquare={shownCheck}
+            lastMove={editing ? null : lastMove}
+            checkSquare={editing ? null : shownCheck}
             marks={marks}
             arrows={arrows}
-            hintArrow={hintArrow}
+            hintArrow={editing ? null : hintArrow}
             promotion={promotion}
-            onSelect={pressSquare}
-            onMove={(from, to) => attemptMove(from, to)}
+            onSelect={editing ? paintSquare : pressSquare}
+            onMove={(from, to) => (editing ? dragInSetup(from, to) : attemptMove(from, to))}
+            onOffBoard={editing ? dropOffBoard : undefined}
             onMark={toggleMark}
             onArrow={toggleArrow}
             onPromote={(type) => attemptMove(promotion.from, promotion.to, type)}
-            onCancelPromotion={() => setPromotion(null)}
-          />
+            onCancelPromotion={() => setPromotion(null)}>
+            <Verdict
+              open={!analysis && view.over && !dismissed}
+              tone={
+                view.status === "draw" ? "drawn" : view.winner === view.mySide ? "won" : "lost"
+              }
+              title={
+                view.status === "draw"
+                  ? "Drawn"
+                  : view.winner === view.mySide
+                  ? "You win"
+                  : "You lose"
+              }
+              line={resultLine(view, view.names)}
+              actions={[
+                mode === "online"
+                  ? { label: "Play again", onClick: room.rematch }
+                  : { label: "New game", onClick: startBotGame },
+                ...(canReview
+                  ? [
+                      {
+                        label: "Review the game",
+                        onClick: () => {
+                          setDismissed(true);
+                          setShowReview(true);
+                          review.run(line.map((node) => node.move));
+                        },
+                      },
+                    ]
+                  : []),
+              ]}
+              onClose={() => setDismissed(true)}
+            />
+          </Board>
 
-          <div className="chess__player">
-            <span className="chess__who">{view.names[orientation]}</span>
-            <Taken seat={orientation} material={material} />
-            <Clock ms={remaining(orientation)} running={clockBase?.running === orientation} />
-          </div>
+          <PlayerRow
+            seat={orientation}
+            name={view.names[orientation]}
+            material={material}
+            clock={remaining(orientation)}
+            running={clockBase?.running === orientation}
+          />
         </div>
       </div>
 
@@ -750,22 +894,26 @@ export default function ChessGame({ onResult }) {
             <Undo size={16} />
             <em>Flip</em>
           </button>
-          <button
-            type="button"
-            className={`tool ${engineOn ? "is-on" : ""}`}
-            onClick={() => setEngineOn((on) => !on)}
-            disabled={!engine.ready}>
-            <Bulb size={16} />
-            <em>Engine</em>
-          </button>
-          {analysis ? (
+
+          {analysis && (
+            <button
+              type="button"
+              className={`tool ${engineOn ? "is-on" : ""}`}
+              onClick={() => setEngineOn((on) => !on)}
+              disabled={!engine.ready || editing}>
+              <Bulb size={16} />
+              <em>Engine</em>
+            </button>
+          )}
+
+          {analysis && !editing && (
             <>
-              <button
-                type="button"
-                className="tool"
-                onClick={cutLine}
-                disabled={!nodeNow.parent}>
-                <Undo size={16} />
+              <button type="button" className="tool" onClick={openSetup}>
+                <Pencil size={16} />
+                <em>Set up</em>
+              </button>
+              <button type="button" className="tool" onClick={cutLine} disabled={!nodeNow.parent}>
+                <Eraser size={16} />
                 <em>Delete</em>
               </button>
               <button
@@ -777,18 +925,18 @@ export default function ChessGame({ onResult }) {
                 <em>Promote</em>
               </button>
             </>
-          ) : (
-            mode === "bot" && (
-              <button
-                type="button"
-                className="tool"
-                onClick={takeback}
-                disabled={!!clockBase || playedMoves.length < 2}
-                title={clockBase ? "Not with a clock running" : undefined}>
-                <Undo size={16} />
-                <em>Take back</em>
-              </button>
-            )
+          )}
+
+          {mode === "bot" && (
+            <button
+              type="button"
+              className="tool"
+              onClick={takeback}
+              disabled={!!clockBase || playedMoves.length < 2}
+              title={clockBase ? "Not with a clock running" : undefined}>
+              <Undo size={16} />
+              <em>Take back</em>
+            </button>
           )}
         </div>
 
@@ -806,7 +954,105 @@ export default function ChessGame({ onResult }) {
           </button>
         )}
 
-        {analysis && (
+        {editing && (
+          <div className="stack">
+            <span className="zone-label" style={{ margin: 0 }}>
+              Pieces
+            </span>
+
+            <div className="palette">
+              {["w", "b"].map((colour) => (
+                <div className="palette__row" key={colour}>
+                  {PALETTE.map((type) => {
+                    const on =
+                      brush !== "erase" && brush?.color === colour && brush?.type === type;
+                    return (
+                      <button
+                        key={`${colour}${type}`}
+                        type="button"
+                        className={`palette__pick ${on ? "is-on" : ""}`}
+                        aria-pressed={on}
+                        onClick={() => setBrush({ color: colour, type })}>
+                        <img src={pieceImage(colour, type)} alt={`${colour}${type}`} />
+                      </button>
+                    );
+                  })}
+                </div>
+              ))}
+            </div>
+
+            <div className="row" style={{ gap: 8 }}>
+              <button
+                type="button"
+                className={`key key--quiet ${brush === "erase" ? "is-on" : ""}`}
+                onClick={() => setBrush(brush === "erase" ? null : "erase")}>
+                {brush === "erase" ? "Erasing" : "Erase"}
+              </button>
+              <button
+                type="button"
+                className={`key key--quiet ${brush === null ? "is-on" : ""}`}
+                onClick={() => setBrush(null)}>
+                Move
+              </button>
+            </div>
+
+            <Peg
+              options={TURNS}
+              value={setup.turn}
+              onChange={(turn) => setSetup((current) => ({ ...current, turn }))}
+              label="Side to move"
+            />
+
+            <div className="row" style={{ gap: 8 }}>
+              <button
+                type="button"
+                className="key key--quiet"
+                onClick={() => setSetup((current) => ({ ...current, map: {} }))}>
+                Clear
+              </button>
+              <button
+                type="button"
+                className="key key--quiet"
+                onClick={() =>
+                  setSetup((current) => ({
+                    ...current,
+                    map: placementOf(new Chess().board()),
+                  }))
+                }>
+                Start position
+              </button>
+            </div>
+
+            {setupError && (
+              <p className="notice" role="alert">
+                {setupError}
+              </p>
+            )}
+
+            <div className="row" style={{ gap: 8 }}>
+              <button type="button" className="key" onClick={applySetup}>
+                Use this position
+              </button>
+              <button
+                type="button"
+                className="key key--quiet"
+                onClick={() => {
+                  setSetup(null);
+                  setBrush(null);
+                  setSetupError(null);
+                }}>
+                Cancel
+              </button>
+            </div>
+
+            <p className="chalk chalk--tight">
+              Pick a piece and click the squares it goes on. Drag a piece to move it, or off the
+              board to take it away. Castling follows from where the kings and rooks stand.
+            </p>
+          </div>
+        )}
+
+        {analysis && !editing && (
           <div className="stack">
             <label className="field">
               <span className="field__label">Load a FEN or a PGN</span>

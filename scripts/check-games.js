@@ -1,12 +1,14 @@
-// One runnable check for the parts of chess that are ours rather than the
-// engine's: the material read, the review maths, and the room's move rules.
-//   node scripts/check-chess.js
+// One runnable check for the parts of the games that are ours rather than a
+// library's: the chess material read, the review maths, the variation tree, the
+// clocks, Connect Four's rules and opponent, and the room's move rules.
+//   npm run check
 const assert = require("node:assert/strict");
 const { Chess } = require("chess.js");
 
 async function main() {
   const core = await import("../lib/chess-core.js");
   const tree = await import("../lib/chess-tree.js");
+  const c4 = await import("../lib/connect4.js");
   const rooms = await import("../lib/rooms.js");
 
   /* material ------------------------------------------------------------- */
@@ -138,7 +140,10 @@ async function main() {
   const after = rooms.publicState(rooms.getRoom(timed.room.code), timed.token);
   assert.equal(after.clock.running, "b", "the press passes with the move");
   assert.ok(after.clock.w > 180000, "the increment is added on");
-  assert.equal(after.clock.b, 180000, "black has not been charged yet");
+  assert.ok(
+    after.clock.b <= 180000 && after.clock.b > 179000,
+    "black is only charged for the time since the press"
+  );
 
   // a move that arrives after the flag has fallen does not land
   const flagged = rooms.getRoom(timed.room.code);
@@ -161,6 +166,60 @@ async function main() {
   const untimed = rooms.createRoom("Ada", "chess", { seat: "w" });
   rooms.joinRoom(untimed.room.code, "Bo");
   assert.equal(rooms.publicState(rooms.getRoom(untimed.room.code), untimed.token).clock, null);
+
+  /* connect four --------------------------------------------------------- */
+  assert.equal(c4.LINES.length, 69, "every run of four on a 7x6 grid");
+
+  let grid = c4.EMPTY();
+  assert.equal(c4.landingRow(grid, 0), 5, "a disc falls to the bottom row");
+  grid = c4.drop(grid, 0, "R").board;
+  assert.equal(c4.landingRow(grid, 0), 4, "the next one stacks on it");
+
+  let full = c4.EMPTY();
+  for (let i = 0; i < 6; i += 1) full = c4.drop(full, 2, i % 2 ? "Y" : "R").board;
+  assert.equal(c4.drop(full, 2, "R"), null, "a full column takes nothing");
+
+  let won = c4.EMPTY();
+  for (const col of [0, 1, 2, 3]) won = c4.drop(won, col, "R").board;
+  const line = c4.outcomeOf(won);
+  assert.equal(line.winner, "R");
+  assert.deepEqual(line.line, [35, 36, 37, 38]);
+
+  let vertical = c4.EMPTY();
+  for (let i = 0; i < 4; i += 1) vertical = c4.drop(vertical, 6, "Y").board;
+  assert.equal(c4.outcomeOf(vertical).winner, "Y", "four stacked counts too");
+
+  // the machine blocks a three in a row, at every level
+  let threat = c4.EMPTY();
+  for (const col of [0, 1, 2]) threat = c4.drop(threat, col, "Y").board;
+  for (const setting of c4.LEVELS) {
+    assert.equal(c4.pickMove(threat, "R", setting.id), 3, `${setting.id} blocks`);
+  }
+
+  // and takes its own win rather than blocking
+  let race = c4.EMPTY();
+  for (const col of [1, 2, 3]) race = c4.drop(race, col, "R").board;
+  for (const col of [4, 5, 6]) race = c4.drop(race, col, "Y").board;
+  assert.equal(c4.pickMove(race, "R", "sharp"), 0, "0 wins outright, 3 only blocks");
+
+  const c4host = rooms.createRoom("Ada", "connect4", { seat: "R" });
+  const c4guest = rooms.joinRoom(c4host.room.code, "Bo");
+  assert.equal(c4guest.seat, "Y");
+  assert.equal(
+    rooms.act(c4host.room.code, c4host.token, "move", { col: 9 }).error,
+    "column-full",
+    "a column off the grid is refused"
+  );
+  for (let i = 0; i < 3; i += 1) {
+    rooms.act(c4host.room.code, c4host.token, "move", { col: i });
+    rooms.act(c4host.room.code, c4guest.token, "move", { col: i });
+  }
+  rooms.act(c4host.room.code, c4host.token, "move", { col: 3 });
+  const c4state = rooms.publicState(rooms.getRoom(c4host.room.code), c4guest.token);
+  assert.equal(c4state.status, "won");
+  assert.equal(c4state.winner, "R");
+  assert.equal(c4state.score.R, 1);
+  assert.equal(c4state.last, 38);
 
   /* tictactoe still works on the same store ------------------------------ */
   const ttt = rooms.createRoom("Ada", "tictactoe", { seat: "X" });

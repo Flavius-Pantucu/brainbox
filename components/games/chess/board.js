@@ -44,6 +44,7 @@ export function Board({
   board,
   orientation = "w",
   interactive = true,
+  drag: dragging = true,
   selected = null,
   targets = [],
   lastMove = null,
@@ -54,10 +55,12 @@ export function Board({
   promotion = null,
   onSelect,
   onMove,
+  onOffBoard,
   onMark,
   onArrow,
   onPromote,
   onCancelPromotion,
+  children,
 }) {
   const [drag, setDrag] = useState(null);
   const rows = orientation === "w" ? board : [...board].reverse().map((row) => [...row].reverse());
@@ -69,11 +72,13 @@ export function Board({
       setDrag((active) => {
         if (!active) return null;
         const to = squareUnder(event.clientX, event.clientY);
-        if (to && to !== active.from) onMove?.(active.from, to);
+        // dragged clean off the board: in set-up mode that means "take it away"
+        if (!to) onOffBoard?.(active.from);
+        else if (to !== active.from) onMove?.(active.from, to);
         return null;
       });
     },
-    [onMove]
+    [onMove, onOffBoard]
   );
 
   useEffect(() => {
@@ -107,7 +112,7 @@ export function Board({
     }
     if (event.button !== 0 || !interactive) return;
     onSelect?.(square);
-    if (piece) {
+    if (piece && dragging) {
       event.preventDefault();
       setDrag({
         from: square,
@@ -202,6 +207,8 @@ export function Board({
           </div>
         )}
       </div>
+
+      {children}
 
       {drag && (
         <img

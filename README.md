@@ -1,6 +1,6 @@
 # BrainBox
 
-A portal for browser-based logic games — chess, sudoku and tic-tac-toe — built with
+A portal for browser-based logic games — chess, Connect Four, sudoku and tic-tac-toe — built with
 [Next.js](https://nextjs.org/).
 
 The interface is a hand-operated club board, painted in navy and steel: today's challenge,
@@ -16,6 +16,7 @@ from `app/`, shared UI lives in `components/`, and the backend will be built ins
 Games:
 
 - [x] **Sudoku** — a fresh puzzle every game, generated in the browser, at four difficulties
+- [x] **Connect Four** — against the machine, against the next chair, or online by room code
 - [x] **Tic-Tac-Toe** — against the machine, against the next chair, or online by room code
 - [x] **Chess** — an analysis board, a Stockfish opponent at five strengths, or online by room code
 
@@ -25,6 +26,7 @@ Games:
 | ---------------- | ----------------------------------------------------------------- |
 | `/`              | The board — today's challenge, the three games, your run, standings |
 | `/play/chess`    | Chess, inside the play frame                                       |
+| `/play/connect4` | Connect Four, inside the play frame                                |
 | `/play/sudoku`   | Sudoku, inside the play frame                                      |
 | `/play/tictactoe`| Tic-Tac-Toe, inside the play frame                                 |
 | `/standings`     | The ladder and your card — recent games, wins, day run             |
@@ -44,15 +46,26 @@ sides an accuracy.
 
 The analysis board keeps a **tree**, not a list: play from any earlier move and it becomes a
 variation under it, shown in brackets under the move it branched from. A variation can be
-promoted to the main line or cut away. **Clocks** are 3+2, 5+0 or 10+5, or none. Online they run
-on the server — a player who stops moving still flags, and a move that arrives after the flag
-does not land.
+promoted to the main line or cut away. It also has a **set-up mode** — paint pieces onto squares,
+drag them around, drag them off the board to remove them, choose the side to move, and castling
+rights follow from where the kings and rooks stand. The engine only runs on the analysis table;
+the bot and online games play without one, and the review runs after the game.
+
+**Clocks** are 3+2, 5+0 or 10+5, or none. Online they run on the server — a player who stops
+moving still flags, and a move that arrives after the flag does not land.
 
 Rules come from [chess.js](https://github.com/jhlywa/chess.js). The engine is
 [Stockfish.js](https://github.com/nmrugg/stockfish.js) (GPLv3), the lite single-threaded wasm
 build, which needs no cross-origin isolation headers. `npm install` copies it into
 `public/engine/` — it is 7 MB and is not in git, so a fresh clone needs that install before the
 bot or the eval bar will run.
+
+## Connect Four
+
+Seven columns, six rows, four in a row in any direction. Three opponents: the machine (Loose /
+Fair / Sharp — alpha-beta over every run of four, in `lib/connect4.js`), two people on one
+device, and online by room code. Discs fall with a bounce, the winning four flashes, and the
+machine always takes a win and blocks one whatever its level.
 
 ## Sudoku
 

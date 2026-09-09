@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "check": "node scripts/check-chess.js",
+    "check": "node scripts/check-games.js",
     "postinstall": "node scripts/copy-engine.js"
   },
   "dependencies": {

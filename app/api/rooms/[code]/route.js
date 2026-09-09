@@ -13,6 +13,7 @@ const ERRORS = {
   "bad-square": [400, "That square is not on the board."],
   "bad-action": [400, "Unknown action."],
   taken: [409, "That square is taken."],
+  "column-full": [409, "That column is full."],
   "illegal-move": [409, "That move is not legal here."],
   "no-offer": [409, "There is no draw on the table."],
   "still-playing": [409, "The game is still running."],

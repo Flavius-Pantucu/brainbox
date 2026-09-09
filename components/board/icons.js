@@ -46,10 +46,29 @@ export function TicTacToeMark({ size = 20, ...rest }) {
   );
 }
 
+export function Connect4Mark({ size = 20, ...rest }) {
+  // A grid of holes with a run of four filled through it.
+  return (
+    <svg {...base} width={size} height={size} {...rest}>
+      <rect x="3.5" y="4.5" width="17" height="15" rx="1.5" />
+      <circle cx="7.5" cy="8.5" r="1.5" strokeWidth="2" />
+      <circle cx="12" cy="8.5" r="1.5" />
+      <circle cx="16.5" cy="8.5" r="1.5" />
+      <circle cx="7.5" cy="13" r="1.5" />
+      <circle cx="12" cy="13" r="1.5" strokeWidth="2" />
+      <circle cx="16.5" cy="13" r="1.5" />
+      <circle cx="7.5" cy="17" r="1.5" />
+      <circle cx="12" cy="17" r="1.5" />
+      <circle cx="16.5" cy="17" r="1.5" strokeWidth="2" />
+    </svg>
+  );
+}
+
 export const GAME_MARKS = {
   chess: ChessMark,
   sudoku: SudokuMark,
   tictactoe: TicTacToeMark,
+  connect4: Connect4Mark,
 };
 
 export function Lamp({ size = 18, lit = false, ...rest }) {

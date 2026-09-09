@@ -14,6 +14,7 @@ import {
 import { Peg } from "../../board/peg";
 import { Tag } from "../../board/tag";
 import { Pencil, Eraser, Undo, Bulb, Pause, Play as PlayMark } from "../../board/icons";
+import { Verdict } from "../../board/verdict";
 
 const CELLS = 81;
 const MAX_MISTAKES = 3;
@@ -258,6 +259,11 @@ export default function Sudoku({ onResult, onStatus }) {
     return () => window.removeEventListener("keydown", onKey);
   });
 
+  const [dismissed, setDismissed] = useState(false);
+  useEffect(() => {
+    if (status === "playing" || status === "dealing") setDismissed(false);
+  }, [status]);
+
   // --- render --------------------------------------------------------------
 
   const playable = status === "playing" && !paused;
@@ -333,34 +339,28 @@ export default function Sudoku({ onResult, onStatus }) {
             </div>
           )}
 
-          {status === "won" && (
-            <div className="sud__veil">
-              <p className="sud__verdict">Solved</p>
-              <p className="chalk">
-                {DIFFICULTIES.find((d) => d.id === difficulty)?.label} in {clock(seconds)},
-                {mistakes === 0 ? " clean" : ` ${mistakes} mistake${mistakes > 1 ? "s" : ""}`}
-                {hints > 0 ? `, ${hints} hint${hints > 1 ? "s" : ""}` : ""}.
-              </p>
-              <button type="button" className="key" onClick={() => newGame(difficulty)}>
-                New grid
-              </button>
-            </div>
-          )}
+          <Verdict
+            open={status === "won" && !dismissed}
+            tone="won"
+            title="Solved"
+            line={`${DIFFICULTIES.find((d) => d.id === difficulty)?.label} in ${clock(seconds)}, ${
+              mistakes === 0 ? "clean" : `${mistakes} mistake${mistakes > 1 ? "s" : ""}`
+            }${hints > 0 ? `, ${hints} hint${hints > 1 ? "s" : ""}` : ""}.`}
+            actions={[{ label: "New grid", onClick: () => newGame(difficulty) }]}
+            onClose={() => setDismissed(true)}
+          />
 
-          {status === "lost" && (
-            <div className="sud__veil">
-              <p className="sud__verdict">Three mistakes</p>
-              <p className="chalk">The grid is closed. Undo the last move, or set a new one.</p>
-              <div className="row" style={{ justifyContent: "center" }}>
-                <button type="button" className="key" onClick={() => newGame(difficulty)}>
-                  New grid
-                </button>
-                <button type="button" className="key key--quiet" onClick={undo}>
-                  Undo last move
-                </button>
-              </div>
-            </div>
-          )}
+          <Verdict
+            open={status === "lost" && !dismissed}
+            tone="lost"
+            title="Three mistakes"
+            line="The grid is closed. Undo the last move, or set a new one."
+            actions={[
+              { label: "New grid", onClick: () => newGame(difficulty) },
+              { label: "Undo last move", onClick: undo },
+            ]}
+            onClose={() => setDismissed(true)}
+          />
         </div>
       </div>
 
