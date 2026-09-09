@@ -67,7 +67,9 @@ Shipped and working today (product truth to preserve):
   one low or high, the 45-point opening, building on anyone's melds, buying jokers off the table,
   and penalty scoring to 100. Two to four players. The rack is the workspace: a two-tier grid
   where adjacency is the grammar — tiles side by side are read as one meld and bracketed with
-  their value, a gap parts them, and laying down sends every bracket at once. The first game with hidden information and the
+  their value, a gap parts them, and laying down sends every bracket at once. The stock is shown
+  in stacks of seven the way it sits in the box, and every throw stays in a line you may reach
+  back into — at the cost of every tile thrown after the one you want. The first game with hidden information and the
   first that seats more than two: the room builds its payload per viewer, and a table that can be
   played by different numbers waits for its host to start it.
 - **Backgammon** — `lib/backgammon.js`: whole-turn move generation so that the must-use-both and

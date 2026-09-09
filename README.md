@@ -116,8 +116,19 @@ bracket disappears, because six tiles in a row are one span and one span is one 
 The board totals the brackets against the forty-five, and laying down puts every bracketed
 group on the table at once.
 
-Tiles are dragged, or tapped and tapped again. Drag one onto a meld on the table to add it or to
-buy its joker; drag one into the well to throw it.
+Tiles are dragged, or tapped and tapped again, and every source reaches every target: rack to
+rack to rearrange, rack onto a meld to add a tile or buy its joker, rack into the line of throws
+to throw it, and the stock or a thrown tile back onto the rack to take it.
+
+### The box and the line
+
+The stock is shown the way it sits in the box — in stacks of seven, with whatever is over at the
+end — so you can see how much of the game is left rather than reading a number.
+
+Everything anybody has thrown lies in a **line**, in the order it went down, and you may reach
+into it. But a tile from further back costs you every tile thrown after it: hover one and the
+line lifts everything that would come with it and tells you how many. Reaching for the 3 you
+needed six throws ago means taking all six that followed it.
 
 Every player has a **lane** — a routed channel with their nameplate at the end, their melds
 sitting in it as valued blocks, how many tiles they still hold, and their running penalty. Yours

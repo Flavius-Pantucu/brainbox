@@ -854,6 +854,18 @@ async function main() {
     const thrown = remi.seatTiles(kept, [t(5, "r"), t(6, "r"), t(7, "r")]);
     assert.equal(thrown.filter((tile) => tile != null).length, 3, "what left the hand leaves the rack");
 
+    // reaching into the line of throws takes everything after it too
+    assert.deepEqual(remi.takeFrom([1, 2, 3, 4], 3), { taken: [4], left: [1, 2, 3] });
+    assert.deepEqual(remi.takeFrom([1, 2, 3, 4], 1), { taken: [2, 3, 4], left: [1] });
+    assert.deepEqual(remi.takeFrom([1, 2, 3, 4], 0), { taken: [1, 2, 3, 4], left: [] });
+    assert.equal(remi.takeFrom([1, 2, 3], 5), null, "there is nothing at that end");
+    assert.equal(remi.takeFrom([], 0), null, "and nothing in an empty line");
+
+    // the stock sits in stacks of seven
+    assert.deepEqual(remi.stacksOf(64), { full: 9, loose: 1 });
+    assert.deepEqual(remi.stacksOf(7), { full: 1, loose: 0 });
+    assert.deepEqual(remi.stacksOf(0), { full: 0, loose: 0 });
+
     // and what a hand costs you if you are left holding it
     assert.equal(remi.handValue([t(13, "r"), J, t(1, "y")]), 39, "a joker in hand is twenty-five");
 
@@ -911,6 +923,25 @@ async function main() {
       "not-your-tile",
       "and only with tiles you hold"
     );
+
+    // a throw goes into the line, and reaching past it costs the rest
+    const held = rooms.publicState(rooms.getRoom(code), mover).hand;
+    rooms.act(code, mover, "discard", { tile: held[0] });
+    let line = rooms.publicState(rooms.getRoom(code), mover);
+    assert.deepEqual(line.discard, [held[0]], "the thrown tile lies in the line");
+
+    const second = seats[line.turn];
+    rooms.act(code, second, "draw", { from: "stock" });
+    const secondHand = rooms.publicState(rooms.getRoom(code), second).hand;
+    rooms.act(code, second, "discard", { tile: secondHand[0] });
+    line = rooms.publicState(rooms.getRoom(code), second);
+    assert.equal(line.discard.length, 2, "two thrown now");
+
+    const third = seats[line.turn];
+    rooms.act(code, third, "draw", { from: "discard", at: 0 });
+    const reached = rooms.publicState(rooms.getRoom(code), third);
+    assert.equal(reached.hand.length, 16, "reaching to the front took both");
+    assert.equal(reached.discard.length, 0, "and emptied the line");
   }
 
   /* every game the catalog lists can be today's --------------------------- */
