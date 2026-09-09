@@ -3626,9 +3626,14 @@ span.movelist__half {
   filter: brightness(1);
 }
 
+/* the offsets and the scale are measured at the press, so the opening walks to
+   the middle of the window rather than swallowing it from where it sits */
 @keyframes through {
+  from {
+    transform: translate(0, 0) scale(1);
+  }
   to {
-    transform: scale(9);
+    transform: translate(var(--dx, 0px), var(--dy, 0px)) scale(var(--zoom, 9));
     border-radius: 0;
   }
 }
