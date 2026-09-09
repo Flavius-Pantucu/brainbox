@@ -4641,76 +4641,70 @@ span.movelist__half {
 }
 
 /* =========================================================================
-   CARDS — drawn once, dealt everywhere
+   REMI — tiles on a table
    ========================================================================= */
 
-.card {
+.tile {
   position: relative;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 2px;
-  width: clamp(38px, 5.2vw, 54px);
-  aspect-ratio: 5 / 7;
+  display: grid;
+  place-items: center;
+  width: clamp(30px, 3.6vw, 40px);
+  aspect-ratio: 3 / 4;
   padding: 0;
-  border: 1px solid var(--keyline-strong);
+  border: 0;
   border-radius: var(--radius-xs);
-  background: var(--plate-face);
-  box-shadow: var(--lift-1);
+  background: #efe6d2;
+  box-shadow: inset 0 -3px 0 rgba(0, 0, 0, 0.18), inset 0 2px 0 rgba(255, 255, 255, 0.6),
+    var(--lift-1);
   font-family: var(--font-display), sans-serif;
   font-weight: 600;
   cursor: default;
-  transition: transform 200ms var(--swing), box-shadow 200ms var(--swing),
-    opacity 200ms ease-out;
+  transition: transform 180ms var(--swing), box-shadow 180ms var(--swing);
 }
 
-.card__rank {
-  font-size: clamp(0.9rem, 1.5vw, 1.15rem);
+.tile__number {
+  font-size: clamp(0.95rem, 1.6vw, 1.25rem);
   line-height: 1;
 }
 
-.card--black .card__rank {
-  color: var(--paint-navy);
-}
-
-.card--red .card__rank {
+.tile--r .tile__number {
   color: #b3241a;
 }
 
-.suit--black {
-  fill: var(--paint-navy);
+.tile--y .tile__number {
+  color: #b07d12;
 }
 
-.suit--red {
+.tile--b .tile__number {
+  color: #21518f;
+}
+
+.tile--k .tile__number {
+  color: #1d2530;
+}
+
+.tile__star {
+  width: 62%;
+  height: 62%;
   fill: #b3241a;
 }
 
-button.card:not(:disabled) {
+button.tile:not(:disabled) {
   cursor: pointer;
 }
 
-button.card:not(:disabled):hover {
-  transform: translateY(-6px);
+button.tile:not(:disabled):hover {
+  transform: translateY(-4px);
 }
 
-.card.is-picked {
-  transform: translateY(-12px);
+.tile.is-picked {
+  transform: translateY(-10px);
   box-shadow: var(--lift-2), 0 0 0 2px var(--signal);
 }
 
-/* what is already in a meld, and what is still costing you */
-.card.is-melded {
-  border-color: color-mix(in srgb, var(--paint-cobalt) 62%, transparent);
-}
-
-.card.is-dim {
-  opacity: 0.72;
-}
-
-.card--back {
+.tile--back {
   background: var(--panel);
-  border-color: var(--keyline);
+  box-shadow: inset 0 -3px 0 rgba(0, 0, 0, 0.28), var(--lift-1);
   background-image: repeating-linear-gradient(
     45deg,
     color-mix(in srgb, var(--paint-cobalt) 22%, transparent) 0 3px,
@@ -4718,21 +4712,17 @@ button.card:not(:disabled):hover {
   );
 }
 
-.card--empty {
+.tile--empty {
   background: none;
-  border-style: dashed;
+  border: 1px dashed var(--keyline-strong);
   box-shadow: none;
 }
 
-/* =========================================================================
-   GIN RUMMY
-   ========================================================================= */
-
-.rum {
+.remi {
   display: contents;
 }
 
-.rum__field {
+.remi__field {
   grid-column: 1;
   display: flex;
   align-items: center;
@@ -4741,7 +4731,7 @@ button.card:not(:disabled):hover {
   min-width: 0;
 }
 
-.rum__side {
+.remi__side {
   grid-column: 2;
   display: flex;
   flex-direction: column;
@@ -4751,30 +4741,31 @@ button.card:not(:disabled):hover {
   padding-bottom: var(--u);
 }
 
-.rum__table {
+.remi__table {
   position: relative;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
-  gap: calc(var(--u) * 3);
+  gap: calc(var(--u) * 2);
   width: 100%;
-  max-width: 760px;
+  max-width: 820px;
   padding: calc(var(--u) * 2.5);
   border-radius: var(--radius-lg);
   background: var(--panel);
   box-shadow: var(--lift-2);
 }
 
-.rum__seat {
+.remi__seats {
   display: flex;
-  flex-direction: column;
-  gap: var(--u);
+  gap: calc(var(--u) * 3);
 }
 
-.rum__who {
+.remi__seat {
   display: flex;
   align-items: baseline;
   gap: var(--u);
+}
+
+.remi__who {
   font-family: var(--font-label);
   font-size: 0.62rem;
   font-weight: 600;
@@ -4783,30 +4774,58 @@ button.card:not(:disabled):hover {
   color: var(--ink-quiet);
 }
 
-.rum__dead {
-  font-style: normal;
-  letter-spacing: 0.02em;
-  text-transform: none;
+.remi__count {
+  font-family: var(--font-display), sans-serif;
+  font-size: 0.95rem;
+  color: var(--ink);
+}
+
+/* what is down, in a routed channel of its own */
+.remi__laid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--u);
+  min-height: 84px;
+  padding: var(--u);
+  border-radius: var(--radius-sm);
+  background: var(--routed);
+  box-shadow: var(--cut);
+}
+
+.remi__empty {
+  margin: auto;
   color: var(--ink-faint);
 }
 
-/* a hand overlaps like a hand does */
-.rum__hand,
-.rum__backs {
+.meld {
   display: flex;
-  padding-top: 12px;
+  align-items: center;
+  gap: 2px;
+  padding: 4px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-xs);
+  background: none;
+  cursor: default;
 }
 
-.rum__hand > * + *,
-.rum__backs > * + * {
-  margin-left: clamp(-22px, -2.2vw, -14px);
+.meld:not(:disabled) {
+  cursor: pointer;
 }
 
-.rum__backs .card {
-  width: clamp(30px, 4vw, 40px);
+.meld:not(:disabled):hover {
+  border-color: var(--signal);
+  background: color-mix(in srgb, var(--paint-cobalt) 12%, transparent);
 }
 
-.rum__piles {
+.meld__value {
+  margin-left: 4px;
+  font-family: var(--font-label);
+  font-size: 0.58rem;
+  letter-spacing: 0.1em;
+  color: var(--ink-faint);
+}
+
+.remi__piles {
   display: flex;
   justify-content: center;
   gap: calc(var(--u) * 3);
@@ -4827,7 +4846,7 @@ button.card:not(:disabled):hover {
   cursor: default;
 }
 
-.pile:not(:disabled):hover .card {
+.pile:not(:disabled):hover .tile {
   transform: translateY(-4px);
 }
 
@@ -4839,31 +4858,47 @@ button.card:not(:disabled):hover {
   color: var(--ink-faint);
 }
 
-.preview .rum__table {
+/* your own rack, and the tiles stand on it */
+.remi__rack {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+  padding: calc(var(--u) * 1.25) var(--u);
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--paint-navy) 40%, var(--panel));
+  box-shadow: var(--cut);
+}
+
+.preview .remi__table {
   gap: var(--u);
   padding: var(--u);
   box-shadow: none;
   max-width: none;
 }
 
-.preview .card {
-  width: 26px;
+.preview .tile {
+  width: 15px;
   box-shadow: none;
 }
 
-.preview .rum__hand > * + *,
-.preview .rum__backs > * + * {
-  margin-left: -11px;
+.preview .tile__number {
+  font-size: 0.5rem;
 }
 
-.preview .rum__who,
-.preview .pile__count {
-  font-size: 0.42rem;
+.preview .remi__laid {
+  min-height: 0;
+}
+
+.preview .remi__who,
+.preview .pile__count,
+.preview .meld__value,
+.preview .remi__empty {
+  font-size: 0.4rem;
 }
 
 @media (max-width: 900px) {
-  .rum__field,
-  .rum__side {
+  .remi__field,
+  .remi__side {
     grid-column: 1;
   }
 }

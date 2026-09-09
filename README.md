@@ -1,6 +1,6 @@
 # BrainBox
 
-A portal for browser-based logic games — chess, Go, backgammon, gin rummy, checkers, Reversi,
+A portal for browser-based logic games — chess, Go, backgammon, Remi, checkers, Reversi,
 Connect Four, minesweeper, sudoku and tic-tac-toe — built with
 [Next.js](https://nextjs.org/).
 
@@ -19,7 +19,7 @@ Games:
 - [x] **Minesweeper** — beginner to expert, with a first click that is always safe
 - [x] **Sudoku** — a fresh puzzle every game, generated in the browser, at four difficulties
 - [x] **Go** — 9×9 to 19×19, against the machine, against the next chair, or online by room code
-- [x] **Gin Rummy** — against the machine, or online by room code
+- [x] **Remi** — two to four at a table, against the machine or online by room code
 - [x] **Backgammon** — against the machine, against the next chair, or online by room code
 - [x] **Checkers** — against the machine, against the next chair, or online by room code
 - [x] **Reversi** — against the machine, against the next chair, or online by room code
@@ -39,7 +39,7 @@ Games:
 | `/play/checkers` | Checkers, inside the play frame                                    |
 | `/play/minesweeper` | Minesweeper, inside the play frame                              |
 | `/play/backgammon` | Backgammon, inside the play frame                                |
-| `/play/rummy`    | Gin Rummy, inside the play frame                                   |
+| `/play/remi`     | Remi, inside the play frame                                        |
 | `/play/sudoku`   | Sudoku, inside the play frame                                      |
 | `/play/tictactoe`| Tic-Tac-Toe, inside the play frame                                 |
 | `/standings`     | The ladder and your card — recent games, wins, day run             |
@@ -87,21 +87,28 @@ own eyes and passes when it has nothing left. It is a real opponent on 9×9 and 
 above that. Not implemented: positional superko, and the search runs on the main thread rather
 than in a worker.
 
-## Gin Rummy
+## Remi
 
-Ten cards each, draw and throw, knock on ten points of deadwood or less. `lib/rummy.js` works
-the hand out for you: it enumerates every set and run the cards could form — including the
-sub-runs, because a five-card run is sometimes worth breaking for a set — and searches for the
-layout that leaves the least behind. That number is the deadwood, and the same solver draws the
-melds in your hand and decides what the machine throws.
+Romanian rummy, on tiles. A hundred and six of them: one to thirteen in four colours, twice
+over, and two jokers. Fourteen to a rack, draw one and throw one, and the rule the game is named
+for — **your first lay has to be worth at least forty-five**, in one turn, or it does not go
+down at all.
 
-Gin pays 25 over the defender's deadwood. Knock and the defender lays off what it can onto your
-melds first; if it comes out level or better, it undercuts you and takes the difference plus 25.
-Laying off is done by the engine rather than asked for, because a defender would always do it.
-First to 100 wins.
+`lib/remi.js` reads a set of tiles and says what it is: a group is one number in three or four
+different colours, a run is one colour running on, one joker to a meld, and the one sits either
+under the two or over the thirteen, where it counts as fourteen. So 12-13-1 is a run worth 39
+and 13-1-2 is nothing. Once you are open you can build on any meld on the table, yours or
+theirs, and buy a joker off it with the tile it is standing in for.
 
-Aces are low, so A-2-3 is a run and Q-K-A is not. Online, **the deck is the server's and a hand
-is only ever sent to the player holding it** — the room's payload is built per viewer.
+Whoever empties their rack ends the hand; everybody else counts what they are left holding, and
+a joker there costs 25. Lowest total when somebody passes 100 wins the game.
+
+The machine works its rack out with the same solver the board uses: every meld the tiles could
+form, then a search for the set of them that share no tile and are worth the most — or cover the
+most tiles, once it is open and trying to go out.
+
+Two to four play. Online tables seat four, start when the host says so, and **your rack is only
+ever sent to you**.
 
 ## Backgammon
 

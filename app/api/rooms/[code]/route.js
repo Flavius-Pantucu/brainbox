@@ -1,4 +1,12 @@
-import { act, getRoom, joinRoom, leaveRoom, publicState, requestRematch } from "../../../../lib/rooms";
+import {
+  act,
+  getRoom,
+  joinRoom,
+  leaveRoom,
+  publicState,
+  requestRematch,
+  startRoom,
+} from "../../../../lib/rooms";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -6,7 +14,10 @@ export const runtime = "nodejs";
 const ERRORS = {
   "no-room": [404, "That room has closed or never existed."],
   "no-game": [400, "That game has no rooms."],
-  full: [409, "That room already has two players."],
+  full: [409, "That room has no seat left."],
+  "not-host": [403, "Only the player who opened the room can start it."],
+  "already-started": [409, "That game has already started."],
+  "too-few": [409, "Not enough players yet."],
   "not-seated": [403, "You are not seated in this room."],
   "not-playing": [409, "The game is not running."],
   "not-your-turn": [409, "It is not your turn."],
@@ -60,6 +71,12 @@ export async function POST(request, { params }) {
       seat: result.seat,
       state: publicState(result.room, result.token),
     });
+  }
+
+  if (action === "start") {
+    const result = startRoom(code, token);
+    if (result.error) return fail(result.error);
+    return Response.json({ state: publicState(result.room, token) });
   }
 
   if (action === "rematch") {

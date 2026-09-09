@@ -2,8 +2,8 @@
 // library's: the chess material read, the review maths, the variation tree, the
 // clocks, Connect Four's rules and opponent, Go's rules and scoring, Reversi's
 // turning and passing, draughts' compulsory captures and chains, minesweeper's
-// safe first click, backgammon's dice rules, gin rummy's melding and
-// scoring, and the room's move rules.
+// safe first click, backgammon's dice rules, Remi's melds and its forty-five, and the
+// room's move rules.
 //   npm run check
 const assert = require("node:assert/strict");
 const { Chess } = require("chess.js");
@@ -17,7 +17,7 @@ async function main() {
   const chk = await import("../lib/checkers.js");
   const ms = await import("../lib/minesweeper.js");
   const bg = await import("../lib/backgammon.js");
-  const rum = await import("../lib/rummy.js");
+  const remi = await import("../lib/remi.js");
   const daily = await import("../lib/daily.js");
   const games = await import("../lib/games.js");
   const rooms = await import("../lib/rooms.js");
@@ -765,131 +765,107 @@ async function main() {
   }
 
   {
-    /* gin rummy ----------------------------------------------------------- */
-    const card = (rank, suit) => suit * 13 + rank;
+    /* remi ---------------------------------------------------------------- */
+    const t = (n, colour, copy = 0) =>
+      copy * 52 + remi.COLOURS.indexOf(colour) * 13 + (n - 1);
+    const J = 104;
+    const J2 = 105;
 
-    assert.equal(rum.valueOf(card(0, 0)), 1, "an ace is one");
-    assert.equal(rum.valueOf(card(9, 0)), 10, "a ten is ten");
-    assert.equal(rum.valueOf(card(12, 0)), 10, "and so is a king");
-    assert.equal(rum.cardName(card(12, 3)), "Kc");
+    assert.equal(remi.bag().length, 106, "a hundred and six tiles");
+    assert.equal(remi.bag().filter(remi.isJoker).length, 2, "two of them jokers");
+    assert.equal(remi.tileName(t(1, "r")), "1r");
+    assert.equal(remi.numberOf(t(13, "k")), 13);
 
-    // a run is same suit and consecutive; a set is same rank
-    const clean = [
-      card(0, 0), card(1, 0), card(2, 0),
-      card(5, 1), card(5, 2), card(5, 3),
-      card(9, 3), card(10, 3), card(11, 3),
-      card(1, 1),
+    // a group is one number in different colours; a run is one colour running on
+    assert.equal(remi.readMeld([t(7, "r"), t(7, "y"), t(7, "b")]).value, 21);
+    assert.equal(remi.readMeld([t(7, "r"), t(7, "y"), J]).value, 21, "a joker stands in");
+    assert.equal(remi.readMeld([t(7, "r"), t(7, "r", 1), t(7, "y")]), null, "not twice a colour");
+    assert.equal(remi.readMeld([t(7, "r"), t(7, "y"), t(7, "b"), t(7, "k"), J]), null, "four at most");
+    assert.equal(remi.readMeld([t(5, "r"), t(6, "r"), t(7, "r")]).value, 18);
+    assert.equal(remi.readMeld([t(5, "r"), t(6, "y"), t(7, "r")]), null, "one colour to a run");
+    assert.equal(remi.readMeld([t(5, "r"), J, J2]), null, "one joker to a meld");
+
+    // the one sits under the two or over the thirteen, and is worth fourteen there
+    assert.equal(remi.readMeld([t(1, "b"), t(2, "b"), t(3, "b")]).value, 6);
+    assert.equal(remi.readMeld([t(12, "b"), t(13, "b"), t(1, "b")]).value, 39, "12 + 13 + 14");
+    assert.equal(remi.readMeld([t(13, "b"), t(1, "b"), t(2, "b")]), null, "nothing wraps round");
+
+    // growing a meld, and buying its joker
+    const run = [t(5, "r"), t(6, "r"), t(7, "r")];
+    assert.ok(remi.extendedWith(run, t(8, "r")), "the eight goes on the end");
+    assert.ok(remi.extendedWith(run, t(4, "r")), "and so does the four");
+    assert.equal(remi.extendedWith(run, t(9, "r")), null, "the nine does not");
+    const withJoker = [t(5, "r"), J, t(7, "r")];
+    assert.deepEqual(remi.jokerSwap(withJoker, t(6, "r")).joker, J, "the six buys the joker");
+    assert.equal(remi.jokerSwap(withJoker, t(9, "r")), null, "and nothing else does");
+
+    // the solver finds the best lay, high ace included
+    const hand = [
+      t(11, "r"), t(12, "r"), t(13, "r"), t(1, "r"),
+      t(4, "y"), t(4, "b"), t(4, "k"),
+      t(2, "y"), t(9, "b"), t(6, "k"), t(8, "y"), t(3, "b"), t(10, "k"), t(7, "r"),
     ];
-    const laid = rum.bestArrangement(clean);
-    assert.equal(laid.melds.length, 3);
-    assert.equal(laid.value, 2, "only the loose two is left");
+    const lay = remi.bestMelds(hand);
+    assert.equal(lay.value, 62, "11-12-13-1 red and three fours");
+    assert.ok(lay.value >= remi.OPENING, "which opens");
 
-    // aces are low: queen, king, ace is not a run
-    const wrapped = [card(11, 0), card(12, 0), card(0, 0), card(4, 1), card(7, 2), card(9, 3)];
+    // and what a hand costs you if you are left holding it
+    assert.equal(remi.handValue([t(13, "r"), J, t(1, "y")]), 39, "a joker in hand is twenty-five");
+
+    /* a remi table seats up to four ---------------------------------------- */
+    const host = rooms.createRoom("Ada", "remi", { seat: "a" });
+    const code = host.room.code;
+    let table = rooms.publicState(rooms.getRoom(code), host.token);
+    assert.equal(table.seats.length, 4);
+    assert.equal(table.minSeats, 2);
+    assert.equal(table.status, "waiting", "a table that can seat four waits to be started");
+    assert.equal(rooms.startRoom(code, host.token).error, "too-few");
+
+    const bo = rooms.joinRoom(code, "Bo");
+    assert.equal(bo.seat, "b");
     assert.equal(
-      rum.meldsIn(wrapped).length,
+      rooms.publicState(rooms.getRoom(code), host.token).status,
+      "waiting",
+      "and keeps waiting, because a third may still sit down"
+    );
+    const cy = rooms.joinRoom(code, "Cy");
+    assert.equal(cy.seat, "c");
+    assert.equal(rooms.startRoom(code, bo.token).error, "not-host");
+
+    rooms.startRoom(code, host.token);
+    table = rooms.publicState(rooms.getRoom(code), host.token);
+    assert.equal(table.status, "playing");
+    assert.equal(table.hand.length, 14, "fourteen tiles each");
+    assert.deepEqual(Object.keys(table.others).sort(), ["b", "c"]);
+    assert.equal(table.others.b, 14, "and I am told counts, not tiles");
+    assert.equal(table.hands, undefined, "never the whole deal");
+    assert.equal(table.stock, 106 - 42, "the rest is stock");
+    assert.equal(
+      rooms.publicState(rooms.getRoom(code), null).hand.length,
       0,
-      "nothing wraps round the king"
+      "somebody with no seat holds nothing"
     );
 
-    // the solver takes the layout that leaves least behind, not the first it finds
-    const choice = [
-      card(3, 0), card(4, 0), card(5, 0), card(6, 0), card(7, 0),
-      card(5, 1), card(5, 2),
-      card(12, 3), card(11, 3), card(0, 1),
-    ];
-    assert.equal(rum.bestArrangement(choice).value, 33);
+    const seats = { a: host.token, b: bo.token, c: cy.token };
+    const mover = seats[table.turn];
+    const idle = seats[table.turn === "a" ? "b" : "a"];
+    assert.equal(rooms.act(code, idle, "draw", { from: "stock" }).error, "not-your-turn");
+    assert.equal(rooms.act(code, mover, "discard", { tile: 0 }).error, "draw-first");
 
-    // laying off: the defender puts what it can on the knocker's melds
-    const melds = [[card(0, 0), card(1, 0), card(2, 0)]];
-    assert.equal(rum.extendsMeld(card(3, 0), melds[0]), true, "the four goes on the end");
-    assert.equal(rum.extendsMeld(card(3, 1), melds[0]), false, "but not off suit");
-    const setMeld = [card(5, 0), card(5, 1), card(5, 2)];
-    assert.equal(rum.extendsMeld(card(5, 3), setMeld), true, "the fourth of a rank goes on a set");
-    assert.equal(rum.extendsMeld(card(5, 3), [...setMeld, card(5, 3)]), false, "a set holds four");
-
-    const off = rum.layOff([card(3, 0), card(12, 1)], melds);
-    assert.deepEqual(off.placed, [card(3, 0)]);
-    assert.equal(off.value, 10, "the king stays deadwood");
-
-    // scoring: a plain knock, a gin, and an undercut
-    const knocker = [
-      card(0, 0), card(1, 0), card(2, 0),
-      card(5, 1), card(5, 2), card(5, 3),
-      card(9, 3), card(10, 3), card(11, 3),
-      card(1, 1),
-    ];
-    const loose = [
-      card(0, 1), card(0, 2), card(0, 3),
-      card(4, 0), card(5, 0), card(6, 0),
-      card(12, 1), card(11, 1), card(8, 2), card(7, 2),
-    ];
-    const knock = rum.scoreKnock(knocker, loose);
-    assert.equal(knock.winner, "knocker");
-    assert.equal(knock.points, 35, "the difference in deadwood");
-
-    const ginHand = [
-      card(0, 0), card(1, 0), card(2, 0),
-      card(5, 1), card(5, 2), card(5, 3),
-      card(9, 3), card(10, 3), card(11, 3), card(12, 3),
-    ];
-    assert.equal(rum.deadwoodValue(ginHand), 0);
-    const gin = rum.scoreKnock(ginHand, loose);
-    assert.equal(gin.gin, true);
-    assert.equal(gin.points, rum.deadwoodValue(loose) + 25, "gin pays the bonus and no lay-offs");
-
-    // level deadwood is an undercut, and it pays the defender
-    const thin = [
-      card(0, 1), card(1, 1), card(2, 1),
-      card(6, 0), card(6, 2), card(6, 3),
-      card(9, 2), card(10, 2), card(11, 2),
-      card(1, 3),
-    ];
-    const under = rum.scoreKnock(knocker, thin);
-    assert.equal(under.winner, "defender");
-    assert.equal(under.undercut, true);
-    assert.equal(under.points, 25, "level, so just the bonus");
-
-    // a deal is a whole deck, split up and none of it lost
-    const dealt = rum.deal();
-    assert.equal(dealt.hands.a.length, 10);
-    assert.equal(dealt.hands.b.length, 10);
-    assert.equal(dealt.discard.length, 1);
-    assert.equal(dealt.stock.length, 31);
+    rooms.act(code, mover, "draw", { from: "stock" });
+    const drawn = rooms.publicState(rooms.getRoom(code), mover);
+    assert.equal(drawn.hand.length, 15, "fifteen between drawing and throwing");
+    assert.equal(rooms.act(code, mover, "draw", { from: "stock" }).error, "already-drawn");
     assert.equal(
-      new Set([...dealt.hands.a, ...dealt.hands.b, ...dealt.discard, ...dealt.stock]).size,
-      52,
-      "fifty-two cards, each of them once"
+      rooms.act(code, mover, "lay", { tiles: drawn.hand.slice(0, 3) }).error,
+      "not-open",
+      "nothing goes down before the forty-five"
     );
-
-    /* a rummy room keeps each hand to itself ------------------------------- */
-    const rumHost = rooms.createRoom("Ada", "rummy", { seat: "a" });
-    const rumGuest = rooms.joinRoom(rumHost.room.code, "Bo");
-    const rumCode = rumHost.room.code;
-
-    const mine = rooms.publicState(rooms.getRoom(rumCode), rumHost.token);
-    const yours = rooms.publicState(rooms.getRoom(rumCode), rumGuest.token);
-    assert.equal(mine.hand.length, 10);
-    assert.equal(mine.theirs, 10, "I am told how many they hold, not what");
-    assert.equal(mine.hands, undefined, "and never the whole deal");
-    assert.notDeepEqual(mine.hand, yours.hand, "two players, two hands");
     assert.equal(
-      rooms.publicState(rooms.getRoom(rumCode), null).hand.length,
-      0,
-      "somebody with no seat is shown no cards"
+      rooms.act(code, mover, "open", { melds: [[t(1, "r"), t(2, "r"), t(3, "r")]] }).error,
+      "not-your-tile",
+      "and only with tiles you hold"
     );
-
-    const onTurn = mine.turn === "a" ? rumHost.token : rumGuest.token;
-    const waiting = mine.turn === "a" ? rumGuest.token : rumHost.token;
-    assert.equal(rooms.act(rumCode, waiting, "draw", { from: "stock" }).error, "not-your-turn");
-    assert.equal(rooms.act(rumCode, onTurn, "discard", { card: 0 }).error, "draw-first");
-
-    rooms.act(rumCode, onTurn, "draw", { from: "stock" });
-    const drawn = rooms.publicState(rooms.getRoom(rumCode), onTurn);
-    assert.equal(drawn.hand.length, 11, "eleven in hand between drawing and throwing");
-    assert.equal(drawn.phase, "discard");
-    assert.equal(rooms.act(rumCode, onTurn, "draw", { from: "stock" }).error, "already-drawn");
-    assert.equal(rooms.act(rumCode, onTurn, "discard", { card: 999 }).error, "not-your-card");
   }
 
   /* every game the catalog lists can be today's --------------------------- */

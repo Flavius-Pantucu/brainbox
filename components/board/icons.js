@@ -144,7 +144,7 @@ export function BackgammonMark({ size = 20, ...rest }) {
   );
 }
 
-export function RummyMark({ size = 20, ...rest }) {
+export function RemiMark({ size = 20, ...rest }) {
   // Two cards, one behind the other, and a pip.
   return (
     <svg {...base} width={size} height={size} {...rest}>
@@ -165,7 +165,7 @@ export const GAME_MARKS = {
   checkers: CheckersMark,
   minesweeper: MinesweeperMark,
   backgammon: BackgammonMark,
-  rummy: RummyMark,
+  remi: RemiMark,
 };
 
 export function Lamp({ size = 18, lit = false, ...rest }) {
