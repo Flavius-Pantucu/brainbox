@@ -13,8 +13,10 @@ const PIPS = {
   6: [[0, 0], [2, 0], [0, 1], [2, 1], [0, 2], [2, 2]],
 };
 
-const TUMBLES = 6;
-const TUMBLE_MS = 90;
+// The throw: dice skid in, spin, bounce twice, settle. Faces keep changing for
+// as long as they are in the air. Kept in step with THROW_MS in globals.css.
+const TUMBLES = 7;
+const TUMBLE_MS = 100;
 const face = () => 1 + Math.floor(Math.random() * 6);
 
 export function Dice({ dice = [], used = [] }) {
@@ -48,13 +50,14 @@ export function Dice({ dice = [], used = [] }) {
 
   return (
     <div
-      className={`dice ${tumble ? "is-rolling" : ""}`}
+      className={`dice ${tumble ? "is-thrown" : ""}`}
       role="status"
       aria-label={tumble ? "Rolling" : `Rolled ${dice.join(" and ")}`}>
       {shown.map((die, index) => (
         <svg
           key={index}
           className={`die ${!tumble && used[index] ? "is-spent" : ""}`}
+          style={{ "--seat": index }}
           viewBox="0 0 24 24"
           aria-hidden="true">
           <rect x="1" y="1" width="22" height="22" rx="4" />

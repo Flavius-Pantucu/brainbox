@@ -31,6 +31,7 @@ const MODES = [
 
 const NAMES = { w: "White", b: "Black" };
 const HOP_MS = 520;
+const THROW_MS = 820; // long enough for the dice to land before anything moves
 
 const fresh = () => ({
   state: start(),
@@ -127,7 +128,7 @@ export default function Backgammon({ onResult }) {
   useEffect(() => {
     if (!local || game.outcome || !game.dice.length) return undefined;
     if (!turnDone(game.sequences)) return undefined;
-    const wait = game.played.length ? HOP_MS : 900; // a blocked roll is worth seeing
+    const wait = game.played.length ? HOP_MS : THROW_MS + 500; // a blocked roll is worth seeing
     const id = setTimeout(() => {
       setGame((current) => ({
         ...current,
@@ -155,9 +156,19 @@ export default function Backgammon({ onResult }) {
         if (!play) return current;
         return playOne(current, play.from, play.to);
       });
-    }, HOP_MS);
+    }, game.played.length ? HOP_MS : THROW_MS);
     return () => clearTimeout(id);
-  }, [mode, game.outcome, game.turn, game.dice, game.used, game.sequences, level, playOne]);
+  }, [
+    mode,
+    game.outcome,
+    game.turn,
+    game.dice,
+    game.used,
+    game.sequences,
+    game.played.length,
+    level,
+    playOne,
+  ]);
 
   /* --- results ---------------------------------------------------------- */
 
