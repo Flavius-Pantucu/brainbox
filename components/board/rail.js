@@ -6,9 +6,13 @@ import { useEffect, useState } from "react";
 import { Lamp } from "./icons";
 import { BrainBoxMark } from "./logo";
 import { NamePlate } from "./nameplate";
+import { GAMES } from "../../lib/games";
 
+// The catalogue drives the nav, so a new game appears here the moment it is
+// added to lib/games.js.
 const LINKS = [
   { href: "/", label: "Board" },
+  ...GAMES.map((game) => ({ href: `/play/${game.slug}`, label: game.name })),
   { href: "/standings", label: "Standings" },
 ];
 

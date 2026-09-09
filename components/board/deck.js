@@ -42,7 +42,7 @@ function Today({ challenge, done, index }) {
         <span id="zone-today">Today&rsquo;s challenge</span>
       </ZoneLabel>
 
-      <Plate tall hookAt="left" index={index} hangKey={challenge.key + String(done)}>
+      <Plate tall pegAt="left" index={index} hangKey={challenge.key + String(done)}>
         <div className="row" style={{ justifyContent: "space-between" }}>
           <span className="today__date">{longDate(challenge.date)}</span>
           {done ? (
@@ -170,7 +170,7 @@ function runLine(streak) {
     return "A run starts the first day you finish a game, and lasts as long as you keep coming back.";
   }
   if (!streak.playedToday) {
-    return "Today's hook is still empty. Finish one game to keep the run going.";
+    return "Today's peg is still empty. Finish one game to keep the run going.";
   }
   return `Today is hung. Come back tomorrow and this reads ${streak.length + 1}.`;
 }
@@ -187,7 +187,7 @@ function Run({ summary, range, startIndex }) {
 
       <div className="stack">
         <Plate
-          hookAt="left"
+          pegAt="left"
           index={startIndex}
           hangKey={`${streak.length}-${streak.alive}`}
           empty={streak.length === 0}>

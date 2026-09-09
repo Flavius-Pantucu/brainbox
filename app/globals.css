@@ -405,16 +405,24 @@ button {
 .rail__nav {
   display: flex;
   align-items: stretch;
-  gap: calc(var(--u) * 0.5);
+  gap: calc(var(--u) * 0.25);
   height: 100%;
   margin-left: calc(var(--u) * 2);
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.rail__nav::-webkit-scrollbar {
+  display: none;
 }
 
 .rail__link {
   position: relative;
   display: inline-flex;
   align-items: center;
-  padding: 0 calc(var(--u) * 1.75);
+  white-space: nowrap;
+  padding: 0 calc(var(--u) * 1.5);
   font-family: var(--font-label), ui-sans-serif, sans-serif;
   font-weight: 600;
   text-transform: uppercase;
@@ -462,65 +470,89 @@ button {
   position: relative;
   display: flex;
   flex-direction: column;
-  padding-top: 13px;
+  /* room for the lug that rises above the plate and drops over the peg */
+  padding-top: 17px;
   height: 100%;
 }
 
-.hang__hook {
+/* The peg: a fixing screwed into the board. It belongs to the board, not to
+   the plate, so it does not move when the plate swings on it. */
+.hang__peg {
   position: absolute;
-  top: 0;
+  top: 6px;
   left: 50%;
-  transform: translateX(-50%);
-  color: var(--signal);
-  pointer-events: none;
+  width: 9px;
+  height: 9px;
+  margin-left: -4.5px;
+  border-radius: 50%;
+  background: var(--signal);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.65),
+    inset 0 1px 0 color-mix(in srgb, var(--paint-bone) 45%, transparent);
   z-index: 3;
-  filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.5));
+  pointer-events: none;
 }
 
-.hang--left .hang__hook {
-  left: 22px;
-  transform: none;
+.hang--left .hang__peg {
+  left: 30px;
 }
 
 .plate {
   position: relative;
+  z-index: 1;
   flex: 1;
   background: var(--plate-face);
   color: var(--plate-ink);
   border: 1px solid rgba(0, 0, 0, 0.3);
   border-radius: var(--radius-plate);
   box-shadow: var(--lift-1);
-  transform-origin: 50% -6px;
+  /* the plate turns about its peg, so the hole stays on the fixing */
+  transform-origin: 50% -4px;
 }
 
 .hang--left .plate {
-  transform-origin: 22px -6px;
+  transform-origin: 30px -4px;
 }
 
-/* the drilled hole the hook goes through */
-.plate::before {
+/* The lug: the tab of the plate that rises above its top edge, punched with
+   the hole that drops over the peg. */
+.plate__lug {
+  position: absolute;
+  top: -15px;
+  left: 50%;
+  width: 30px;
+  height: 18px;
+  margin-left: -15px;
+  background: var(--plate-face);
+  border: 1px solid rgba(0, 0, 0, 0.3);
+  border-bottom: 0;
+  border-radius: 9px 9px 0 0;
+  z-index: -1;
+}
+
+.hang--left .plate__lug {
+  left: 30px;
+}
+
+/* the punched hole: the board shows through it */
+.plate__lug::after {
   content: "";
   position: absolute;
-  top: 6px;
+  top: 4px;
   left: 50%;
-  transform: translateX(-50%);
-  width: 10px;
-  height: 10px;
+  width: 13px;
+  height: 13px;
+  margin-left: -6.5px;
   border-radius: 50%;
-  background: var(--routed);
-  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.75), 0 1px 0 rgba(255, 255, 255, 0.28);
+  background: var(--ground);
+  box-shadow: inset 0 1.5px 2px rgba(0, 0, 0, 0.6);
 }
 
-.hang--left .plate::before {
-  left: 22px;
-}
-
-/* enamel keyline, painted inside the edge */
+/* the enamel keyline, painted inside the edge */
 .plate::after {
   content: "";
   position: absolute;
   inset: 4px;
-  border: 1px solid color-mix(in srgb, var(--paint-navy) 28%, transparent);
+  border: 1px solid color-mix(in srgb, var(--paint-navy) 22%, transparent);
   border-radius: 12px;
   pointer-events: none;
 }
@@ -541,6 +573,16 @@ button {
   color: var(--ink-quiet);
 }
 
+.plate--empty .plate__lug {
+  background: transparent;
+  border: 1px dashed var(--keyline-strong);
+  border-bottom: 0;
+}
+
+.plate--notch .plate__lug {
+  background: var(--routed);
+}
+
 .plate--empty .best__value,
 .plate--empty .numerals,
 .plate--empty .day__plate {
@@ -552,31 +594,8 @@ button {
   color: var(--ink-quiet);
 }
 
-.plate--empty::before,
-.plate--notch::before {
-  background: color-mix(in srgb, var(--ground) 70%, #000);
-  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.6), 0 0 0 3px var(--ground);
-}
-
 .plate--empty::after {
   display: none;
-}
-
-/* An open hook: the board shows the empty notch rather than a ghost plate. */
-.plate--notch {
-  background: var(--routed);
-  border: 1px solid rgba(0, 0, 0, 0.4);
-  box-shadow: var(--cut);
-  color: var(--ink-faint);
-}
-
-.plate--notch::after {
-  display: none;
-}
-
-.plate--notch::before {
-  background: color-mix(in srgb, var(--ground) 50%, #000);
-  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.7), 0 0 0 3px var(--routed);
 }
 
 /* --- hanging the plate: the signature move --- */
@@ -798,23 +817,42 @@ button {
   flex-shrink: 0;
 }
 
+/* Tags sit on two very different grounds — the dark board and a light plate —
+   so each tone is stated for both. The mark carries the state either way. */
 .tag--on {
-  color: var(--plate-ink);
-  background: color-mix(in srgb, var(--paint-navy) 12%, transparent);
+  color: var(--ink);
+  background: color-mix(in srgb, var(--ink) 8%, transparent);
 }
 
 .tag--live {
-  color: var(--signal);
-  background: color-mix(in srgb, var(--paint-cobalt) 14%, transparent);
+  color: var(--signal-ink);
+  background: color-mix(in srgb, var(--signal) 14%, transparent);
 }
 
 .tag--off {
   color: var(--ink-faint);
   border-style: dashed;
+  background: transparent;
 }
 
 .tag--chalk {
   color: var(--ink-quiet);
+  background: transparent;
+}
+
+.plate .tag--on {
+  color: var(--plate-ink);
+  background: color-mix(in srgb, var(--paint-navy) 8%, transparent);
+}
+
+.plate .tag--live {
+  color: color-mix(in srgb, var(--paint-cobalt) 58%, var(--paint-navy));
+  background: color-mix(in srgb, var(--paint-cobalt) 16%, transparent);
+}
+
+.plate .tag--off,
+.plate .tag--chalk {
+  color: var(--plate-ink-quiet);
 }
 
 /* =========================================================================
@@ -1141,7 +1179,8 @@ button {
   margin: 0;
   padding: 0;
   display: grid;
-  gap: calc(var(--u) * 1);
+  /* the lug rises above each plate, so rungs need clearance for it */
+  gap: calc(var(--u) * 2.5);
 }
 
 .ladder__rung {
@@ -1435,18 +1474,29 @@ button {
   }
 
   .day .hang {
-    padding-top: 9px;
+    padding-top: 13px;
   }
 
-  .day .hang__hook {
-    width: 12px;
-    height: 17px;
-  }
-
-  .day .plate::before {
+  .day .hang__peg {
     top: 4px;
-    width: 6px;
-    height: 6px;
+    width: 7px;
+    height: 7px;
+    margin-left: -3.5px;
+  }
+
+  .day .plate__lug {
+    top: -11px;
+    width: 22px;
+    height: 13px;
+    margin-left: -11px;
+    border-radius: 7px 7px 0 0;
+  }
+
+  .day .plate__lug::after {
+    top: 3px;
+    width: 9px;
+    height: 9px;
+    margin-left: -4.5px;
   }
 
   .day .plate::after {

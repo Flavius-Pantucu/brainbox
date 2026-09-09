@@ -221,7 +221,7 @@ components:
 
 **Creative North Star: "The Club Scoreboard"**
 
-BrainBox is a hand-operated board in a club back room, painted in navy and cobalt. Nothing on it is generated: every figure sits on an enamel plate that somebody screwed to a hook, every region is a channel routed into the panel, every label is painted on. The interface reads as fabricated hardware rather than rendered software — plates catch a hard offset shadow, slots sink into an inset channel, and cobalt appears only where a fitting would be metal.
+BrainBox is a hand-operated board in a club back room, painted in navy and cobalt. Nothing on it is generated: every figure sits on an enamel plate hung on a peg through a punched lug, every region is a channel routed into the panel, every label is painted on. The interface reads as fabricated hardware rather than rendered software — plates catch a hard offset shadow, slots sink into an inset channel, and cobalt appears only where a fitting would be metal.
 
 The hardware is rounded, not machined. Corners run on a soft scale (8/12/16/20px), the display face is curvy and capped at semibold, and the mark is a solid brain with its folds cut out. The board is friendly and it does not shout — the tone commitment is carried by the corner scale and the weight ceiling, not by adding color.
 
@@ -245,7 +245,7 @@ Density is high but the voice is warm. Numbers are large, rounded and tabular; s
 Cold, printed enamel: a near-black navy ground, a bone plate face, a steel grey between them, and one cobalt fitting.
 
 ### Primary
-- **Signal Cobalt** (`--paint-cobalt`): the one live paint. It is fittings and marks: the hook, the active nav underline, the primary key face, the selected peg, the tic-tac-toe O, the room-code plate, the brain inside the mark, the focus ring, the scrollbar thumb. On the night coat it measures roughly 4.4:1 on the navy ground — enough for a fill or a large drawn stroke, not enough for body text.
+- **Signal Cobalt** (`--paint-cobalt`): the one live paint. It is fittings and marks: the peg a plate hangs on, the active nav underline, the primary key face, the selected peg, the tic-tac-toe O, the room-code plate, the brain inside the mark, the focus ring, the scrollbar thumb. On the night coat it measures roughly 4.4:1 on the navy ground — enough for a fill or a large drawn stroke, not enough for body text.
 - **Signal Ink** (`--signal-ink`): the text-safe cobalt. Cobalt pushed toward bone on the night coat and toward navy on the day coat, so accent-colored *words* (warn readouts, the tool shortcut hint, the seat mark, the strike line) stay legible in both coats.
 - **Signal On** (`--signal-on`): whatever sits on top of a cobalt fill. It flips per coat — navy on the night coat, bone on the day coat — so a cobalt key never has to guess its own label color.
 
@@ -374,7 +374,7 @@ State is a written word plus a drawn 7px mark inside a `currentColor` 1px border
 
 ### Cards / Containers — plate and slot
 Two container species, and only two.
-- **Plate (`.plate`):** raised enamel — plate face, 16px radius, 1px dark border, inset enamel keyline at 12px, `--lift-1`, 20px body padding (26/28/24 on `.plate--tall`). Empty variants are honest: `.plate--empty` is a dashed outline with no face; `.plate--notch` is the routed channel with the cut shadow, showing an open hook rather than a ghost plate.
+- **Plate (`.plate`):** raised enamel — plate face, 16px radius, 1px dark border, inset enamel keyline at 12px, `--lift-1`, 20px body padding (26/28/24 on `.plate--tall`). Empty variants are honest: `.plate--empty` is a dashed outline with no face; `.plate--notch` is the routed channel with the cut shadow, showing an open peg rather than a ghost plate.
 - **Slot (`.slot`):** cut channel — routed color, 20px radius, `--cut`, 16px padding (20px deep). Everything that reads as recessed (`.readout`, `.status`, `.field__input`, the peg groove) uses the same channel treatment.
 
 ### Inputs / Fields
@@ -401,9 +401,9 @@ A container-query grid: `container-type: size` on the board, so cell type is siz
 No box. Four SVG hash strokes in steel-mixed-with-ground at 1.1 width sit above a bare 3×3 grid; cells are transparent with a 12px radius and only appear on interaction — hover washes 16% cobalt and reveals a ghost mark at 26% ink, a winning cell holds a 22% cobalt wash. X is drawn in `--ink`, O in `--signal`, both stroked at width 9 with the `draw-mark` dash reveal; the winning line strikes through in `--signal-ink`.
 
 ### The hung plate (signature — under review)
-Every figure on the dashboard hangs from a drawn hook: a `.hang` wrapper with 13px of top padding, the cobalt `Hook` icon absolutely centered (or 22px from the left on `.hang--left`), and a plate below with a drilled hole punched through its face and its transform origin set 6px above its own top edge. When data changes the outgoing plate lifts off the hook (`hang-lift`, 340ms) while the incoming plate waits 200ms for the hook to clear and then drops onto it (`hang-drop`, 620ms on `--swing`), each plate staggered 55ms by index. Both animations are removed entirely under `prefers-reduced-motion`.
+Every figure on the dashboard hangs on a peg. `.hang` carries 17px of top padding and an absolutely positioned `.hang__peg` — a 9px cobalt disc that belongs to the board, not to the plate, so it stays put while the plate moves. The plate itself grows a `.plate__lug`: a tab in the plate's own face rising 15px above its top edge, punched with a 13px hole that shows the board through it, with the peg sitting at the top of that hole the way gravity would leave it. The plate's transform origin is the peg, so it turns about its fixing. On `.hang--left` the whole assembly moves to 30px from the left. When data changes the outgoing plate lifts off (`hang-lift`, 340ms) while the incoming plate waits 200ms for the peg to clear and then drops onto it (`hang-drop`, 620ms on `--swing`), each plate staggered 55ms by index. Both animations are removed entirely under `prefers-reduced-motion`.
 
-**Status: this is what ships today and is documented as the current system, but it is under review.** The user has reported that the hung-plate device does not read as an intentional design and that the hooks are misplaced. Do not extend the hang mechanic to new surfaces, and do not treat the hook geometry as settled.
+**Status: reworked on 2026-09-09 after the user reported that the plates did not read as hung and the fixings were misaligned.** The earlier device — a drawn hook above a plate with a drilled hole in its face — failed because the hook's curl never met the hole and the bracket was screwed to nothing. A two-piece hook that wrapped the plate edge was drawn next and also rejected: the joint that sold the wrap was hidden behind the plate, so it read as a hook parked beside a plate. The shipped lug-and-peg is the third attempt and the one that reads. Keep the peg on the board and the lug on the plate: that split is the whole illusion, and swapping it breaks the physics.
 
 ### Legacy panel (transitional)
 Chess still runs its pre-rebuild interface and is marked `legacy: true` in `lib/games.js`. It renders inside `.legacy`: a full-width enamel panel on the stage with `--lift-2` and a note beneath, with a targeted override forcing the old Tailwind `text-white` / `text-slate-100` utilities to navy so the legacy UI is at least legible on enamel. This is a holding pattern, not a pattern. New games use the stage furniture; the override disappears when chess is rebuilt.

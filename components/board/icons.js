@@ -13,32 +13,6 @@ const base = {
   focusable: "false",
 };
 
-export function Hook({ width = 18, height = 26, ...rest }) {
-  // A key hook screwed into the board: mounting bracket, two screw heads,
-  // stem, and the upturned tip the plate hangs from.
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 18 26"
-      width={width}
-      height={height}
-      aria-hidden="true"
-      focusable="false"
-      {...rest}>
-      <rect x="1" y="0.5" width="16" height="5" rx="1.5" fill="currentColor" />
-      <circle cx="4.6" cy="3" r="1" fill="rgba(0,0,0,.42)" />
-      <circle cx="13.4" cy="3" r="1" fill="rgba(0,0,0,.42)" />
-      <path
-        d="M9 5.5v9.5a4 4 0 0 0 8 0v-2"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="3"
-        strokeLinecap="round"
-      />
-    </svg>
-  );
-}
-
 export function ChessMark({ size = 20, ...rest }) {
   // A knight, cut to the same stroke as the rest of the fittings.
   return (

@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Hook } from "./icons";
 
 const LIFT_MS = 340;
 
@@ -12,8 +11,8 @@ function reducedMotion() {
   );
 }
 
-// A plate hung on a hook. `hangKey` is the value the plate carries: change it
-// and the old plate lifts off its hook and away, then the new one drops in and
+// A plate hung on a peg. `hangKey` is the value the plate carries: change it
+// and the old plate lifts off its peg and away, then the new one drops on and
 // swings once to rest.
 export function Plate({
   children,
@@ -21,7 +20,7 @@ export function Plate({
   tall = false,
   index = 0,
   hangKey,
-  hookAt = "center",
+  pegAt = "center",
   className = "",
   as: Tag = "div",
   ...rest
@@ -49,10 +48,12 @@ export function Plate({
     .join(" ");
 
   return (
-    <div className={`hang ${hookAt === "left" ? "hang--left" : ""}`}>
-      <Hook className="hang__hook" />
+    <div className={`hang ${pegAt === "left" ? "hang--left" : ""}`}>
+      {/* the peg is screwed to the board, so it stays put while the plate swings */}
+      <span className="hang__peg" aria-hidden="true" />
       {outgoing && (
         <div className={`${plateClass} plate--lifting`} style={{ "--i": index }} aria-hidden="true">
+          <span className="plate__lug" aria-hidden="true" />
           <div className="plate__body">{outgoing.children}</div>
         </div>
       )}
@@ -63,6 +64,7 @@ export function Plate({
         data-relanding={outgoing ? "" : undefined}
         key={hangKey ?? undefined}
         {...rest}>
+        <span className="plate__lug" aria-hidden="true" />
         <div className="plate__body">{children}</div>
       </Tag>
     </div>

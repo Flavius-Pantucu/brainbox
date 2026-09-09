@@ -40,10 +40,10 @@ work. Do not act on these during game work; they are the agenda for the final da
 3. **Game access should use depth.** They want entering a game to feel like looking through an
    opened door into the room beyond — a preview of the game surface itself, set back in space,
    with depth as the effect. This replaces the current flat game slots.
-4. **The hung system does not read.** The hook is not placed right and the plate-on-hook device
-   does not work as a design look. Treat the hook hardware as failed: either re-solve the physical
-   attachment convincingly or drop hanging as the world's organising device. Until then, new
-   surfaces must not add more hooks.
+4. ~~**The hung system does not read.**~~ **Resolved 2026-09-09.** The hook was replaced by a
+   lug-and-peg fixing: a peg fixed to the board, and a punched lug in the plate's own face that
+   drops over it. Two hook designs were built and rejected first; DESIGN.md records both and the
+   reason each failed. The don't-extend rule is lifted — the fixing is now the settled device.
 
 Also confirmed 2026-09-09: the catalog grows — more games will be added over time, so every
 surface that lists games must scale past three without redesign.

@@ -2,8 +2,8 @@
 
 import { Plate } from "./plate";
 
-// The standings ladder: one hook per rung. A taken rung carries a plate; an
-// open rung shows the empty hook and says so.
+// The standings ladder: one peg per rung. A taken rung carries a plate; an
+// open rung shows the bare peg and says so.
 export function Ladder({ rungs, startIndex = 0 }) {
   return (
     <ol className="ladder">
@@ -13,7 +13,7 @@ export function Ladder({ rungs, startIndex = 0 }) {
             {rung.no}
           </span>
           <Plate
-            hookAt="left"
+            pegAt="left"
             index={startIndex + i}
             hangKey={`${rung.no}-${rung.score}`}
             empty={!!rung.empty}
