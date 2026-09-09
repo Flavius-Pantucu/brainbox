@@ -1,6 +1,7 @@
 # BrainBox
 
-A portal for browser-based logic games — chess, Go, Reversi, Connect Four, sudoku and tic-tac-toe — built with
+A portal for browser-based logic games — chess, Go, checkers, Reversi, Connect Four, sudoku and
+tic-tac-toe — built with
 [Next.js](https://nextjs.org/).
 
 The interface is a hand-operated club board, painted in navy and steel: today's challenge,
@@ -17,6 +18,7 @@ Games:
 
 - [x] **Sudoku** — a fresh puzzle every game, generated in the browser, at four difficulties
 - [x] **Go** — 9×9 to 19×19, against the machine, against the next chair, or online by room code
+- [x] **Checkers** — against the machine, against the next chair, or online by room code
 - [x] **Reversi** — against the machine, against the next chair, or online by room code
 - [x] **Connect Four** — against the machine, against the next chair, or online by room code
 - [x] **Tic-Tac-Toe** — against the machine, against the next chair, or online by room code
@@ -31,6 +33,7 @@ Games:
 | `/play/connect4` | Connect Four, inside the play frame                                |
 | `/play/go`       | Go, inside the play frame                                          |
 | `/play/reversi`  | Reversi, inside the play frame                                     |
+| `/play/checkers` | Checkers, inside the play frame                                    |
 | `/play/sudoku`   | Sudoku, inside the play frame                                      |
 | `/play/tictactoe`| Tic-Tac-Toe, inside the play frame                                 |
 | `/standings`     | The ladder and your card — recent games, wins, day run             |
@@ -77,6 +80,18 @@ and takes the one that wins most, on a time budget that grows with the board. It
 own eyes and passes when it has nothing left. It is a real opponent on 9×9 and an honest one
 above that. Not implemented: positional superko, and the search runs on the main thread rather
 than in a worker.
+
+## Checkers
+
+English draughts on the dark squares, in `lib/checkers.js`. The rules that decide whether an
+implementation is right are all here: a capture is compulsory, a capture that can continue must
+continue, and a man crowned by a jump stops on the back row even with another jump waiting. A
+game ends when a side has nothing left to move, or is drawn after forty moves each with nothing
+taken and no man moved.
+
+The machine is alpha-beta over whole moves — chains expanded, so it sees a triple jump as one
+move — scoring men by how close they are to crowning, kings flat, and an edge or a held back row
+slightly up. It plays its chains out one hop at a time on the board rather than teleporting.
 
 ## Reversi
 

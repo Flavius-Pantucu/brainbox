@@ -20,6 +20,8 @@ const ERRORS = {
   "not-counting": [409, "The game is not being counted."],
   "no-group": [400, "There is no group on that point."],
   "turns-nothing": [409, "That square turns nothing over."],
+  "must-continue": [409, "That piece has another jump to take."],
+  empty: [400, "There is no piece on that square."],
   "illegal-move": [409, "That move is not legal here."],
   "no-offer": [409, "There is no draw on the table."],
   "still-playing": [409, "The game is still running."],

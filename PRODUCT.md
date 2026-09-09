@@ -20,7 +20,7 @@ react-hook-form, modulo-x.
 ## Users
 
 Primary user: a person who wants a short, self-contained session of a classic logic game
-(chess, Go, Reversi, Connect Four, sudoku, tic-tac-toe) in the browser, with no install and no lobby wait. They arrive
+(chess, Go, checkers, Reversi, Connect Four, sudoku, tic-tac-toe) in the browser, with no install and no lobby wait. They arrive
 on a break or in an idle moment, want to be inside a game within a few seconds, and want a
 reason to come back tomorrow.
 
@@ -60,6 +60,9 @@ Shipped and working today (product truth to preserve):
   alpha-beta in `lib/ttt.js`), two people on one device, and **online play by room code**.
 - **Connect Four** — the same three opponents, over `lib/connect4.js` (alpha-beta scored on runs
   of four, three levels), with online rooms on the same server.
+- **Checkers** — English draughts in `lib/checkers.js`: compulsory captures, forced chains, a man
+  crowned by a jump stopping there, and a forty-move idle draw. Alpha-beta over whole moves.
+  Online rooms carry chains one hop at a time.
 - **Reversi** — `lib/reversi.js`: turning, forced passes, and a game that ends only when neither
   side can move. The opponent is alpha-beta over a corner-weighted table with a disc-count
   endgame. Online rooms on the same server.
@@ -81,7 +84,7 @@ Shipped and working today (product truth to preserve):
 Confirmed constraints (2026-09-08, amended 2026-09-09):
 - **No database and no accounts.** Player stats, streaks, leaderboards and challenge history
   have no server behind them and live in one browser.
-- **One server-side feature exists: online rooms for tic-tac-toe, chess, Connect Four, Go and Reversi** (`lib/rooms.js`, `app/api/rooms/**`).
+- **One server-side feature exists: online rooms for tic-tac-toe, chess, Connect Four, Go, Reversi and checkers** (`lib/rooms.js`, `app/api/rooms/**`).
   Rooms are held in the node process's memory and pushed to both players over SSE. This works
   under `npm run dev` and a self-hosted `npm start`; a serverless deploy with more than one
   instance would need that one module swapped for a shared store. Rooms hold no identity beyond

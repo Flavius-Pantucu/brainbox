@@ -3876,3 +3876,166 @@ span.movelist__half {
     max-height: none;
   }
 }
+
+/* =========================================================================
+   CHECKERS
+   ========================================================================= */
+
+.chk {
+  display: contents;
+}
+
+.chk__field {
+  grid-column: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 0;
+  min-width: 0;
+}
+
+.chk__side {
+  grid-column: 2;
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--u) * 2);
+  min-height: 0;
+  overflow: auto;
+  padding-bottom: var(--u);
+}
+
+.chk__wrap {
+  position: relative;
+  height: 100%;
+  aspect-ratio: 1;
+  max-height: min(100%, 74vh);
+  max-width: 100%;
+  margin: auto;
+}
+
+.chk__grid {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  grid-template-columns: repeat(8, minmax(0, 1fr));
+  grid-template-rows: repeat(8, minmax(0, 1fr));
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  box-shadow: var(--lift-2);
+}
+
+.chk__cell {
+  position: relative;
+  appearance: none;
+  border: 0;
+  padding: 9%;
+  display: grid;
+  place-items: center;
+  cursor: default;
+  transition: background-color 180ms ease-out;
+}
+
+/* the same two square paints the chess board uses */
+.chk__cell--light {
+  background: color-mix(in srgb, var(--paint-bone) 90%, var(--paint-steel));
+}
+
+.chk__cell--dark {
+  background: color-mix(in srgb, var(--paint-steel) 58%, var(--paint-navy));
+}
+
+.chk__cell:not(:disabled) {
+  cursor: pointer;
+}
+
+.chk__cell.is-walked {
+  background-image: linear-gradient(
+    color-mix(in srgb, var(--paint-cobalt) 34%, transparent),
+    color-mix(in srgb, var(--paint-cobalt) 34%, transparent)
+  );
+}
+
+.chk__cell.is-selected,
+.chk__cell.is-chained {
+  box-shadow: inset 0 0 0 3px var(--signal);
+}
+
+.chk__cell:focus-visible {
+  outline: 2px solid var(--signal);
+  outline-offset: -3px;
+}
+
+.chk__piece {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  box-shadow: inset 0 -3px 0 rgba(0, 0, 0, 0.32), inset 0 2px 0 rgba(255, 255, 255, 0.18),
+    0 2px 4px -1px rgba(0, 0, 0, 0.5);
+}
+
+/* the turned rim a stacked draughtsman has */
+.chk__piece::after {
+  content: "";
+  position: absolute;
+  inset: 22%;
+  border-radius: 50%;
+  border: 1px solid rgba(0, 0, 0, 0.24);
+}
+
+.chk__piece--b {
+  background: var(--paint-navy);
+}
+
+.chk__piece--r {
+  background: #b3241a;
+}
+
+.chk__crown {
+  position: relative;
+  z-index: 1;
+  width: 40%;
+  height: 40%;
+  background: color-mix(in srgb, var(--paint-bone) 84%, transparent);
+  clip-path: polygon(0% 100%, 0% 22%, 25% 55%, 50% 8%, 75% 55%, 100% 22%, 100% 100%);
+}
+
+.chk__open {
+  width: 30%;
+  height: 30%;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--paint-cobalt) 62%, transparent);
+}
+
+.preview .chk__wrap {
+  grid-column: auto;
+  grid-row: auto;
+  height: 100%;
+  width: auto;
+  max-height: 100%;
+  max-width: 100%;
+  margin: 0;
+}
+
+.preview .chk__grid {
+  box-shadow: none;
+}
+
+.seat__stone--r {
+  background: #b3241a;
+}
+
+@media (max-width: 900px) {
+  .chk__field,
+  .chk__side {
+    grid-column: 1;
+  }
+
+  .chk__wrap {
+    height: auto;
+    width: min(100%, 74vh);
+    max-height: none;
+  }
+}

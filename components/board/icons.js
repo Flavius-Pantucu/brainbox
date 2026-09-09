@@ -87,6 +87,19 @@ export function ReversiMark({ size = 20, ...rest }) {
   );
 }
 
+export function CheckersMark({ size = 20, ...rest }) {
+  // Two men on the dark squares, one of them crowned.
+  return (
+    <svg {...base} width={size} height={size} {...rest}>
+      <rect x="3.5" y="3.5" width="17" height="17" rx="1.5" />
+      <path d="M12 3.5v17M3.5 12h17" strokeWidth="1" />
+      <circle cx="7.9" cy="16.1" r="2.5" fill="currentColor" stroke="none" />
+      <circle cx="16.1" cy="7.9" r="2.5" strokeWidth="1.6" />
+      <path d="M14.9 7.9h2.4" strokeWidth="1.4" />
+    </svg>
+  );
+}
+
 export const GAME_MARKS = {
   chess: ChessMark,
   sudoku: SudokuMark,
@@ -94,6 +107,7 @@ export const GAME_MARKS = {
   connect4: Connect4Mark,
   go: GoMark,
   reversi: ReversiMark,
+  checkers: CheckersMark,
 };
 
 export function Lamp({ size = 18, lit = false, ...rest }) {

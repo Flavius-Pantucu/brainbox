@@ -1,7 +1,8 @@
 // One runnable check for the parts of the games that are ours rather than a
 // library's: the chess material read, the review maths, the variation tree, the
 // clocks, Connect Four's rules and opponent, Go's rules and scoring, Reversi's
-// turning and passing, and the room's move rules.
+// turning and passing, draughts' compulsory captures and chains, and the room's
+// move rules.
 //   npm run check
 const assert = require("node:assert/strict");
 const { Chess } = require("chess.js");
@@ -12,6 +13,7 @@ async function main() {
   const c4 = await import("../lib/connect4.js");
   const go = await import("../lib/go.js");
   const rev = await import("../lib/reversi.js");
+  const chk = await import("../lib/checkers.js");
   const daily = await import("../lib/daily.js");
   const games = await import("../lib/games.js");
   const rooms = await import("../lib/rooms.js");
@@ -423,6 +425,109 @@ async function main() {
   assert.deepEqual(revState.counts, { b: 4, w: 1 });
   assert.deepEqual(revState.flipped, [rev.index(3, 3)]);
   assert.ok(revState.moves.length > 0, "white is told where it may play");
+
+  /* checkers -------------------------------------------------------------- */
+  const men = chk.start();
+  assert.deepEqual(chk.counts(men), { b: 12, r: 12, bKings: 0, rKings: 0 });
+  assert.equal(chk.stepsFor(men, "b").length, 7, "seven opening moves each");
+  assert.equal(chk.stepsFor(men, "r").length, 7);
+  assert.ok(
+    chk.stepsFor(men, "b").every((step) => step.captured === null),
+    "and none of them takes anything"
+  );
+
+  // a capture anywhere makes every quiet move illegal
+  const forced = new Array(64).fill(null);
+  forced[chk.index(3, 2)] = "b";
+  forced[chk.index(4, 3)] = "r";
+  forced[chk.index(0, 1)] = "b"; // has quiet moves, and may not use them
+  const only = chk.stepsFor(forced, "b");
+  assert.equal(only.length, 1, "the jump is the only move on the board");
+  assert.equal(only[0].captured, chk.index(4, 3));
+  assert.equal(
+    chk.applyStep(forced, chk.index(0, 1), chk.index(1, 0)).error,
+    "illegal-move",
+    "the quiet move is refused while a capture is going"
+  );
+
+  // a jump that can continue must continue, and only that piece may move
+  const chain = new Array(64).fill(null);
+  chain[chk.index(1, 2)] = "b";
+  chain[chk.index(2, 3)] = "r";
+  chain[chk.index(4, 5)] = "r";
+  const hop1 = chk.applyStep(chain, chk.index(1, 2), chk.index(3, 4));
+  assert.equal(hop1.captured, chk.index(2, 3));
+  assert.equal(hop1.mustContinue, true, "another jump is on");
+  const hop2 = chk.applyStep(hop1.board, chk.index(3, 4), chk.index(5, 6), chk.index(3, 4));
+  assert.equal(hop2.captured, chk.index(4, 5));
+  assert.equal(hop2.mustContinue, false, "and the chain is done");
+  assert.equal(chk.counts(hop2.board).r, 0, "both men came off");
+
+  // a man crowned by a jump stops there, whatever else was available
+  const crowning = new Array(64).fill(null);
+  crowning[chk.index(5, 2)] = "b";
+  crowning[chk.index(6, 3)] = "r";
+  crowning[chk.index(6, 5)] = "r";
+  const crowned = chk.applyStep(crowning, chk.index(5, 2), chk.index(7, 4));
+  assert.equal(crowned.crowned, true);
+  assert.equal(crowned.board[chk.index(7, 4)], "B", "and it is a king now");
+  assert.equal(crowned.mustContinue, false, "crowning ends the move");
+
+  // men only go forward; kings go both ways
+  const backwards = new Array(64).fill(null);
+  backwards[chk.index(4, 3)] = "b";
+  assert.ok(
+    chk.stepsFor(backwards, "b").every((step) => step.to > chk.index(4, 3)),
+    "a black man only moves down the board"
+  );
+  backwards[chk.index(4, 3)] = "B";
+  assert.equal(chk.stepsFor(backwards, "b").length, 4, "a king moves all four ways");
+
+  // nothing left to move is a loss
+  const beaten = new Array(64).fill(null);
+  beaten[chk.index(0, 1)] = "b";
+  assert.deepEqual(chk.outcomeOf(beaten, "r"), { winner: "b", reason: "no move" });
+  assert.equal(chk.outcomeOf(beaten, "b"), null);
+
+  // whole moves carry the chain, so the machine plays one and takes both
+  const whole = chk.fullMoves(chain, "b");
+  assert.equal(whole.length, 1);
+  assert.deepEqual(whole[0].path, [chk.index(1, 2), chk.index(3, 4), chk.index(5, 6)]);
+
+  // and it takes a free capture rather than a quiet move
+  assert.equal(chk.pickMove(forced, "b", "sharp").to, chk.index(5, 4));
+
+  // mid-chain it takes the branch that eats the most, and nothing when the
+  // piece has no jump left
+  assert.equal(
+    chk.bestChainStep(hop1.board, "b", chk.index(3, 4)).to,
+    chk.index(5, 6),
+    "the chain carries on"
+  );
+  assert.equal(chk.bestChainStep(chk.start(), "b", chk.index(2, 1)), null);
+
+  /* a checkers room ------------------------------------------------------- */
+  const chkHost = rooms.createRoom("Ada", "checkers", { seat: "b" });
+  const chkGuest = rooms.joinRoom(chkHost.room.code, "Bo");
+  const chkCode = chkHost.room.code;
+  assert.equal(chkGuest.seat, "r");
+  assert.equal(
+    rooms.act(chkCode, chkGuest.token, "move", { from: chk.index(5, 0), to: chk.index(4, 1) })
+      .error,
+    "not-your-turn"
+  );
+  assert.equal(
+    rooms.act(chkCode, chkHost.token, "move", { from: chk.index(2, 1), to: chk.index(4, 3) })
+      .error,
+    "illegal-move",
+    "a man cannot jump an empty square"
+  );
+  rooms.act(chkCode, chkHost.token, "move", { from: chk.index(2, 1), to: chk.index(3, 0) });
+  const chkState = rooms.publicState(rooms.getRoom(chkCode), chkGuest.token);
+  assert.equal(chkState.turn, "r");
+  assert.deepEqual(chkState.path, [chk.index(2, 1), chk.index(3, 0)]);
+  assert.equal(chkState.steps.length, 7, "red is told its seven replies");
+  assert.equal(chkState.counts.b, 12);
 
   /* tictactoe still works on the same store ------------------------------ */
   const ttt = rooms.createRoom("Ada", "tictactoe", { seat: "X" });

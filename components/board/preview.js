@@ -4,10 +4,12 @@ import { useEffect, useRef } from "react";
 import { Board as ChessBoard } from "../games/chess/board";
 import { Goban } from "../games/go/goban";
 import { Grid as Connect4Grid } from "../games/connect4/grid";
+import { CheckersGrid } from "../games/checkers/grid";
 import { ReversiGrid } from "../games/reversi/grid";
 import { SudokuGrid } from "../games/sudoku/grid";
 import { Board as TicTacToeBoard } from "../games/tictactoe/board";
 import {
+  CHECKERS_PREVIEW,
   CHESS_PREVIEW,
   CONNECT4_PREVIEW,
   GO_PREVIEW,
@@ -74,6 +76,14 @@ export function GamePreview({ gameId }) {
           onDrop={() => {}}
           disabled
         />
+      </Inert>
+    );
+  }
+
+  if (gameId === "checkers") {
+    return (
+      <Inert>
+        <CheckersGrid board={CHECKERS_PREVIEW.board} disabled />
       </Inert>
     );
   }
