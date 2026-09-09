@@ -1,6 +1,6 @@
 # BrainBox
 
-A portal for browser-based logic games — chess, Go, Connect Four, sudoku and tic-tac-toe — built with
+A portal for browser-based logic games — chess, Go, Reversi, Connect Four, sudoku and tic-tac-toe — built with
 [Next.js](https://nextjs.org/).
 
 The interface is a hand-operated club board, painted in navy and steel: today's challenge,
@@ -17,6 +17,7 @@ Games:
 
 - [x] **Sudoku** — a fresh puzzle every game, generated in the browser, at four difficulties
 - [x] **Go** — 9×9 to 19×19, against the machine, against the next chair, or online by room code
+- [x] **Reversi** — against the machine, against the next chair, or online by room code
 - [x] **Connect Four** — against the machine, against the next chair, or online by room code
 - [x] **Tic-Tac-Toe** — against the machine, against the next chair, or online by room code
 - [x] **Chess** — an analysis board, a Stockfish opponent at five strengths, or online by room code
@@ -29,6 +30,7 @@ Games:
 | `/play/chess`    | Chess, inside the play frame                                       |
 | `/play/connect4` | Connect Four, inside the play frame                                |
 | `/play/go`       | Go, inside the play frame                                          |
+| `/play/reversi`  | Reversi, inside the play frame                                     |
 | `/play/sudoku`   | Sudoku, inside the play frame                                      |
 | `/play/tictactoe`| Tic-Tac-Toe, inside the play frame                                 |
 | `/standings`     | The ladder and your card — recent games, wins, day run             |
@@ -75,6 +77,15 @@ and takes the one that wins most, on a time budget that grows with the board. It
 own eyes and passes when it has nothing left. It is a real opponent on 9×9 and an honest one
 above that. Not implemented: positional superko, and the search runs on the main thread rather
 than in a worker.
+
+## Reversi
+
+Eight by eight, filled to the last square. Full rules in `lib/reversi.js` — a move must turn at
+least one disc, a side with nowhere to play sits the turn out, and the game ends only when
+neither side can move. The opponent is alpha-beta over a positional table where a corner is
+worth 120 and the square diagonally inside one is worth −40, plus a mobility term; inside the
+last ten empty squares it stops valuing position and counts discs, because nothing can be turned
+back by then.
 
 ## Connect Four
 

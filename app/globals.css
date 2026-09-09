@@ -3722,3 +3722,157 @@ span.movelist__half {
     animation: none;
   }
 }
+
+/* =========================================================================
+   REVERSI
+   ========================================================================= */
+
+.rev {
+  display: contents;
+}
+
+.rev__field {
+  grid-column: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 0;
+  min-width: 0;
+}
+
+.rev__side {
+  grid-column: 2;
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--u) * 2);
+  min-height: 0;
+  overflow: auto;
+  padding-bottom: var(--u);
+}
+
+.rev__wrap {
+  position: relative;
+  height: 100%;
+  aspect-ratio: 1;
+  max-height: min(100%, 74vh);
+  max-width: 100%;
+  margin: auto;
+}
+
+/* a mid tone, so a bone disc and a navy disc both read against it */
+.rev__grid {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  grid-template-columns: repeat(8, minmax(0, 1fr));
+  grid-template-rows: repeat(8, minmax(0, 1fr));
+  gap: 1px;
+  padding: 1px;
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--paint-navy) 62%, var(--paint-steel));
+  box-shadow: var(--lift-2);
+  overflow: hidden;
+}
+
+.rev__cell {
+  position: relative;
+  appearance: none;
+  border: 0;
+  padding: 7%;
+  display: grid;
+  place-items: center;
+  background: color-mix(in srgb, var(--paint-steel) 58%, var(--paint-navy));
+  cursor: default;
+  transition: background-color 180ms ease-out;
+}
+
+.rev__cell.is-open {
+  cursor: pointer;
+}
+
+.rev__cell.is-open:hover {
+  background: color-mix(in srgb, var(--paint-cobalt) 26%, var(--paint-steel));
+}
+
+.rev__cell:focus-visible {
+  outline: 2px solid var(--signal);
+  outline-offset: -3px;
+}
+
+.rev__cell.is-last::after {
+  content: "";
+  position: absolute;
+  inset: 8%;
+  border-radius: 50%;
+  box-shadow: 0 0 0 2px var(--signal);
+  pointer-events: none;
+}
+
+.rev__disc {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  box-shadow: inset 0 -2px 0 rgba(0, 0, 0, 0.3), inset 0 2px 0 rgba(255, 255, 255, 0.18);
+}
+
+.rev__disc--b {
+  background: var(--paint-navy);
+}
+
+.rev__disc--w {
+  background: var(--paint-bone);
+}
+
+/* a turned disc shows its other face on the way over */
+.rev__disc.is-turning {
+  animation: rev-turn 340ms ease-in-out both;
+}
+
+@keyframes rev-turn {
+  from {
+    transform: rotateY(180deg);
+  }
+  to {
+    transform: rotateY(0);
+  }
+}
+
+.rev__open {
+  width: 26%;
+  height: 26%;
+  border-radius: 50%;
+  border: 2px solid color-mix(in srgb, var(--paint-cobalt) 72%, transparent);
+}
+
+.preview .rev__wrap {
+  grid-column: auto;
+  grid-row: auto;
+  height: 100%;
+  width: auto;
+  max-height: 100%;
+  max-width: 100%;
+  margin: 0;
+}
+
+.preview .rev__grid {
+  box-shadow: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rev__disc.is-turning {
+    animation: none;
+  }
+}
+
+@media (max-width: 900px) {
+  .rev__field,
+  .rev__side {
+    grid-column: 1;
+  }
+
+  .rev__wrap {
+    height: auto;
+    width: min(100%, 74vh);
+    max-height: none;
+  }
+}

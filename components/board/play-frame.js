@@ -7,6 +7,7 @@ import Sudoku from "../games/sudoku/sudoku";
 import Chess from "../games/chess/chess";
 import Connect4 from "../games/connect4/connect4";
 import Go from "../games/go/go";
+import Reversi from "../games/reversi/reversi";
 import { Tag } from "./tag";
 import { ArrowLeft } from "./icons";
 import { GAME_BY_ID } from "../../lib/games";
@@ -17,6 +18,7 @@ const SURFACES = {
   chess: Chess,
   connect4: Connect4,
   go: Go,
+  reversi: Reversi,
   sudoku: Sudoku,
   tictactoe: TicTacToe,
 };

@@ -4,12 +4,14 @@ import { useEffect, useRef } from "react";
 import { Board as ChessBoard } from "../games/chess/board";
 import { Goban } from "../games/go/goban";
 import { Grid as Connect4Grid } from "../games/connect4/grid";
+import { ReversiGrid } from "../games/reversi/grid";
 import { SudokuGrid } from "../games/sudoku/grid";
 import { Board as TicTacToeBoard } from "../games/tictactoe/board";
 import {
   CHESS_PREVIEW,
   CONNECT4_PREVIEW,
   GO_PREVIEW,
+  REVERSI_PREVIEW,
   SUDOKU_PREVIEW,
   TICTACTOE_PREVIEW,
 } from "../../lib/previews";
@@ -70,6 +72,19 @@ export function GamePreview({ gameId }) {
           board={CONNECT4_PREVIEW.board}
           last={CONNECT4_PREVIEW.last}
           onDrop={() => {}}
+          disabled
+        />
+      </Inert>
+    );
+  }
+
+  if (gameId === "reversi") {
+    return (
+      <Inert>
+        <ReversiGrid
+          board={REVERSI_PREVIEW.board}
+          turn="b"
+          last={REVERSI_PREVIEW.last}
           disabled
         />
       </Inert>

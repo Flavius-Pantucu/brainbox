@@ -1,7 +1,7 @@
 // One runnable check for the parts of the games that are ours rather than a
 // library's: the chess material read, the review maths, the variation tree, the
-// clocks, Connect Four's rules and opponent, Go's rules and scoring, and the
-// room's move rules.
+// clocks, Connect Four's rules and opponent, Go's rules and scoring, Reversi's
+// turning and passing, and the room's move rules.
 //   npm run check
 const assert = require("node:assert/strict");
 const { Chess } = require("chess.js");
@@ -11,6 +11,9 @@ async function main() {
   const tree = await import("../lib/chess-tree.js");
   const c4 = await import("../lib/connect4.js");
   const go = await import("../lib/go.js");
+  const rev = await import("../lib/reversi.js");
+  const daily = await import("../lib/daily.js");
+  const games = await import("../lib/games.js");
   const rooms = await import("../lib/rooms.js");
 
   /* material ------------------------------------------------------------- */
@@ -328,6 +331,99 @@ async function main() {
   assert.equal(goState.result.b, 81, "one stone plus everything it surrounds");
   assert.equal(goState.score.b, 1);
 
+  /* reversi --------------------------------------------------------------- */
+  const opening = rev.start();
+  assert.deepEqual(rev.counts(opening), { b: 2, w: 2 });
+  assert.deepEqual(
+    [...rev.legalMoves(opening, "b").keys()].sort((a, b) => a - b),
+    [rev.index(2, 3), rev.index(3, 2), rev.index(4, 5), rev.index(5, 4)],
+    "the four opening moves"
+  );
+
+  const opened = rev.play(opening, rev.index(2, 3), "b");
+  assert.deepEqual(opened.flipped, [rev.index(3, 3)], "one disc turns");
+  assert.deepEqual(rev.counts(opened.board), { b: 4, w: 1 });
+  assert.equal(rev.play(opening, rev.index(0, 0), "b").error, "turns-nothing");
+  assert.equal(rev.play(opening, rev.index(3, 3), "b").error, "taken");
+  assert.equal(rev.play(opening, 99, "b").error, "off-board");
+
+  // a run only turns when your own disc closes it
+  const openEnded = new Array(64).fill(null);
+  openEnded[rev.index(4, 4)] = "w";
+  assert.deepEqual(rev.flipsFor(openEnded, rev.index(4, 3), "b"), [], "nothing closes the run");
+
+  // the turn comes back to you when the other side has nowhere to go: the board
+  // is black but for two white discs walled in at the top, and one empty square
+  const stuck = new Array(64).fill("b");
+  stuck[rev.index(0, 1)] = "w";
+  stuck[rev.index(0, 2)] = "w";
+  stuck[rev.index(0, 3)] = null;
+  assert.equal(rev.legalMoves(stuck, "w").size, 0, "white has nowhere to play");
+  assert.equal(rev.legalMoves(stuck, "b").size, 1, "black can still close the run");
+  assert.equal(rev.turnAfter(stuck, "b"), "b", "so the turn comes straight back");
+  assert.equal(rev.outcomeOf(stuck), null, "and the game is not over while black can move");
+
+  const finished = new Array(64).fill("b");
+  finished[0] = "w";
+  const decided = rev.outcomeOf(finished);
+  assert.equal(decided.winner, "b");
+  assert.equal(decided.counts.b, 63);
+
+  const level = new Array(64).fill("b");
+  for (let i = 0; i < 32; i += 1) level[i] = "w";
+  assert.equal(rev.outcomeOf(level).winner, "draw");
+
+  // the machine takes a corner when one is going
+  const corner = rev.start();
+  let stage = corner;
+  for (const [point, disc] of [
+    [rev.index(0, 1), "w"],
+    [rev.index(0, 2), "b"],
+  ]) {
+    stage = stage.slice();
+    stage[point] = disc;
+  }
+  assert.equal(
+    rev.pickMove(stage, "b", "sharp"),
+    rev.index(0, 0),
+    "a corner beats every other square"
+  );
+
+  // a whole game, played out by the machine, ends
+  let selfPlay = rev.start();
+  let turn = "b";
+  let plies = 0;
+  while (turn && plies < 80) {
+    const point = rev.pickMove(selfPlay, turn, "easy");
+    if (point == null) break;
+    selfPlay = rev.play(selfPlay, point, turn).board;
+    turn = rev.turnAfter(selfPlay, turn);
+    plies += 1;
+  }
+  assert.equal(turn, null, "a played-out game reaches a position nobody can move in");
+  assert.ok(rev.outcomeOf(selfPlay), "and that position has a result");
+
+  /* a reversi room ------------------------------------------------------- */
+  const revHost = rooms.createRoom("Ada", "reversi", { seat: "b" });
+  const revGuest = rooms.joinRoom(revHost.room.code, "Bo");
+  const revCode = revHost.room.code;
+  assert.equal(revGuest.seat, "w");
+  assert.equal(
+    rooms.act(revCode, revGuest.token, "move", { point: rev.index(2, 3) }).error,
+    "not-your-turn"
+  );
+  assert.equal(
+    rooms.act(revCode, revHost.token, "move", { point: 0 }).error,
+    "turns-nothing",
+    "the server refuses a move that turns nothing"
+  );
+  rooms.act(revCode, revHost.token, "move", { point: rev.index(2, 3) });
+  const revState = rooms.publicState(rooms.getRoom(revCode), revGuest.token);
+  assert.equal(revState.turn, "w");
+  assert.deepEqual(revState.counts, { b: 4, w: 1 });
+  assert.deepEqual(revState.flipped, [rev.index(3, 3)]);
+  assert.ok(revState.moves.length > 0, "white is told where it may play");
+
   /* tictactoe still works on the same store ------------------------------ */
   const ttt = rooms.createRoom("Ada", "tictactoe", { seat: "X" });
   const tttGuest = rooms.joinRoom(ttt.room.code, "Bo");
@@ -339,6 +435,14 @@ async function main() {
   assert.equal(tttState.status, "won");
   assert.equal(tttState.winner, "X");
   assert.deepEqual(tttState.line, [0, 1, 2]);
+
+  /* every game the catalog lists can be today's --------------------------- */
+  for (let day = 0; day < 40; day += 1) {
+    const date = new Date(2026, 0, 1 + day);
+    const challenge = daily.dailyChallenge(date);
+    assert.ok(challenge.task, `${challenge.game.id} has a challenge on day ${day}`);
+    assert.ok(games.GAME_BY_ID[challenge.game.id], "and it names a game the catalog holds");
+  }
 
   console.log("game checks pass");
 }
