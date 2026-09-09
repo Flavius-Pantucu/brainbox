@@ -1,8 +1,8 @@
 // One runnable check for the parts of the games that are ours rather than a
 // library's: the chess material read, the review maths, the variation tree, the
 // clocks, Connect Four's rules and opponent, Go's rules and scoring, Reversi's
-// turning and passing, draughts' compulsory captures and chains, and the room's
-// move rules.
+// turning and passing, draughts' compulsory captures and chains, minesweeper's
+// safe first click, and the room's move rules.
 //   npm run check
 const assert = require("node:assert/strict");
 const { Chess } = require("chess.js");
@@ -14,6 +14,7 @@ async function main() {
   const go = await import("../lib/go.js");
   const rev = await import("../lib/reversi.js");
   const chk = await import("../lib/checkers.js");
+  const ms = await import("../lib/minesweeper.js");
   const daily = await import("../lib/daily.js");
   const games = await import("../lib/games.js");
   const rooms = await import("../lib/rooms.js");
@@ -540,6 +541,85 @@ async function main() {
   assert.equal(tttState.status, "won");
   assert.equal(tttState.winner, "X");
   assert.deepEqual(tttState.line, [0, 1, 2]);
+
+  /* minesweeper ----------------------------------------------------------- */
+  const beginner = ms.levelOf("beginner");
+  assert.equal(beginner.cols * beginner.rows, 81);
+  assert.equal(ms.levelOf("nonsense").id, "beginner", "an unknown field falls back");
+  assert.equal(ms.neighboursOf(9, 9, 0).length, 3, "a corner touches three squares");
+  assert.equal(ms.neighboursOf(9, 9, 40).length, 8, "the middle touches eight");
+
+  // the first click, and everything around it, is never a mine
+  for (let attempt = 0; attempt < 40; attempt += 1) {
+    const safe = Math.floor(Math.random() * 81);
+    const field = ms.plant(9, 9, 10, safe);
+    assert.equal(field.mines.filter(Boolean).length, 10, "ten mines, every time");
+    assert.equal(field.mines[safe], false, "the click is safe");
+    for (const around of ms.neighboursOf(9, 9, safe)) {
+      assert.equal(field.mines[around], false, "and so is everything it touches");
+    }
+    // so the first click always opens more than one square
+    const opened = ms.openFrom(field, new Array(81).fill(false), new Array(81).fill(false), safe);
+    assert.ok(opened.filter(Boolean).length > 1, "the first click opens a space");
+  }
+
+  // the counts are the mines around each square
+  const counted = ms.plant(9, 9, 10, 40);
+  for (let point = 0; point < 81; point += 1) {
+    if (counted.mines[point]) continue;
+    const around = ms.neighboursOf(9, 9, point).filter((n) => counted.mines[n]).length;
+    assert.equal(counted.near[point], around);
+  }
+
+  // a board too crowded for a whole safe patch keeps the click itself safe
+  const crowded = ms.plant(3, 3, 8, 4);
+  assert.equal(crowded.mines.filter(Boolean).length, 8);
+  assert.equal(crowded.mines[4], false);
+
+  // a hand-laid field: one mine, everything else open by one click
+  const hand = { cols: 3, rows: 3, count: 1, mines: new Array(9).fill(false), near: new Array(9).fill(0) };
+  hand.mines[0] = true;
+  hand.near = hand.mines.map((mine, point) =>
+    mine ? 0 : ms.neighboursOf(3, 3, point).filter((n) => hand.mines[n]).length
+  );
+  const shut = new Array(9).fill(false);
+  const noFlags = new Array(9).fill(false);
+  const swept = ms.openFrom(hand, shut, noFlags, 8);
+  assert.equal(swept.filter(Boolean).length, 8, "one press clears everything but the mine");
+  assert.equal(ms.isWon(hand, swept), true);
+  assert.equal(ms.isWon(hand, shut), false);
+
+  // a flag stops the flood, and counts against the mines left
+  const guarded = new Array(9).fill(false);
+  guarded[1] = true;
+  const blocked = ms.openFrom(hand, shut, guarded, 8);
+  assert.equal(blocked[1], false, "the flood goes around a flag");
+  assert.equal(ms.minesLeft(hand, guarded), 0);
+  assert.equal(ms.minesLeft(hand, noFlags), 1);
+
+  // chording opens the rest only once the flags match the number
+  const chordField = ms.plant(9, 9, 10, 40);
+  const marked = new Array(81).fill(false);
+  let numbered = -1;
+  for (let point = 0; point < 81; point += 1) {
+    if (!chordField.mines[point] && chordField.near[point] === 1) {
+      numbered = point;
+      break;
+    }
+  }
+  assert.ok(numbered >= 0, "some square touches exactly one mine");
+  const touching = ms.neighboursOf(9, 9, numbered);
+  const oneOpen = new Array(81).fill(false);
+  oneOpen[numbered] = true;
+  assert.equal(
+    ms.chordAt(chordField, oneOpen, marked, numbered).revealed,
+    oneOpen,
+    "nothing happens while the flags do not match"
+  );
+  marked[touching.find((cell) => chordField.mines[cell])] = true;
+  const chorded = ms.chordAt(chordField, oneOpen, marked, numbered);
+  assert.ok(chorded.revealed.filter(Boolean).length > 1, "and everything else opens once they do");
+  assert.equal(chorded.hit, false, "with the mine flagged, nothing blows up");
 
   /* every game the catalog lists can be today's --------------------------- */
   for (let day = 0; day < 40; day += 1) {

@@ -5,6 +5,7 @@ import { Board as ChessBoard } from "../games/chess/board";
 import { Goban } from "../games/go/goban";
 import { Grid as Connect4Grid } from "../games/connect4/grid";
 import { CheckersGrid } from "../games/checkers/grid";
+import { MineField } from "../games/minesweeper/grid";
 import { ReversiGrid } from "../games/reversi/grid";
 import { SudokuGrid } from "../games/sudoku/grid";
 import { Board as TicTacToeBoard } from "../games/tictactoe/board";
@@ -13,6 +14,7 @@ import {
   CHESS_PREVIEW,
   CONNECT4_PREVIEW,
   GO_PREVIEW,
+  MINESWEEPER_PREVIEW,
   REVERSI_PREVIEW,
   SUDOKU_PREVIEW,
   TICTACTOE_PREVIEW,
@@ -95,6 +97,19 @@ export function GamePreview({ gameId }) {
           board={REVERSI_PREVIEW.board}
           turn="b"
           last={REVERSI_PREVIEW.last}
+          disabled
+        />
+      </Inert>
+    );
+  }
+
+  if (gameId === "minesweeper") {
+    return (
+      <Inert>
+        <MineField
+          field={MINESWEEPER_PREVIEW.field}
+          revealed={MINESWEEPER_PREVIEW.revealed}
+          flags={MINESWEEPER_PREVIEW.flags}
           disabled
         />
       </Inert>

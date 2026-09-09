@@ -1,7 +1,7 @@
 # BrainBox
 
-A portal for browser-based logic games — chess, Go, checkers, Reversi, Connect Four, sudoku and
-tic-tac-toe — built with
+A portal for browser-based logic games — chess, Go, checkers, Reversi, Connect Four,
+minesweeper, sudoku and tic-tac-toe — built with
 [Next.js](https://nextjs.org/).
 
 The interface is a hand-operated club board, painted in navy and steel: today's challenge,
@@ -16,6 +16,7 @@ from `app/`, shared UI lives in `components/`, and the backend will be built ins
 
 Games:
 
+- [x] **Minesweeper** — beginner to expert, with a first click that is always safe
 - [x] **Sudoku** — a fresh puzzle every game, generated in the browser, at four difficulties
 - [x] **Go** — 9×9 to 19×19, against the machine, against the next chair, or online by room code
 - [x] **Checkers** — against the machine, against the next chair, or online by room code
@@ -34,6 +35,7 @@ Games:
 | `/play/go`       | Go, inside the play frame                                          |
 | `/play/reversi`  | Reversi, inside the play frame                                     |
 | `/play/checkers` | Checkers, inside the play frame                                    |
+| `/play/minesweeper` | Minesweeper, inside the play frame                              |
 | `/play/sudoku`   | Sudoku, inside the play frame                                      |
 | `/play/tictactoe`| Tic-Tac-Toe, inside the play frame                                 |
 | `/standings`     | The ladder and your card — recent games, wins, day run             |
@@ -108,6 +110,15 @@ Seven columns, six rows, four in a row in any direction. Three opponents: the ma
 Fair / Sharp — alpha-beta over every run of four, in `lib/connect4.js`), two people on one
 device, and online by room code. Discs fall with a bounce, the winning four flashes, and the
 machine always takes a win and blocks one whatever its level.
+
+## Minesweeper
+
+Beginner (9×9, 10), intermediate (16×16, 40) or expert (30×16, 99), in `lib/minesweeper.js`.
+The mines are laid *after* the first click and kept off it and everything it touches, so the
+first press is always safe and always opens a space rather than a lone number. Flags by
+right-click or by holding the flag key on; a number that already has its flags opens everything
+else it touches when pressed, and takes the consequences if a flag is in the wrong place. Only a
+cleared field records a time.
 
 ## Sudoku
 

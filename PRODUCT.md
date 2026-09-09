@@ -20,7 +20,7 @@ react-hook-form, modulo-x.
 ## Users
 
 Primary user: a person who wants a short, self-contained session of a classic logic game
-(chess, Go, checkers, Reversi, Connect Four, sudoku, tic-tac-toe) in the browser, with no install and no lobby wait. They arrive
+(chess, Go, checkers, Reversi, Connect Four, minesweeper, sudoku, tic-tac-toe) in the browser, with no install and no lobby wait. They arrive
 on a break or in an idle moment, want to be inside a game within a few seconds, and want a
 reason to come back tomorrow.
 
@@ -60,6 +60,8 @@ Shipped and working today (product truth to preserve):
   alpha-beta in `lib/ttt.js`), two people on one device, and **online play by room code**.
 - **Connect Four** — the same three opponents, over `lib/connect4.js` (alpha-beta scored on runs
   of four, three levels), with online rooms on the same server.
+- **Minesweeper** — `lib/minesweeper.js`: three field sizes, mines laid after the first click so
+  that click is always safe, flood opening, flags, and chording. Solo — no rooms, no opponent.
 - **Checkers** — English draughts in `lib/checkers.js`: compulsory captures, forced chains, a man
   crowned by a jump stopping there, and a forty-move idle draw. Alpha-beta over whole moves.
   Online rooms carry chains one hop at a time.

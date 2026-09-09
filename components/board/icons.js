@@ -100,6 +100,37 @@ export function CheckersMark({ size = 20, ...rest }) {
   );
 }
 
+export function Mine({ size = 18, ...rest }) {
+  return (
+    <svg {...base} width={size} height={size} {...rest}>
+      <circle cx="12" cy="12" r="5" fill="currentColor" stroke="none" />
+      <path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1" />
+    </svg>
+  );
+}
+
+export function Flag({ size = 18, ...rest }) {
+  return (
+    <svg {...base} width={size} height={size} {...rest}>
+      <path d="M7 21V3" />
+      <path d="M7 4.5h10.5L15 8.2l2.5 3.7H7" fill="currentColor" stroke="none" />
+      <path d="M7 4.5h10.5L15 8.2l2.5 3.7H7" />
+    </svg>
+  );
+}
+
+export function MinesweeperMark({ size = 20, ...rest }) {
+  // A mine sat in a ruled field.
+  return (
+    <svg {...base} width={size} height={size} {...rest}>
+      <rect x="3.5" y="3.5" width="17" height="17" rx="1.5" />
+      <path d="M9 3.5v17M15 3.5v17M3.5 9h17M3.5 15h17" strokeWidth="0.9" />
+      <circle cx="12" cy="12" r="2.2" fill="currentColor" stroke="none" />
+      <path d="M12 8.4v-1.2M12 16.8v-1.2M8.4 12H7.2M16.8 12h-1.2" strokeWidth="1.4" />
+    </svg>
+  );
+}
+
 export const GAME_MARKS = {
   chess: ChessMark,
   sudoku: SudokuMark,
@@ -108,6 +139,7 @@ export const GAME_MARKS = {
   go: GoMark,
   reversi: ReversiMark,
   checkers: CheckersMark,
+  minesweeper: MinesweeperMark,
 };
 
 export function Lamp({ size = 18, lit = false, ...rest }) {
