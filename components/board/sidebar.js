@@ -27,6 +27,7 @@ export function Sidebar() {
         <span className="side__label">The board</span>
         {entry("/", "Today")}
         {entry("/standings", "Standings")}
+        {entry("/you", "Your card")}
 
         <span className="side__label side__label--gap">Games</span>
         {GAMES.map((game) => entry(`/play/${game.slug}`, game.name, GAME_MARKS[game.id]))}

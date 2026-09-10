@@ -123,7 +123,29 @@ async function board() {
   jar = "";
   assert.equal((await call("/api/board")).status, 401, "and signing out closes it again");
 
-  console.log("board: sign-up through sign-out ok");
+  // Two players whose browsers pick the same play id must each keep their game.
+  // The id used to be the primary key on its own, so the second insert met
+  // onConflictDoNothing and disappeared behind a 200 — a game lost in silence.
+  const shared = { ...play, id: `shared-${Date.now()}` };
+  const counts = [];
+  for (const who of ["one", "two"]) {
+    jar = "";
+    await call("/api/auth/sign-up/email", {
+      method: "POST",
+      body: JSON.stringify({
+        email: `clash-${who}-${Date.now()}@example.test`,
+        password: "correct-horse-battery",
+        name: who,
+      }),
+    });
+    await call("/api/board/plays", { method: "POST", body: JSON.stringify(shared) });
+    counts.push((await call("/api/board")).body.sessions.length);
+    await call("/api/auth/sign-out", { method: "POST" });
+  }
+  assert.deepEqual(counts, [1, 1], "the same id under two players is two games, not one");
+  jar = "";
+
+  console.log("board: sign-up through sign-out ok, and ids do not collide across players");
 }
 
 // The same room, driven the way a browser drives it: over HTTP, against

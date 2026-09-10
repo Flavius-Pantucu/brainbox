@@ -4636,3 +4636,133 @@ span.movelist__half {
     transition-duration: 1ms !important;
   }
 }
+
+
+/* =========================================================================
+   THE CARD — signing in, and the player's own page
+   ========================================================================= */
+
+.auth {
+  max-width: 30rem;
+}
+
+.auth__form {
+  display: grid;
+  gap: calc(var(--u) * 2);
+}
+
+.auth__error {
+  margin: 0;
+  padding: calc(var(--u) * 1.2) calc(var(--u) * 1.5);
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--lost, #b4472f) 16%, transparent);
+  border: 1px solid color-mix(in srgb, var(--lost, #b4472f) 42%, transparent);
+  color: var(--ink);
+  font-size: 0.86rem;
+}
+
+.auth__swap a,
+.you a {
+  color: var(--signal);
+  text-underline-offset: 3px;
+}
+
+/* ---------- the card ---------- */
+
+.you {
+  max-width: 46rem;
+}
+
+.you__who {
+  display: grid;
+  gap: calc(var(--u) * 2);
+}
+
+.you__email {
+  /* an address is long and must not push the plate wider than the board */
+  overflow-wrap: anywhere;
+  font-size: 0.82rem;
+}
+
+.you__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--u);
+  margin-top: calc(var(--u) * 2);
+}
+
+/* the four figures, side by side until there is no room for four */
+.you__figures {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr));
+  gap: calc(var(--u) * 2);
+  margin-bottom: calc(var(--u) * 3);
+}
+
+.you__figure {
+  text-align: center;
+}
+
+.you__number {
+  display: block;
+  font-family: var(--font-display), ui-sans-serif, sans-serif;
+  font-size: 2rem;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+  margin-top: 4px;
+}
+
+/* a game's row carries its mark, so the eye finds the row by shape */
+.ruled__name {
+  display: flex;
+  align-items: center;
+  gap: var(--u);
+  font-weight: 600;
+}
+
+.ruled__name svg {
+  flex: none;
+  opacity: 0.75;
+}
+
+@media (max-width: 900px) {
+  .you__figures {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* who is signed in, sitting in the head rail beside the lamp */
+.rail__who {
+  display: inline-flex;
+  align-items: center;
+  max-width: 12rem;
+  min-width: 4.5rem;
+  justify-content: flex-end;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-family: var(--font-label), ui-sans-serif, sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: 0.68rem;
+  color: var(--ink-quiet);
+  transition: color 160ms ease-out;
+}
+
+.rail__who:hover {
+  color: var(--ink);
+}
+
+.rail__who--in {
+  color: var(--signal);
+}
+
+/* a figure that is not known yet holds its place without claiming a number */
+.you__number--waiting {
+  display: block;
+  height: 2.2rem;
+  border-radius: var(--radius-sm);
+  background: var(--routed);
+  box-shadow: var(--cut);
+  opacity: 0.55;
+}

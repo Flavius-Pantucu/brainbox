@@ -38,9 +38,13 @@ export async function POST(request) {
     meta: typeof body.meta === "object" && body.meta ? body.meta : {},
   };
 
-  // replaying the same id — a retry, or a local board being pushed up twice —
-  // must not double-count a game
-  await db.insert(schema.play).values(entry).onConflictDoNothing({ target: schema.play.id });
+  // Replaying the same id — a retry, or a local board pushed up twice — must not
+  // double-count a game. Scoped to the player: the id came from their browser,
+  // so it says nothing about anybody else's rows.
+  await db
+    .insert(schema.play)
+    .values(entry)
+    .onConflictDoNothing({ target: [schema.play.userId, schema.play.id] });
 
   return Response.json({
     session: { ...entry, startedAt: entry.startedAt.toISOString(), endedAt: entry.endedAt.toISOString(), userId: undefined },

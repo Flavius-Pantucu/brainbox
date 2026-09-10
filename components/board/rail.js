@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Lamp } from "./icons";
 import { BrainBoxMark } from "./logo";
+import { useSession } from "../../lib/auth-client";
 
 function PaintSwitch() {
   const [paint, setPaint] = useState("night");
@@ -38,8 +39,29 @@ function PaintSwitch() {
   );
 }
 
-// The head rail carries the name of the place and the light switch. Where you
-// can go is the sidebar's job.
+// Who is signed in, or the way to be. Renders nothing until the session is
+// known, so the rail does not flick from "Sign in" to a name on every load.
+function Who() {
+  const { data: session, isPending } = useSession();
+  if (isPending) return <span className="rail__who" aria-hidden="true" />;
+
+  if (!session) {
+    return (
+      <Link href="/sign-in" className="rail__who rail__who--in">
+        Sign in
+      </Link>
+    );
+  }
+
+  return (
+    <Link href="/you" className="rail__who" title="Your card">
+      {session.user.name || session.user.email}
+    </Link>
+  );
+}
+
+// The head rail carries the name of the place, who you are, and the light
+// switch. Where you can go is the sidebar's job.
 export function Rail() {
   return (
     <header className="rail">
@@ -52,6 +74,7 @@ export function Rail() {
         <span className="rail__spacer" />
 
         <div className="rail__side">
+          <Who />
           <PaintSwitch />
         </div>
       </div>

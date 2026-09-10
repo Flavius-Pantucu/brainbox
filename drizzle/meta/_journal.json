@@ -8,6 +8,13 @@
       "when": 1789055527455,
       "tag": "0000_faithful_rocket_racer",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1789057153734,
+      "tag": "0001_heavy_randall_flagg",
+      "breakpoints": true
     }
   ]
 }
