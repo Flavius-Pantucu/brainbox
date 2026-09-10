@@ -20,8 +20,15 @@ function recallToken(code) {
   }
 }
 
-// Holds one online room: creates or joins it, keeps a live stream open, and
-// posts whatever actions the game on top of it defines.
+// How often to ask, and how far to back off when the room is quiet. A room
+// nobody is moving in costs one 304 every few seconds rather than a held
+// connection — which matters, because the database is billed by the time it
+// spends awake.
+const POLL_MIN_MS = 1200;
+const POLL_MAX_MS = 8000;
+
+// Holds one online room: creates or joins it, keeps asking what has changed,
+// and posts whatever actions the game on top of it defines.
 export function useRoom(game = "tictactoe") {
   const [state, setState] = useState(null);
   const [code, setCode] = useState(null);
@@ -30,31 +37,94 @@ export function useRoom(game = "tictactoe") {
   const [busy, setBusy] = useState(false);
   const [live, setLive] = useState(false);
   const token = useRef(null);
-  const source = useRef(null);
+  const poll = useRef(null);
+  const cleanup = useRef(null);
+  // the last version seen, so the server can answer "nothing new" cheaply
+  const version = useRef(0);
 
   const closeStream = useCallback(() => {
-    source.current?.close();
-    source.current = null;
+    if (poll.current) clearTimeout(poll.current);
+    poll.current = null;
     setLive(false);
   }, []);
 
+  // The stream used to push; now the client asks. Three things keep that from
+  // being wasteful: `since`, so an unchanged room replies 304 with no body; a
+  // delay that grows while nothing happens and snaps back the moment something
+  // does; and stopping entirely while the tab is hidden, because a forgotten
+  // tab must not keep a database awake all night.
   const openStream = useCallback(
     (roomCode, roomToken) => {
       closeStream();
-      const es = new EventSource(
-        `/api/rooms/${roomCode}/stream?token=${encodeURIComponent(roomToken)}`
-      );
-      es.onmessage = (event) => {
-        setState(JSON.parse(event.data));
-        setLive(true);
+      let wait = POLL_MIN_MS;
+      let stopped = false;
+
+      const ask = async () => {
+        if (stopped) return;
+
+        if (typeof document !== "undefined" && document.hidden) {
+          poll.current = setTimeout(ask, POLL_MAX_MS);
+          return;
+        }
+
+        try {
+          const res = await fetch(
+            `/api/rooms/${roomCode}?token=${encodeURIComponent(roomToken)}&since=${version.current}`,
+            { cache: "no-store" }
+          );
+
+          if (res.status === 304) {
+            // quiet: ask a little less often, up to the ceiling
+            wait = Math.min(POLL_MAX_MS, Math.round(wait * 1.5));
+          } else if (res.ok) {
+            const data = await res.json();
+            version.current = data.state.version ?? 0;
+            setState(data.state);
+            wait = POLL_MIN_MS; // something moved, so watch closely again
+          } else if (res.status === 404) {
+            stopped = true;
+            setLive(false);
+            return;
+          }
+          setLive(true);
+        } catch {
+          setLive(false);
+          wait = Math.min(POLL_MAX_MS, Math.round(wait * 1.5));
+        }
+
+        if (!stopped) poll.current = setTimeout(ask, wait);
       };
-      es.onerror = () => setLive(false);
-      source.current = es;
+
+      // a hidden tab that comes back should catch up at once
+      const wake = () => {
+        if (document.hidden || stopped) return;
+        if (poll.current) clearTimeout(poll.current);
+        wait = POLL_MIN_MS;
+        ask();
+      };
+      document.addEventListener("visibilitychange", wake);
+
+      poll.current = setTimeout(ask, 0);
+      cleanup.current = () => {
+        stopped = true;
+        document.removeEventListener("visibilitychange", wake);
+      };
     },
     [closeStream]
   );
 
-  useEffect(() => closeStream, [closeStream]);
+  useEffect(
+    () => () => {
+      cleanup.current?.();
+      closeStream();
+    },
+    [closeStream]
+  );
+
+  // An action changes the room, so stop waiting and look now.
+  const refresh = useCallback((next) => {
+    if (next?.version != null) version.current = next.version;
+  }, []);
 
   const host = useCallback(
     async (name, options = {}) => {
@@ -72,6 +142,7 @@ export function useRoom(game = "tictactoe") {
         rememberToken(data.state.code, data.token);
         setCode(data.state.code);
         setSeat(data.seat);
+        refresh(data.state);
         setState(data.state);
         openStream(data.state.code, data.token);
       } catch (e) {
@@ -80,7 +151,7 @@ export function useRoom(game = "tictactoe") {
         setBusy(false);
       }
     },
-    [game, openStream]
+    [game, openStream, refresh]
   );
 
   const join = useCallback(
@@ -104,6 +175,7 @@ export function useRoom(game = "tictactoe") {
         rememberToken(clean, data.token);
         setCode(clean);
         setSeat(data.seat);
+        refresh(data.state);
         setState(data.state);
         openStream(clean, data.token);
       } catch (e) {
@@ -112,7 +184,7 @@ export function useRoom(game = "tictactoe") {
         setBusy(false);
       }
     },
-    [openStream]
+    [openStream, refresh]
   );
 
   const act = useCallback(
@@ -130,12 +202,15 @@ export function useRoom(game = "tictactoe") {
           setError(data.message || "That move did not go through.");
           return;
         }
-        if (data.state) setState(data.state);
+        if (data.state) {
+          refresh(data.state);
+          setState(data.state);
+        }
       } catch {
         setError("The room did not answer. Check your connection.");
       }
     },
-    [code]
+    [code, refresh]
   );
 
   const leave = useCallback(async () => {

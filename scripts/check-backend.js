@@ -126,6 +126,73 @@ async function board() {
   console.log("board: sign-up through sign-out ok");
 }
 
+// The same room, driven the way a browser drives it: over HTTP, against
+// whichever store is live, with the polling the event stream was replaced by.
+async function roomsOverHttp() {
+  const post = (path, body) =>
+    fetch(BASE + path, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(body),
+    }).then(async (r) => ({ status: r.status, body: await r.json().catch(() => null) }));
+
+  const opened = await post("/api/rooms", { name: "Ada", game: "chess", seat: "w" });
+  assert.equal(opened.status, 201, "a room opens");
+  const code = opened.body.state.code;
+  const host = opened.body.token;
+
+  const joined = await post(`/api/rooms/${code}`, { action: "join", name: "Bo" });
+  assert.equal(joined.status, 200);
+  assert.equal(joined.body.seat, "b", "the guest takes the other seat");
+  assert.equal(joined.body.state.status, "playing", "and a full table starts");
+
+  const guest = joined.body.token;
+  let version = joined.body.state.version;
+
+  // an unchanged room answers 304, which is what makes polling affordable
+  const quiet = await fetch(`${BASE}/api/rooms/${code}?token=${host}&since=${version}`);
+  assert.equal(quiet.status, 304, "nothing has moved, so there is nothing to send");
+
+  const wrongTurn = await post(`/api/rooms/${code}`, {
+    action: "move",
+    token: guest,
+    from: "e7",
+    to: "e5",
+  });
+  assert.equal(wrongTurn.status, 409, "black cannot open");
+
+  const moved = await post(`/api/rooms/${code}`, {
+    action: "move",
+    token: host,
+    from: "e2",
+    to: "e4",
+  });
+  assert.equal(moved.status, 200);
+  assert.equal(moved.body.state.moves[0].san, "e4");
+  assert.ok(moved.body.state.version > version, "a move moves the version on");
+
+  // and now the poll has something to say
+  const noisy = await fetch(`${BASE}/api/rooms/${code}?token=${host}&since=${version}`);
+  assert.equal(noisy.status, 200, "a changed room sends the board");
+  const seen = (await noisy.json()).state;
+  assert.equal(seen.moves.length, 1);
+  assert.equal(seen.turn, "b");
+  // The position survived a round trip through the store, which for chess means
+  // it was packed down to PGN and built back into a Chess instance. Before that
+  // packing existed, JSON turned the game into {} and this came back empty.
+  assert.equal(
+    seen.fen,
+    "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1",
+    "the board came back with the pawn on e4 and black to move"
+  );
+
+  await post(`/api/rooms/${code}`, { action: "leave", token: host });
+  const gone = await fetch(`${BASE}/api/rooms/${code}?token=${host}`);
+  assert.equal(gone.status, 404, "the host leaving closes the room");
+
+  console.log("rooms over http: open, join, move, poll, close ok");
+}
+
 async function main() {
   await rooms();
   try {
@@ -135,6 +202,7 @@ async function main() {
     return;
   }
   await board();
+  await roomsOverHttp();
   console.log("backend checks pass");
 }
 

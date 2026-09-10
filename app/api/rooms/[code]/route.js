@@ -50,11 +50,26 @@ function fail(code) {
   return Response.json({ error: code, message }, { status });
 }
 
+// Polling replaced the event stream: a serverless function cannot hold a
+// connection open for a whole game, and the watchers it pushed to lived in one
+// process's memory.
+//
+// `since` is what keeps that cheap. A client sends the version it already has,
+// and a room that has not moved answers 304 with no body — no board, no
+// serialising, and nothing for the client to re-render.
 export async function GET(request, { params }) {
   const { code } = await params;
-  const room = getRoom(code);
+  const room = await getRoom(code);
   if (!room) return fail("no-room");
-  const token = new URL(request.url).searchParams.get("token");
+
+  const url = new URL(request.url);
+  const token = url.searchParams.get("token");
+  const since = Number(url.searchParams.get("since"));
+
+  if (Number.isFinite(since) && since > 0 && room.version <= since) {
+    return new Response(null, { status: 304 });
+  }
+
   return Response.json({ state: publicState(room, token) });
 }
 
@@ -64,7 +79,7 @@ export async function POST(request, { params }) {
   const { action, token } = body;
 
   if (action === "join") {
-    const result = joinRoom(code, body.name, token);
+    const result = await joinRoom(code, body.name, token);
     if (result.error) return fail(result.error);
     return Response.json({
       token: result.token,
@@ -74,24 +89,24 @@ export async function POST(request, { params }) {
   }
 
   if (action === "start") {
-    const result = startRoom(code, token);
+    const result = await startRoom(code, token);
     if (result.error) return fail(result.error);
     return Response.json({ state: publicState(result.room, token) });
   }
 
   if (action === "rematch") {
-    const result = requestRematch(code, token);
+    const result = await requestRematch(code, token);
     if (result.error) return fail(result.error);
     return Response.json({ state: publicState(result.room, token) });
   }
 
   if (action === "leave") {
-    leaveRoom(code, token);
+    await leaveRoom(code, token);
     return Response.json({ ok: true });
   }
 
   // everything else is the game's own business
-  const result = act(code, token, action, body);
+  const result = await act(code, token, action, body);
   if (result.error) return fail(result.error);
   return Response.json({ state: publicState(result.room, token) });
 }

@@ -6,6 +6,10 @@
 // the rules an implementation usually gets wrong.
 //   npm run check
 const assert = require("node:assert/strict");
+
+// Rooms live in Redis or Postgres in a deployment. These are unit checks, so
+// they run against the in-memory driver and need no service and no .env.
+process.env.BRAINBOX_ROOMS = "memory";
 const { Chess } = require("chess.js");
 
 async function main() {
@@ -103,51 +107,51 @@ async function main() {
   assert.equal(straight.tree.nodes[straight.tip].move.san, "e5");
 
   /* rooms ---------------------------------------------------------------- */
-  const host = rooms.createRoom("Ada", "chess", { seat: "w" });
+  const host = await rooms.createRoom("Ada", "chess", { seat: "w" });
   assert.equal(host.seat, "w");
-  const guest = rooms.joinRoom(host.room.code, "Bo");
+  const guest = await rooms.joinRoom(host.room.code, "Bo");
   assert.equal(guest.seat, "b");
 
   const code = host.room.code;
-  assert.equal(rooms.act(code, guest.token, "move", { from: "e2", to: "e4" }).error, "not-your-turn");
-  assert.equal(rooms.act(code, host.token, "move", { from: "e2", to: "e5" }).error, "illegal-move");
-  assert.equal(rooms.act(code, "not-a-token", "move", { from: "e2", to: "e4" }).error, "not-seated");
-  assert.ok(rooms.act(code, host.token, "move", { from: "e2", to: "e4" }).room);
+  assert.equal((await rooms.act(code, guest.token, "move", { from: "e2", to: "e4" })).error, "not-your-turn");
+  assert.equal((await rooms.act(code, host.token, "move", { from: "e2", to: "e5" })).error, "illegal-move");
+  assert.equal((await rooms.act(code, "not-a-token", "move", { from: "e2", to: "e4" })).error, "not-seated");
+  assert.ok((await rooms.act(code, host.token, "move", { from: "e2", to: "e4" })).room);
 
-  const state = rooms.publicState(rooms.getRoom(code), guest.token);
+  const state = rooms.publicState(await rooms.getRoom(code), guest.token);
   assert.equal(state.seat, "b");
   assert.equal(state.turn, "b");
   assert.equal(state.moves[0].san, "e4");
   assert.equal(state.moves[0].after, state.fen);
   assert.equal(state.game, "chess");
 
-  assert.equal(rooms.act(code, host.token, "accept-draw", {}).error, "no-offer");
-  rooms.act(code, host.token, "offer-draw", {});
-  assert.equal(rooms.publicState(rooms.getRoom(code), guest.token).drawOffer, "w");
-  rooms.act(code, guest.token, "accept-draw", {});
-  const drawn = rooms.publicState(rooms.getRoom(code), guest.token);
+  assert.equal((await rooms.act(code, host.token, "accept-draw", {})).error, "no-offer");
+  await rooms.act(code, host.token, "offer-draw", {});
+  assert.equal(rooms.publicState(await rooms.getRoom(code), guest.token).drawOffer, "w");
+  await rooms.act(code, guest.token, "accept-draw", {});
+  const drawn = rooms.publicState(await rooms.getRoom(code), guest.token);
   assert.equal(drawn.status, "draw");
   assert.equal(drawn.reason, "agreement");
   assert.equal(drawn.score.draw, 1);
 
   // both sides asking for another game swaps the colours
-  rooms.requestRematch(code, host.token);
-  rooms.requestRematch(code, guest.token);
-  const again = rooms.publicState(rooms.getRoom(code), host.token);
+  await rooms.requestRematch(code, host.token);
+  await rooms.requestRematch(code, guest.token);
+  const again = rooms.publicState(await rooms.getRoom(code), host.token);
   assert.equal(again.seat, "b", "the host takes black next game");
   assert.equal(again.status, "playing");
   assert.equal(again.moves.length, 0);
 
   /* the room owns the clock ---------------------------------------------- */
-  const timed = rooms.createRoom("Ada", "chess", { seat: "w", time: "3+2" });
-  const timedGuest = rooms.joinRoom(timed.room.code, "Bo");
-  const before = rooms.publicState(rooms.getRoom(timed.room.code), timed.token);
+  const timed = await rooms.createRoom("Ada", "chess", { seat: "w", time: "3+2" });
+  const timedGuest = await rooms.joinRoom(timed.room.code, "Bo");
+  const before = rooms.publicState(await rooms.getRoom(timed.room.code), timed.token);
   assert.equal(before.clock.initial, 180000);
   assert.equal(before.clock.running, "w", "white's clock runs from the start");
   assert.ok(before.clock.w <= 180000 && before.clock.w > 179000);
 
-  rooms.act(timed.room.code, timed.token, "move", { from: "e2", to: "e4" });
-  const after = rooms.publicState(rooms.getRoom(timed.room.code), timed.token);
+  await rooms.act(timed.room.code, timed.token, "move", { from: "e2", to: "e4" });
+  const after = rooms.publicState(await rooms.getRoom(timed.room.code), timed.token);
   assert.equal(after.clock.running, "b", "the press passes with the move");
   assert.ok(after.clock.w > 180000, "the increment is added on");
   assert.ok(
@@ -155,27 +159,33 @@ async function main() {
     "black is only charged for the time since the press"
   );
 
-  // a move that arrives after the flag has fallen does not land
-  const flagged = rooms.getRoom(timed.room.code);
+  // The flag used to fall by setTimeout, which cannot be written to Redis and
+  // would not fire on a host that sleeps between requests. It is worked out on
+  // read instead, so run the clock down and look.
+  const flagged = await rooms.getRoom(timed.room.code);
   flagged.data.clock.left.b = 0;
   flagged.data.clock.since = Date.now() - 10;
-  rooms.act(timed.room.code, timedGuest.token, "move", { from: "e7", to: "e5" });
+
+  assert.equal(rooms.settleClock(flagged), true, "the flag falls on the next read");
   const out = rooms.publicState(flagged, timedGuest.token);
   assert.equal(out.status, "won");
   assert.equal(out.winner, "w");
   assert.equal(out.reason, "time");
-  assert.equal(out.moves.length, 1, "the late move never reached the board");
+  assert.equal(out.moves.length, 1, "and the board is left where it stood");
+  assert.equal(rooms.settleClock(flagged), false, "a fallen flag does not fall twice");
 
-  // a fresh game keeps the same control
-  rooms.requestRematch(timed.room.code, timed.token);
-  rooms.requestRematch(timed.room.code, timedGuest.token);
-  const rematched = rooms.publicState(rooms.getRoom(timed.room.code), timed.token);
+  // a fresh game keeps the same control. The room in the store is still
+  // running — only the copy above ran out — so end it the ordinary way.
+  await rooms.act(timed.room.code, timedGuest.token, "resign");
+  await rooms.requestRematch(timed.room.code, timed.token);
+  await rooms.requestRematch(timed.room.code, timedGuest.token);
+  const rematched = rooms.publicState(await rooms.getRoom(timed.room.code), timed.token);
   assert.equal(rematched.clock.control, "3+2");
   assert.equal(rematched.clock.b, 180000);
 
-  const untimed = rooms.createRoom("Ada", "chess", { seat: "w" });
-  rooms.joinRoom(untimed.room.code, "Bo");
-  assert.equal(rooms.publicState(rooms.getRoom(untimed.room.code), untimed.token).clock, null);
+  const untimed = await rooms.createRoom("Ada", "chess", { seat: "w" });
+  await rooms.joinRoom(untimed.room.code, "Bo");
+  assert.equal(rooms.publicState(await rooms.getRoom(untimed.room.code), untimed.token).clock, null);
 
   /* connect four --------------------------------------------------------- */
   assert.equal(c4.LINES.length, 69, "every run of four on a 7x6 grid");
@@ -212,20 +222,20 @@ async function main() {
   for (const col of [4, 5, 6]) race = c4.drop(race, col, "Y").board;
   assert.equal(c4.pickMove(race, "R", "sharp"), 0, "0 wins outright, 3 only blocks");
 
-  const c4host = rooms.createRoom("Ada", "connect4", { seat: "R" });
-  const c4guest = rooms.joinRoom(c4host.room.code, "Bo");
+  const c4host = await rooms.createRoom("Ada", "connect4", { seat: "R" });
+  const c4guest = await rooms.joinRoom(c4host.room.code, "Bo");
   assert.equal(c4guest.seat, "Y");
   assert.equal(
-    rooms.act(c4host.room.code, c4host.token, "move", { col: 9 }).error,
+    (await rooms.act(c4host.room.code, c4host.token, "move", { col: 9 })).error,
     "column-full",
     "a column off the grid is refused"
   );
   for (let i = 0; i < 3; i += 1) {
-    rooms.act(c4host.room.code, c4host.token, "move", { col: i });
-    rooms.act(c4host.room.code, c4guest.token, "move", { col: i });
+    await rooms.act(c4host.room.code, c4host.token, "move", { col: i });
+    await rooms.act(c4host.room.code, c4guest.token, "move", { col: i });
   }
-  rooms.act(c4host.room.code, c4host.token, "move", { col: 3 });
-  const c4state = rooms.publicState(rooms.getRoom(c4host.room.code), c4guest.token);
+  await rooms.act(c4host.room.code, c4host.token, "move", { col: 3 });
+  const c4state = rooms.publicState(await rooms.getRoom(c4host.room.code), c4guest.token);
   assert.equal(c4state.status, "won");
   assert.equal(c4state.winner, "R");
   assert.equal(c4state.score.R, 1);
@@ -288,49 +298,49 @@ async function main() {
   assert.equal(go.pickMove(filled, size, "w", "easy"), null);
 
   /* a whole go room, from the first stone to the count ---------------------- */
-  const bigger = rooms.createRoom("Ada", "go", { seat: "b", size: 13 });
+  const bigger = await rooms.createRoom("Ada", "go", { seat: "b", size: 13 });
   assert.equal(rooms.publicState(bigger.room, bigger.token).board.length, 169, "13x13 asked for");
   assert.equal(
-    rooms.publicState(rooms.createRoom("Ada", "go", { size: 4 }).room, null).size,
+    rooms.publicState((await rooms.createRoom("Ada", "go", { size: 4 })).room, null).size,
     9,
     "a size nobody plays falls back to 9x9"
   );
 
-  const goHost = rooms.createRoom("Ada", "go", { seat: "b", size: 9 });
-  const goGuest = rooms.joinRoom(goHost.room.code, "Bo");
+  const goHost = await rooms.createRoom("Ada", "go", { seat: "b", size: 9 });
+  const goGuest = await rooms.joinRoom(goHost.room.code, "Bo");
   assert.equal(goGuest.seat, "w");
 
   const goCode = goHost.room.code;
-  assert.equal(rooms.act(goCode, goGuest.token, "move", { point: 0 }).error, "not-your-turn");
-  rooms.act(goCode, goHost.token, "move", { point: point(4, 4) });
-  assert.equal(rooms.act(goCode, goGuest.token, "move", { point: point(4, 4) }).error, "taken");
-  rooms.act(goCode, goGuest.token, "move", { point: point(0, 0) });
+  assert.equal((await rooms.act(goCode, goGuest.token, "move", { point: 0 })).error, "not-your-turn");
+  await rooms.act(goCode, goHost.token, "move", { point: point(4, 4) });
+  assert.equal((await rooms.act(goCode, goGuest.token, "move", { point: point(4, 4) })).error, "taken");
+  await rooms.act(goCode, goGuest.token, "move", { point: point(0, 0) });
 
   assert.equal(
-    rooms.act(goCode, goHost.token, "accept", {}).error,
+    (await rooms.act(goCode, goHost.token, "accept", {})).error,
     "not-counting",
     "there is nothing to agree on until both have passed"
   );
 
-  rooms.act(goCode, goHost.token, "pass", {});
-  rooms.act(goCode, goGuest.token, "pass", {});
-  let goState = rooms.publicState(rooms.getRoom(goCode), goHost.token);
+  await rooms.act(goCode, goHost.token, "pass", {});
+  await rooms.act(goCode, goGuest.token, "pass", {});
+  let goState = rooms.publicState(await rooms.getRoom(goCode), goHost.token);
   assert.equal(goState.status, "scoring", "two passes start the count");
 
-  rooms.act(goCode, goHost.token, "mark", { point: point(0, 0) });
-  goState = rooms.publicState(rooms.getRoom(goCode), goHost.token);
+  await rooms.act(goCode, goHost.token, "mark", { point: point(0, 0) });
+  goState = rooms.publicState(await rooms.getRoom(goCode), goHost.token);
   assert.deepEqual(goState.dead, [point(0, 0)], "white's corner stone is marked dead");
 
-  rooms.act(goCode, goHost.token, "accept", {});
-  rooms.act(goCode, goGuest.token, "mark", { point: point(0, 0) });
-  goState = rooms.publicState(rooms.getRoom(goCode), goHost.token);
+  await rooms.act(goCode, goHost.token, "accept", {});
+  await rooms.act(goCode, goGuest.token, "mark", { point: point(0, 0) });
+  goState = rooms.publicState(await rooms.getRoom(goCode), goHost.token);
   assert.deepEqual(goState.dead, [], "marking the same group again brings it back");
   assert.deepEqual(goState.accepted, { b: false, w: false }, "a new mark needs new agreement");
 
-  rooms.act(goCode, goGuest.token, "mark", { point: point(0, 0) });
-  rooms.act(goCode, goHost.token, "accept", {});
-  rooms.act(goCode, goGuest.token, "accept", {});
-  goState = rooms.publicState(rooms.getRoom(goCode), goHost.token);
+  await rooms.act(goCode, goGuest.token, "mark", { point: point(0, 0) });
+  await rooms.act(goCode, goHost.token, "accept", {});
+  await rooms.act(goCode, goGuest.token, "accept", {});
+  goState = rooms.publicState(await rooms.getRoom(goCode), goHost.token);
   assert.equal(goState.status, "won");
   assert.equal(goState.winner, "b", "black holds the whole board");
   assert.equal(goState.result.b, 81, "one stone plus everything it surrounds");
@@ -409,21 +419,21 @@ async function main() {
   assert.ok(rev.outcomeOf(selfPlay), "and that position has a result");
 
   /* a reversi room ------------------------------------------------------- */
-  const revHost = rooms.createRoom("Ada", "reversi", { seat: "b" });
-  const revGuest = rooms.joinRoom(revHost.room.code, "Bo");
+  const revHost = await rooms.createRoom("Ada", "reversi", { seat: "b" });
+  const revGuest = await rooms.joinRoom(revHost.room.code, "Bo");
   const revCode = revHost.room.code;
   assert.equal(revGuest.seat, "w");
   assert.equal(
-    rooms.act(revCode, revGuest.token, "move", { point: rev.index(2, 3) }).error,
+    (await rooms.act(revCode, revGuest.token, "move", { point: rev.index(2, 3) })).error,
     "not-your-turn"
   );
   assert.equal(
-    rooms.act(revCode, revHost.token, "move", { point: 0 }).error,
+    (await rooms.act(revCode, revHost.token, "move", { point: 0 })).error,
     "turns-nothing",
     "the server refuses a move that turns nothing"
   );
-  rooms.act(revCode, revHost.token, "move", { point: rev.index(2, 3) });
-  const revState = rooms.publicState(rooms.getRoom(revCode), revGuest.token);
+  await rooms.act(revCode, revHost.token, "move", { point: rev.index(2, 3) });
+  const revState = rooms.publicState(await rooms.getRoom(revCode), revGuest.token);
   assert.equal(revState.turn, "w");
   assert.deepEqual(revState.counts, { b: 4, w: 1 });
   assert.deepEqual(revState.flipped, [rev.index(3, 3)]);
@@ -510,36 +520,36 @@ async function main() {
   assert.equal(chk.bestChainStep(chk.start(), "b", chk.index(2, 1)), null);
 
   /* a checkers room ------------------------------------------------------- */
-  const chkHost = rooms.createRoom("Ada", "checkers", { seat: "b" });
-  const chkGuest = rooms.joinRoom(chkHost.room.code, "Bo");
+  const chkHost = await rooms.createRoom("Ada", "checkers", { seat: "b" });
+  const chkGuest = await rooms.joinRoom(chkHost.room.code, "Bo");
   const chkCode = chkHost.room.code;
   assert.equal(chkGuest.seat, "r");
   assert.equal(
-    rooms.act(chkCode, chkGuest.token, "move", { from: chk.index(5, 0), to: chk.index(4, 1) })
+    (await rooms.act(chkCode, chkGuest.token, "move", { from: chk.index(5, 0), to: chk.index(4, 1) }))
       .error,
     "not-your-turn"
   );
   assert.equal(
-    rooms.act(chkCode, chkHost.token, "move", { from: chk.index(2, 1), to: chk.index(4, 3) })
+    (await rooms.act(chkCode, chkHost.token, "move", { from: chk.index(2, 1), to: chk.index(4, 3) }))
       .error,
     "illegal-move",
     "a man cannot jump an empty square"
   );
-  rooms.act(chkCode, chkHost.token, "move", { from: chk.index(2, 1), to: chk.index(3, 0) });
-  const chkState = rooms.publicState(rooms.getRoom(chkCode), chkGuest.token);
+  await rooms.act(chkCode, chkHost.token, "move", { from: chk.index(2, 1), to: chk.index(3, 0) });
+  const chkState = rooms.publicState(await rooms.getRoom(chkCode), chkGuest.token);
   assert.equal(chkState.turn, "r");
   assert.deepEqual(chkState.path, [chk.index(2, 1), chk.index(3, 0)]);
   assert.equal(chkState.steps.length, 7, "red is told its seven replies");
   assert.equal(chkState.counts.b, 12);
 
   /* tictactoe still works on the same store ------------------------------ */
-  const ttt = rooms.createRoom("Ada", "tictactoe", { seat: "X" });
-  const tttGuest = rooms.joinRoom(ttt.room.code, "Bo");
-  [0, 3, 1, 4, 2].forEach((index, i) => {
+  const ttt = await rooms.createRoom("Ada", "tictactoe", { seat: "X" });
+  const tttGuest = await rooms.joinRoom(ttt.room.code, "Bo");
+  for (const [i, index] of [0, 3, 1, 4, 2].entries()) {
     const who = i % 2 === 0 ? ttt.token : tttGuest.token;
-    rooms.act(ttt.room.code, who, "move", { index });
-  });
-  const tttState = rooms.publicState(rooms.getRoom(ttt.room.code), ttt.token);
+    await rooms.act(ttt.room.code, who, "move", { index });
+  }
+  const tttState = rooms.publicState(await rooms.getRoom(ttt.room.code), ttt.token);
   assert.equal(tttState.status, "won");
   assert.equal(tttState.winner, "X");
   assert.deepEqual(tttState.line, [0, 1, 2]);
@@ -734,31 +744,31 @@ async function main() {
     assert.equal(race.off[raced.winner], 15);
 
     /* a backgammon room, where the dice are the server's --------------------- */
-    const bgHost = rooms.createRoom("Ada", "backgammon", { seat: "w" });
-    const bgGuest = rooms.joinRoom(bgHost.room.code, "Bo");
+    const bgHost = await rooms.createRoom("Ada", "backgammon", { seat: "w" });
+    const bgGuest = await rooms.joinRoom(bgHost.room.code, "Bo");
     const bgCode = bgHost.room.code;
-    let bgState = rooms.publicState(rooms.getRoom(bgCode), bgHost.token);
+    let bgState = rooms.publicState(await rooms.getRoom(bgCode), bgHost.token);
     assert.ok(bgState.dice.length >= 2, "the first roll is down as soon as both seats are filled");
     assert.ok(bgState.plays.length > 0, "and the mover is told what it may do");
 
     const onRoll = bgState.turn === "w" ? bgHost.token : bgGuest.token;
     const waiting = bgState.turn === "w" ? bgGuest.token : bgHost.token;
     assert.equal(
-      rooms.act(bgCode, waiting, "move", bgState.plays[0]).error,
+      (await rooms.act(bgCode, waiting, "move", bgState.plays[0])).error,
       "not-your-turn",
       "the other side cannot move the dice it did not roll"
     );
-    assert.equal(rooms.act(bgCode, onRoll, "move", { from: 99, to: 98 }).error, "illegal-move");
-    assert.equal(rooms.act(bgCode, onRoll, "undo", {}).error, "nothing-to-undo");
+    assert.equal((await rooms.act(bgCode, onRoll, "move", { from: 99, to: 98 })).error, "illegal-move");
+    assert.equal((await rooms.act(bgCode, onRoll, "undo", {})).error, "nothing-to-undo");
 
     const firstPlay = bgState.plays[0];
-    rooms.act(bgCode, onRoll, "move", { from: firstPlay.from, to: firstPlay.to });
-    bgState = rooms.publicState(rooms.getRoom(bgCode), bgHost.token);
+    await rooms.act(bgCode, onRoll, "move", { from: firstPlay.from, to: firstPlay.to });
+    bgState = rooms.publicState(await rooms.getRoom(bgCode), bgHost.token);
     assert.equal(bgState.played.length, 1);
     assert.equal(bgState.used.filter(Boolean).length, 1, "one die spent");
 
-    rooms.act(bgCode, onRoll, "undo", {});
-    bgState = rooms.publicState(rooms.getRoom(bgCode), bgHost.token);
+    await rooms.act(bgCode, onRoll, "undo", {});
+    bgState = rooms.publicState(await rooms.getRoom(bgCode), bgHost.token);
     assert.equal(bgState.played.length, 0, "and a turn can be taken back to where it started");
     assert.equal(bgState.used.filter(Boolean).length, 0);
   }
