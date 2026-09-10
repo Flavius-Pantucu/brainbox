@@ -77,7 +77,7 @@ export function PlayerCard() {
   // live in this browser, and saying so beats an empty page.
   if (!isPending && !session) {
     return (
-      <div className="board__inner">
+      <div className="board__inner page--mid">
         <div className="play__head">
           <ZoneLabel>Your card</ZoneLabel>
         </div>
@@ -102,7 +102,7 @@ export function PlayerCard() {
   const user = session?.user;
 
   return (
-    <div className="board__inner">
+    <div className="board__inner page--mid">
       <div className="play__head">
         <ZoneLabel>Your card</ZoneLabel>
         <Peg options={PEG_OPTIONS} value={range} onChange={setRange} label="Range" />

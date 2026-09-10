@@ -65,7 +65,7 @@ export function AuthForm({ mode }) {
   };
 
   return (
-    <div className="board__inner">
+    <div className="board__inner page--narrow">
       <div className="play__head">
         <ZoneLabel>{joining ? "Open an account" : "Sign in"}</ZoneLabel>
       </div>

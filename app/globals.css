@@ -4642,8 +4642,40 @@ span.movelist__half {
    THE CARD — signing in, and the player's own page
    ========================================================================= */
 
-.auth {
-  max-width: 30rem;
+/* A form is a column, not a board: it wants to sit in the middle of the room
+   rather than start at the left wall. The width belongs to the column, so the
+   plate, its peg and the label above it all centre together — capping the
+   plate alone left the peg centred on a card that was not. */
+.page--narrow {
+  max-width: 31rem;
+  margin-inline: auto;
+}
+
+.page--mid {
+  max-width: 52rem;
+  margin-inline: auto;
+}
+
+/* The board's plates are pale enamel, which reads well as a small hung tile and
+   badly as a slab this size — a white field against a navy room, with a cobalt
+   key sitting in it. These two pages take the darker surface the palette
+   already carries, so the card sits in the room instead of cutting a hole in
+   it. Redefining the tokens rather than the properties means everything inside
+   follows, in both paints. */
+/* A hung plate stretches to fill its slot, which is right on a board of tiles
+   and wrong for a form — it left a hand's width of empty card under the last
+   line. Here the plate is as tall as what is on it. */
+.page--narrow .hang,
+.page--mid .hang {
+  height: auto;
+}
+
+.page--narrow .plate,
+.page--mid .plate {
+  --plate-face: var(--panel);
+  --plate-ink: var(--ink);
+  --plate-ink-quiet: var(--ink-quiet);
+  border-color: var(--keyline-strong);
 }
 
 .auth__form {
@@ -4661,8 +4693,11 @@ span.movelist__half {
   font-size: 0.86rem;
 }
 
+/* Links in this prose are cobalt — but a .key IS cobalt, so colouring its label
+   the same way painted the primary button's text onto its own background and
+   left an empty blue pill. A button carries its own colours. */
 .auth__swap a,
-.you a {
+.you a:not(.key) {
   color: var(--signal);
   text-underline-offset: 3px;
 }
@@ -4670,7 +4705,8 @@ span.movelist__half {
 /* ---------- the card ---------- */
 
 .you {
-  max-width: 46rem;
+  /* the column sets the width now */
+  max-width: none;
 }
 
 .you__who {
