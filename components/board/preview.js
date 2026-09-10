@@ -5,7 +5,6 @@ import { Board as ChessBoard } from "../games/chess/board";
 import { Goban } from "../games/go/goban";
 import { Grid as Connect4Grid } from "../games/connect4/grid";
 import { BackgammonBoard } from "../games/backgammon/board";
-import { RemiTable } from "../games/remi/table";
 import { CheckersGrid } from "../games/checkers/grid";
 import { MineField } from "../games/minesweeper/grid";
 import { ReversiGrid } from "../games/reversi/grid";
@@ -13,7 +12,6 @@ import { SudokuGrid } from "../games/sudoku/grid";
 import { Board as TicTacToeBoard } from "../games/tictactoe/board";
 import {
   BACKGAMMON_PREVIEW,
-  REMI_PREVIEW,
   CHECKERS_PREVIEW,
   CHESS_PREVIEW,
   CONNECT4_PREVIEW,
@@ -80,27 +78,6 @@ export function GamePreview({ gameId }) {
           board={CONNECT4_PREVIEW.board}
           last={CONNECT4_PREVIEW.last}
           onDrop={() => {}}
-          disabled
-        />
-      </Inert>
-    );
-  }
-
-  if (gameId === "remi") {
-    return (
-      <Inert>
-        <RemiTable
-          seats={REMI_PREVIEW.seats}
-          names={REMI_PREVIEW.names}
-          you={REMI_PREVIEW.you}
-          turn={REMI_PREVIEW.turn}
-          table={REMI_PREVIEW.table}
-          held={REMI_PREVIEW.held}
-          opened={REMI_PREVIEW.opened}
-          scores={REMI_PREVIEW.scores}
-          slots={REMI_PREVIEW.slots}
-          discard={REMI_PREVIEW.discard}
-          stock={REMI_PREVIEW.stock}
           disabled
         />
       </Inert>

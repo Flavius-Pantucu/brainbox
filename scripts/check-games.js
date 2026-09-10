@@ -2,8 +2,7 @@
 // library's: the chess material read, the review maths, the variation tree, the
 // clocks, Connect Four's rules and opponent, Go's rules and scoring, Reversi's
 // turning and passing, draughts' compulsory captures and chains, minesweeper's
-// safe first click, backgammon's dice rules, Remi's melds and its forty-five, and the
-// room's move rules.
+// safe first click, backgammon's dice rules, and the room's move rules.
 //   npm run check
 const assert = require("node:assert/strict");
 const { Chess } = require("chess.js");
@@ -17,7 +16,6 @@ async function main() {
   const chk = await import("../lib/checkers.js");
   const ms = await import("../lib/minesweeper.js");
   const bg = await import("../lib/backgammon.js");
-  const remi = await import("../lib/remi.js");
   const daily = await import("../lib/daily.js");
   const games = await import("../lib/games.js");
   const rooms = await import("../lib/rooms.js");
@@ -762,186 +760,6 @@ async function main() {
     bgState = rooms.publicState(rooms.getRoom(bgCode), bgHost.token);
     assert.equal(bgState.played.length, 0, "and a turn can be taken back to where it started");
     assert.equal(bgState.used.filter(Boolean).length, 0);
-  }
-
-  {
-    /* remi ---------------------------------------------------------------- */
-    const t = (n, colour, copy = 0) =>
-      copy * 52 + remi.COLOURS.indexOf(colour) * 13 + (n - 1);
-    const J = 104;
-    const J2 = 105;
-
-    assert.equal(remi.bag().length, 106, "a hundred and six tiles");
-    assert.equal(remi.bag().filter(remi.isJoker).length, 2, "two of them jokers");
-    assert.equal(remi.tileName(t(1, "r")), "1r");
-    assert.equal(remi.numberOf(t(13, "k")), 13);
-
-    // a group is one number in different colours; a run is one colour running on
-    assert.equal(remi.readMeld([t(7, "r"), t(7, "y"), t(7, "b")]).value, 21);
-    assert.equal(remi.readMeld([t(7, "r"), t(7, "y"), J]).value, 21, "a joker stands in");
-    assert.equal(remi.readMeld([t(7, "r"), t(7, "r", 1), t(7, "y")]), null, "not twice a colour");
-    assert.equal(remi.readMeld([t(7, "r"), t(7, "y"), t(7, "b"), t(7, "k"), J]), null, "four at most");
-    assert.equal(remi.readMeld([t(5, "r"), t(6, "r"), t(7, "r")]).value, 18);
-    assert.equal(remi.readMeld([t(5, "r"), t(6, "y"), t(7, "r")]), null, "one colour to a run");
-    assert.equal(remi.readMeld([t(5, "r"), J, J2]), null, "one joker to a meld");
-
-    // the one sits under the two or over the thirteen, and is worth fourteen there
-    assert.equal(remi.readMeld([t(1, "b"), t(2, "b"), t(3, "b")]).value, 6);
-    assert.equal(remi.readMeld([t(12, "b"), t(13, "b"), t(1, "b")]).value, 39, "12 + 13 + 14");
-    assert.equal(remi.readMeld([t(13, "b"), t(1, "b"), t(2, "b")]), null, "nothing wraps round");
-
-    // growing a meld, and buying its joker
-    const run = [t(5, "r"), t(6, "r"), t(7, "r")];
-    assert.ok(remi.extendedWith(run, t(8, "r")), "the eight goes on the end");
-    assert.ok(remi.extendedWith(run, t(4, "r")), "and so does the four");
-    assert.equal(remi.extendedWith(run, t(9, "r")), null, "the nine does not");
-    const withJoker = [t(5, "r"), J, t(7, "r")];
-    assert.deepEqual(remi.jokerSwap(withJoker, t(6, "r")).joker, J, "the six buys the joker");
-    assert.equal(remi.jokerSwap(withJoker, t(9, "r")), null, "and nothing else does");
-
-    // the solver finds the best lay, high ace included
-    const hand = [
-      t(11, "r"), t(12, "r"), t(13, "r"), t(1, "r"),
-      t(4, "y"), t(4, "b"), t(4, "k"),
-      t(2, "y"), t(9, "b"), t(6, "k"), t(8, "y"), t(3, "b"), t(10, "k"), t(7, "r"),
-    ];
-    const lay = remi.bestMelds(hand);
-    assert.equal(lay.value, 62, "11-12-13-1 red and three fours");
-    assert.ok(lay.value >= remi.OPENING, "which opens");
-
-    // the rack reads itself: tiles side by side are one group, a gap parts them
-    let rack = remi.emptyRack();
-    [t(5, "r"), t(6, "r"), t(7, "r")].forEach((tile, i) => {
-      rack[i] = tile;
-    });
-    [t(9, "y"), t(9, "b"), t(9, "k")].forEach((tile, i) => {
-      rack[5 + i] = tile;
-    });
-    const read = remi.rackGroups(rack);
-    assert.equal(read.length, 2, "a run and a group, with a gap between them");
-    assert.deepEqual(read.map((group) => group.value), [18, 27]);
-    assert.equal(
-      read.reduce((sum, group) => sum + group.value, 0),
-      45,
-      "and together they open"
-    );
-
-    // slid together they are one span, and one span is not two melds
-    const shoved = remi.emptyRack();
-    [t(5, "r"), t(6, "r"), t(7, "r"), t(9, "y"), t(9, "b"), t(9, "k")].forEach((tile, i) => {
-      shoved[i] = tile;
-    });
-    assert.equal(remi.rackGroups(shoved).length, 0, "no gap, no reading");
-
-    // two tiers, read separately
-    const tiered = remi.emptyRack();
-    [t(5, "r"), t(6, "r"), t(7, "r")].forEach((tile, i) => {
-      tiered[i] = tile;
-    });
-    [t(9, "y"), t(9, "b"), t(9, "k")].forEach((tile, i) => {
-      tiered[remi.SLOTS + i] = tile;
-    });
-    assert.equal(remi.rackGroups(tiered).length, 2, "the second tier reads too");
-
-    // seating keeps the arrangement and finds room for whatever is new
-    const kept = remi.seatTiles(rack, [
-      t(5, "r"), t(6, "r"), t(7, "r"), t(9, "y"), t(9, "b"), t(9, "k"), t(1, "r"),
-    ]);
-    assert.equal(kept[0], t(5, "r"), "nothing already placed is moved");
-    assert.equal(kept[5], t(9, "y"), "not even across a gap");
-    assert.ok(kept.includes(t(1, "r")), "and the new tile gets a slot");
-
-    const thrown = remi.seatTiles(kept, [t(5, "r"), t(6, "r"), t(7, "r")]);
-    assert.equal(thrown.filter((tile) => tile != null).length, 3, "what left the hand leaves the rack");
-
-    // reaching into the line of throws takes everything after it too
-    assert.deepEqual(remi.takeFrom([1, 2, 3, 4], 3), { taken: [4], left: [1, 2, 3] });
-    assert.deepEqual(remi.takeFrom([1, 2, 3, 4], 1), { taken: [2, 3, 4], left: [1] });
-    assert.deepEqual(remi.takeFrom([1, 2, 3, 4], 0), { taken: [1, 2, 3, 4], left: [] });
-    assert.equal(remi.takeFrom([1, 2, 3], 5), null, "there is nothing at that end");
-    assert.equal(remi.takeFrom([], 0), null, "and nothing in an empty line");
-
-    // the stock sits in stacks of seven
-    assert.deepEqual(remi.stacksOf(64), { full: 9, loose: 1 });
-    assert.deepEqual(remi.stacksOf(7), { full: 1, loose: 0 });
-    assert.deepEqual(remi.stacksOf(0), { full: 0, loose: 0 });
-
-    // and what a hand costs you if you are left holding it
-    assert.equal(remi.handValue([t(13, "r"), J, t(1, "y")]), 39, "a joker in hand is twenty-five");
-
-    /* a remi table seats up to four ---------------------------------------- */
-    const host = rooms.createRoom("Ada", "remi", { seat: "a" });
-    const code = host.room.code;
-    let table = rooms.publicState(rooms.getRoom(code), host.token);
-    assert.equal(table.seats.length, 4);
-    assert.equal(table.minSeats, 2);
-    assert.equal(table.status, "waiting", "a table that can seat four waits to be started");
-    assert.equal(rooms.startRoom(code, host.token).error, "too-few");
-
-    const bo = rooms.joinRoom(code, "Bo");
-    assert.equal(bo.seat, "b");
-    assert.equal(
-      rooms.publicState(rooms.getRoom(code), host.token).status,
-      "waiting",
-      "and keeps waiting, because a third may still sit down"
-    );
-    const cy = rooms.joinRoom(code, "Cy");
-    assert.equal(cy.seat, "c");
-    assert.equal(rooms.startRoom(code, bo.token).error, "not-host");
-
-    rooms.startRoom(code, host.token);
-    table = rooms.publicState(rooms.getRoom(code), host.token);
-    assert.equal(table.status, "playing");
-    assert.equal(table.hand.length, 14, "fourteen tiles each");
-    assert.deepEqual(Object.keys(table.others).sort(), ["b", "c"]);
-    assert.equal(table.others.b, 14, "and I am told counts, not tiles");
-    assert.equal(table.hands, undefined, "never the whole deal");
-    assert.equal(table.stock, 106 - 42, "the rest is stock");
-    assert.equal(
-      rooms.publicState(rooms.getRoom(code), null).hand.length,
-      0,
-      "somebody with no seat holds nothing"
-    );
-
-    const seats = { a: host.token, b: bo.token, c: cy.token };
-    const mover = seats[table.turn];
-    const idle = seats[table.turn === "a" ? "b" : "a"];
-    assert.equal(rooms.act(code, idle, "draw", { from: "stock" }).error, "not-your-turn");
-    assert.equal(rooms.act(code, mover, "discard", { tile: 0 }).error, "draw-first");
-
-    rooms.act(code, mover, "draw", { from: "stock" });
-    const drawn = rooms.publicState(rooms.getRoom(code), mover);
-    assert.equal(drawn.hand.length, 15, "fifteen between drawing and throwing");
-    assert.equal(rooms.act(code, mover, "draw", { from: "stock" }).error, "already-drawn");
-    assert.equal(
-      rooms.act(code, mover, "lay", { tiles: drawn.hand.slice(0, 3) }).error,
-      "not-open",
-      "nothing goes down before the forty-five"
-    );
-    assert.equal(
-      rooms.act(code, mover, "open", { melds: [[t(1, "r"), t(2, "r"), t(3, "r")]] }).error,
-      "not-your-tile",
-      "and only with tiles you hold"
-    );
-
-    // a throw goes into the line, and reaching past it costs the rest
-    const held = rooms.publicState(rooms.getRoom(code), mover).hand;
-    rooms.act(code, mover, "discard", { tile: held[0] });
-    let line = rooms.publicState(rooms.getRoom(code), mover);
-    assert.deepEqual(line.discard, [held[0]], "the thrown tile lies in the line");
-
-    const second = seats[line.turn];
-    rooms.act(code, second, "draw", { from: "stock" });
-    const secondHand = rooms.publicState(rooms.getRoom(code), second).hand;
-    rooms.act(code, second, "discard", { tile: secondHand[0] });
-    line = rooms.publicState(rooms.getRoom(code), second);
-    assert.equal(line.discard.length, 2, "two thrown now");
-
-    const third = seats[line.turn];
-    rooms.act(code, third, "draw", { from: "discard", at: 0 });
-    const reached = rooms.publicState(rooms.getRoom(code), third);
-    assert.equal(reached.hand.length, 16, "reaching to the front took both");
-    assert.equal(reached.discard.length, 0, "and emptied the line");
   }
 
   /* every game the catalog lists can be today's --------------------------- */

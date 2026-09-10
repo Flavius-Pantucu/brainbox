@@ -1,6 +1,6 @@
 # BrainBox
 
-A portal for browser-based logic games — chess, Go, backgammon, Remi, checkers, Reversi,
+A portal for browser-based logic games — chess, Go, backgammon, checkers, Reversi,
 Connect Four, minesweeper, sudoku and tic-tac-toe — built with
 [Next.js](https://nextjs.org/).
 
@@ -19,7 +19,6 @@ Games:
 - [x] **Minesweeper** — beginner to expert, with a first click that is always safe
 - [x] **Sudoku** — a fresh puzzle every game, generated in the browser, at four difficulties
 - [x] **Go** — 9×9 to 19×19, against the machine, against the next chair, or online by room code
-- [x] **Remi** — two to four at a table, against the machine or online by room code
 - [x] **Backgammon** — against the machine, against the next chair, or online by room code
 - [x] **Checkers** — against the machine, against the next chair, or online by room code
 - [x] **Reversi** — against the machine, against the next chair, or online by room code
@@ -39,7 +38,6 @@ Games:
 | `/play/checkers` | Checkers, inside the play frame                                    |
 | `/play/minesweeper` | Minesweeper, inside the play frame                              |
 | `/play/backgammon` | Backgammon, inside the play frame                                |
-| `/play/remi`     | Remi, inside the play frame                                        |
 | `/play/sudoku`   | Sudoku, inside the play frame                                      |
 | `/play/tictactoe`| Tic-Tac-Toe, inside the play frame                                 |
 | `/standings`     | The ladder and your card — recent games, wins, day run             |
@@ -86,56 +84,6 @@ and takes the one that wins most, on a time budget that grows with the board. It
 own eyes and passes when it has nothing left. It is a real opponent on 9×9 and an honest one
 above that. Not implemented: positional superko, and the search runs on the main thread rather
 than in a worker.
-
-## Remi
-
-Romanian rummy, on tiles. A hundred and six of them: one to thirteen in four colours, twice
-over, and two jokers. Fourteen to a rack, draw one and throw one, and the rule the game is named
-for — **your first lay has to be worth at least forty-five**, in one turn, or it does not go
-down at all.
-
-`lib/remi.js` reads a set of tiles and says what it is: a group is one number in three or four
-different colours, a run is one colour running on, one joker to a meld, and the one sits either
-under the two or over the thirteen, where it counts as fourteen. So 12-13-1 is a run worth 39
-and 13-1-2 is nothing. Once you are open you can build on any meld on the table, yours or
-theirs, and buy a joker off it with the tile it is standing in for.
-
-Whoever empties their rack ends the hand; everybody else counts what they are left holding, and
-a joker there costs 25. Lowest total when somebody passes 100 wins the game.
-
-The machine works its rack out with the same solver the board uses: every meld the tiles could
-form, then a search for the set of them that share no tile and are worth the most — or cover the
-most tiles, once it is open and trying to go out.
-
-### The rack reads itself
-
-There is no "select these tiles and press lay". You arrange tiles on a two-tier rack, and
-anything sitting side by side that reads as a run or a group is bracketed underneath with what
-it is worth. A gap is how you say two groups are two groups — slide a run into a group and the
-bracket disappears, because six tiles in a row are one span and one span is one meld or none.
-The board totals the brackets against the forty-five, and laying down puts every bracketed
-group on the table at once.
-
-Tiles are dragged, or tapped and tapped again, and every source reaches every target: rack to
-rack to rearrange, rack onto a meld to add a tile or buy its joker, rack into the line of throws
-to throw it, and the stock or a thrown tile back onto the rack to take it.
-
-### The box and the line
-
-The stock is shown the way it sits in the box — in stacks of seven, with whatever is over at the
-end — so you can see how much of the game is left rather than reading a number.
-
-Everything anybody has thrown lies in a **line**, in the order it went down, and you may reach
-into it. But a tile from further back costs you every tile thrown after it: hover one and the
-line lifts everything that would come with it and tells you how many. Reaching for the 3 you
-needed six throws ago means taking all six that followed it.
-
-Every player has a **lane** — a routed channel with their nameplate at the end, their melds
-sitting in it as valued blocks, how many tiles they still hold, and their running penalty. Yours
-is the lit one, and the lane of whoever is playing wears a cobalt bar.
-
-Two to four play. Online tables seat four, start when the host says so, and **your rack is only
-ever sent to you**.
 
 ## Backgammon
 
