@@ -60,8 +60,7 @@
 }
 
 [data-paint="day"] .plate:not(.plate--empty):not(.plate--notch),
-[data-paint="day"] .nameplate,
-[data-paint="day"] .play__surface {
+[data-paint="day"] .nameplate {
   border-color: color-mix(in srgb, var(--paint-navy) 30%, transparent);
 }
 
@@ -333,23 +332,6 @@ button {
   min-height: 0;
 }
 
-.stage__field {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 0;
-  min-width: 0;
-}
-
-.stage__side {
-  display: flex;
-  flex-direction: column;
-  gap: calc(var(--u) * 2);
-  min-height: 0;
-  overflow: auto;
-  padding-bottom: var(--u);
-}
-
 @media (max-width: 900px) {
   .stage {
     height: auto;
@@ -362,10 +344,6 @@ button {
     grid-template-columns: minmax(0, 1fr);
     grid-template-rows: auto auto;
     padding-bottom: calc(var(--u) * 3);
-  }
-
-  .stage__side {
-    overflow: visible;
   }
 }
 
@@ -407,44 +385,6 @@ button {
   letter-spacing: 0.005em;
   font-size: clamp(1.3rem, 2.3vw, 1.6rem);
   line-height: 1;
-  color: var(--ink);
-}
-
-.rail__nav {
-  display: flex;
-  align-items: stretch;
-  gap: calc(var(--u) * 0.25);
-  height: 100%;
-  margin-left: calc(var(--u) * 2);
-  min-width: 0;
-  overflow-x: auto;
-  scrollbar-width: none;
-}
-
-.rail__nav::-webkit-scrollbar {
-  display: none;
-}
-
-.rail__link {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  white-space: nowrap;
-  padding: 0 calc(var(--u) * 1.5);
-  font-family: var(--font-label), ui-sans-serif, sans-serif;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.13em;
-  font-size: 0.76rem;
-  color: var(--ink-quiet);
-  transition: color 160ms ease-out;
-}
-
-.rail__link:hover {
-  color: var(--ink);
-}
-
-.rail__link[aria-current="page"] {
   color: var(--ink);
 }
 
@@ -736,11 +676,6 @@ button {
   border: 1px dashed var(--keyline-strong);
   box-shadow: none;
   transform: none;
-}
-
-.key--large {
-  padding: calc(var(--u) * 2.25) calc(var(--u) * 4);
-  font-size: 0.95rem;
 }
 
 .key--quiet {
@@ -1154,41 +1089,6 @@ button {
   }
 }
 
-.play__surface {
-  background: var(--plate-face);
-  border: 1px solid rgba(0, 0, 0, 0.32);
-  border-radius: var(--radius-plate);
-  box-shadow: var(--lift-2);
-  padding: calc(var(--u) * 2);
-  position: relative;
-  overflow: hidden;
-  display: flex;
-  justify-content: center;
-}
-
-.play__surface::after {
-  content: "";
-  position: absolute;
-  inset: 6px;
-  border: 1px solid color-mix(in srgb, var(--paint-navy) 22%, transparent);
-  border-radius: 12px;
-  pointer-events: none;
-}
-
-.play__aside {
-  display: flex;
-  flex-direction: column;
-  gap: calc(var(--u) * 3);
-  position: sticky;
-  top: calc(var(--rail-h) + var(--u) * 3);
-}
-
-@media (max-width: 1000px) {
-  .play__aside {
-    position: static;
-  }
-}
-
 .play__head {
   display: flex;
   align-items: flex-end;
@@ -1223,11 +1123,6 @@ button {
 
 .play__back:hover {
   color: var(--signal);
-}
-
-/* the legacy game components render on the enamel surface */
-.play__surface :is(.text-white, .text-slate-100) {
-  color: var(--paint-navy) !important;
 }
 
 /* =========================================================================
@@ -1351,16 +1246,6 @@ button {
 
     .rail__inner {
     gap: calc(var(--u) * 1.5);
-  }
-
-  .rail__nav {
-    margin-left: calc(var(--u) * 0.5);
-  }
-
-  .rail__link {
-    padding: 0 calc(var(--u) * 1);
-    font-size: 0.68rem;
-    letter-spacing: 0.12em;
   }
 
   .rail .nameplate {
@@ -4711,5 +4596,22 @@ span.movelist__half {
 
   .bg__wrap {
     max-height: none;
+  }
+}
+
+/* =========================================================================
+   REDUCED MOTION — the net under the guards above
+   ========================================================================= */
+
+/* Each effect that animates is turned off where it is defined, because doing it
+   properly needs more than "animation: none" — a stroke to reset, a lifting
+   plate to hide. Transitions are the ones that get forgotten: there are thirty
+   in this file and seven of them move something. This catches all of them, and
+   whatever gets added next. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 1ms !important;
   }
 }
