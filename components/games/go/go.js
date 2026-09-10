@@ -19,7 +19,7 @@ import { useRoom } from "../use-room";
 import { Peg } from "../../board/peg";
 import { Tag } from "../../board/tag";
 import { Verdict } from "../../board/verdict";
-import { Copy, Cpu, Undo, Users } from "../../board/icons";
+import { Copy, Cpu, Flag, Skip, Undo, Users } from "../../board/icons";
 
 const MODES = [
   { id: "solo", label: "Solo" },
@@ -463,7 +463,7 @@ export default function Go({ onResult }) {
               className="tool"
               onClick={onPass}
               disabled={view.phase !== "playing" || !yourTurn}>
-              <Undo size={16} />
+              <Skip size={16} />
               <em>Pass</em>
             </button>
             {local && (
@@ -473,7 +473,7 @@ export default function Go({ onResult }) {
               </button>
             )}
             <button type="button" className="tool" onClick={onResign} disabled={over}>
-              <Undo size={16} />
+              <Flag size={16} />
               <em>Resign</em>
             </button>
           </div>

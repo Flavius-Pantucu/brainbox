@@ -241,6 +241,26 @@ export function Undo({ size = 18, ...rest }) {
   );
 }
 
+// Pass: hand the turn over untouched. A play arrow stopped by a bar.
+export function Skip({ size = 18, ...rest }) {
+  return (
+    <svg {...base} width={size} height={size} {...rest}>
+      <path d="M6 5.5 15 12 6 18.5V5.5Z" />
+      <path d="M18.5 5v14" strokeWidth="2.2" />
+    </svg>
+  );
+}
+
+// Deal again. A closed loop, so it does not read as Undo's single step back.
+export function Replay({ size = 18, ...rest }) {
+  return (
+    <svg {...base} width={size} height={size} {...rest}>
+      <path d="M20 12a8 8 0 1 1-2.4-5.7" />
+      <path d="M20.5 3.5V9H15" />
+    </svg>
+  );
+}
+
 export function Bulb({ size = 18, ...rest }) {
   return (
     <svg {...base} width={size} height={size} {...rest}>

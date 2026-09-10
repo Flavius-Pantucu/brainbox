@@ -715,6 +715,12 @@ button {
   appearance: none;
   border: 0;
   background: transparent;
+  /* share the groove out evenly. Without this the options huddle at the left
+     and a wrapped one — "Expert" under "Beginner Intermediate" — sits alone
+     against a stretch of empty groove, which reads as broken rather than
+     wrapped. */
+  flex: 1 1 auto;
+  text-align: center;
   padding: calc(var(--u) * 0.9) calc(var(--u) * 1.9);
   border-radius: 999px;
   font-family: var(--font-label), ui-sans-serif, sans-serif;
@@ -4492,8 +4498,14 @@ span.movelist__half {
 }
 
 .bg__dice .dice {
-  flex-direction: column;
+  display: grid;
   gap: 0.7cqw;
+}
+
+/* doubles are played four times over, so four dice come up. In a single column
+   they run off the bar and land on the checkers; paired, they stay on it. */
+.bg__dice .dice:has(.die:nth-child(3)) {
+  grid-template-columns: 1fr 1fr;
 }
 
 .bg__dice .die {

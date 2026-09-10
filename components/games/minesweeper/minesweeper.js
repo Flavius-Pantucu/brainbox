@@ -13,7 +13,7 @@ import {
 import { MineField } from "./grid";
 import { Peg } from "../../board/peg";
 import { Verdict } from "../../board/verdict";
-import { Flag, Undo } from "../../board/icons";
+import { Flag, Replay } from "../../board/icons";
 
 const EMPTY_FIELD = (level) => ({
   cols: level.cols,
@@ -196,7 +196,7 @@ export default function Minesweeper({ onResult }) {
             <em>Flag</em>
           </button>
           <button type="button" className="tool" onClick={() => newGame(level)}>
-            <Undo size={16} />
+            <Replay size={16} />
             <em>New field</em>
           </button>
         </div>

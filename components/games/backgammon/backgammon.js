@@ -21,7 +21,7 @@ import { useRoom } from "../use-room";
 import { Peg } from "../../board/peg";
 import { Tag } from "../../board/tag";
 import { Verdict } from "../../board/verdict";
-import { Copy, Cpu, Undo, Users } from "../../board/icons";
+import { Copy, Cpu, Flag, Undo, Users } from "../../board/icons";
 
 const MODES = [
   { id: "solo", label: "Solo" },
@@ -390,7 +390,7 @@ export default function Backgammon({ onResult }) {
           </button>
           {mode === "online" && online?.status === "playing" && (
             <button type="button" className="tool" onClick={() => room.act("resign")}>
-              <Undo size={16} />
+              <Flag size={16} />
               <em>Resign</em>
             </button>
           )}
