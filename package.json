@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "drizzle-kit migrate && next build",
     "start": "next start",
     "lint": "next lint",
     "check": "node scripts/check-games.js",
@@ -13,7 +13,8 @@
     "db:migrate": "drizzle-kit migrate",
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
-    "check:backend": "node scripts/check-backend.js"
+    "check:backend": "node scripts/check-backend.js",
+    "build:only": "next build"
   },
   "dependencies": {
     "@headlessui/react": "^1.7.13",
