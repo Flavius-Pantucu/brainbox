@@ -89,15 +89,18 @@ Shipped and working today (product truth to preserve):
 - `pages/api/health.js` is the only endpoint.
 
 Confirmed constraints (2026-09-08, amended 2026-09-09):
-- **No database and no accounts.** Player stats, streaks, leaderboards and challenge history
-  have no server behind them and live in one browser.
-- **One server-side feature exists: online rooms for tic-tac-toe, chess, Connect Four, Go, Reversi, checkers and backgammon** (all seat two) (`lib/rooms.js`, `app/api/rooms/**`).
-  Rooms are held in the node process's memory and pushed to both players over SSE. This works
-  under `npm run dev` and a self-hosted `npm start`; a serverless deploy with more than one
-  instance would need that one module swapped for a shared store. Rooms hold no identity beyond
-  a name typed for the round, and expire two hours after the last move.
-- The redesign must therefore route all player data through one explicit client data layer
-  with local persistence, so that swapping in real endpoints later is a contained change.
+- **There is a database, and accounts are optional.** Postgres on Neon, reached through
+  Drizzle (`lib/db/**`), with Better Auth over email and password — no OAuth provider
+  (`lib/auth.js`). Signing in is an upgrade, never a gate: a signed-out player keeps the
+  localStorage board they always had, and a signed-in one reads and writes the same shape
+  over `/api/board`. `lib/board.js` chooses per call and nothing above it knows which
+  answered.
+- **Online rooms for tic-tac-toe, chess, Connect Four, Go, Reversi, checkers and backgammon**
+  (all seat two) (`lib/rooms.js`, `app/api/rooms/**`). Room state lives in Redis, or in
+  Postgres when Redis is absent or unreachable (`lib/rooms-store.js`) — nothing is held in
+  process memory, because a serverless host will not send the next request to the same one.
+  Clients poll with the version they hold and an unchanged room answers 304. Rooms hold no
+  identity beyond a name typed for the round, and expire two hours after the last move.
 - Any surface that would show numbers the product cannot truthfully produce must render an
   honest empty or "not yet" state rather than invented figures. Leaderboards must not display
   fabricated rival players, and stats must not display invented history.

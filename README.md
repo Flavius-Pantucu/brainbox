@@ -164,22 +164,29 @@ store; nothing above it changes.
 
 ## Where the data lives
 
-There is no database and there are no accounts. Nothing is invented to cover for that: a number
-the app cannot honestly produce shows an open hook instead. (The one server-side feature is the
-online tic-tac-toe room above, and it stores nothing beyond the round in play.)
-
-Everything a player accumulates is kept in one browser under one versioned localStorage key,
-and every read and write in the app goes through a single module:
+An account is optional. Signed out, everything a player accumulates stays in that one browser
+exactly as it always did; signed in, the same board is read and written against Postgres. Which
+one answered is decided per call inside `lib/board.js`, and nothing above it knows or cares.
+Nothing is invented either way: a number the app cannot honestly produce shows an open hook.
 
 ```
-lib/store.js    localStorage read/write, versioned, SSR-safe
-lib/board.js    the data layer every screen calls — already async, already the only
-                place the shape of a session is known. Swap these bodies for fetches
-                when the server arrives and nothing above them changes.
-lib/daily.js    today's challenge, derived from the calendar date so no server is
-                needed for everyone to agree on what it is
-lib/games.js    the catalog
+lib/board.js         the data layer every screen calls. Picks a backing per call and
+                     falls back to the local one whenever the server cannot be reached,
+                     because a game that has just been played must not be lost to a
+                     failed request
+lib/store.js         localStorage read/write, versioned, SSR-safe — the signed-out path
+lib/store-remote.js  the signed-in path, over /api/board
+lib/db/schema.js     six tables: four Better Auth owns, plus play and room
+lib/auth.js          Better Auth, email and password, no OAuth
+lib/rooms-store.js   where a live room sits: Redis first, Postgres when it is not there
+lib/daily.js         today's challenge, derived from the calendar date so no server is
+                     needed for everyone to agree on what it is
+lib/games.js         the catalog
 ```
+
+Copy `.env.example` to `.env` and fill it in before either half will run. `npm run db:migrate`
+creates the tables; `npm run check:backend` proves the whole thing works against the real
+services, while `npm run check` stays offline and needs neither.
 
 A game reports its outcome through an `onResult` prop; the play frame records the session
 (with its duration) when the player leaves the surface, and ignores visits shorter than
