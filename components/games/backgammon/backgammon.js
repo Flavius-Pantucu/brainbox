@@ -33,9 +33,12 @@ const NAMES = { w: "White", b: "Black" };
 const HOP_MS = 520;
 const THROW_MS = 820; // long enough for the dice to land before anything moves
 
-const fresh = () => ({
+// The opening side is a coin flip, but the very first render happens on the
+// server too, and a coin lands differently there. Seed that one render with a
+// fixed side; the effect below deals a real one the moment we are in a browser.
+const fresh = (turn = Math.random() < 0.5 ? "w" : "b") => ({
   state: start(),
-  turn: Math.random() < 0.5 ? "w" : "b",
+  turn,
   dice: [],
   used: [],
   sequences: [],
@@ -61,7 +64,7 @@ const turnDone = (sequences) => !sequences.length || sequences.every((path) => !
 export default function Backgammon({ onResult }) {
   const [mode, setMode] = useState("solo");
   const [level, setLevel] = useState("fair");
-  const [game, setGame] = useState(fresh);
+  const [game, setGame] = useState(() => fresh("w"));
   const [selected, setSelected] = useState(null);
   const [score, setScore] = useState({ w: 0, b: 0 });
   const [dismissed, setDismissed] = useState(false);

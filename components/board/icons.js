@@ -205,17 +205,10 @@ export function Dash({ size = 14, ...rest }) {
   );
 }
 
-export function Square({ size = 8, filled = false, ...rest }) {
+export function Square({ size = 8, ...rest }) {
   return (
     <svg {...base} width={size} height={size} viewBox="0 0 8 8" {...rest}>
-      <rect
-        x="1"
-        y="1"
-        width="6"
-        height="6"
-        fill={filled ? "currentColor" : "none"}
-        strokeWidth="1.4"
-      />
+      <rect x="1" y="1" width="6" height="6" fill="currentColor" strokeWidth="1.4" />
     </svg>
   );
 }

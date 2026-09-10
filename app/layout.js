@@ -40,6 +40,9 @@ export default function RootLayout({ children }) {
     <html
       lang="en"
       data-paint="night"
+      // PAINT_BOOT below rewrites data-paint before React gets here, which is
+      // the whole point of it — so the mismatch it causes is not a warning.
+      suppressHydrationWarning
       className={`${text.variable} ${display.variable}`}>
       <head>
         <script dangerouslySetInnerHTML={{ __html: PAINT_BOOT }} />

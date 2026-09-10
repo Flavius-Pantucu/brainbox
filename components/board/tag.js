@@ -13,7 +13,7 @@ export function Tag({ tone = "chalk", mark = "off", children }) {
   const Mark = MARKS[mark] || Dash;
   return (
     <span className={`tag tag--${tone}`}>
-      <Mark className="tag__mark" size={mark === "live" ? 7 : 11} filled />
+      <Mark className="tag__mark" size={mark === "live" ? 7 : 11} />
       {children}
     </span>
   );
