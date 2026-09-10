@@ -4030,9 +4030,18 @@ span.movelist__half {
 .ms__wrap {
   position: relative;
   aspect-ratio: var(--ms-cols) / var(--ms-rows);
-  height: 100%;
-  max-height: min(100%, 74vh);
-  max-width: 100%;
+  /* Height was pinned to 100% AND an aspect ratio given, so on a wide field the
+     ratio lost and the cells came out oblong — 28 across by 42 down at expert.
+     Size by width alone and let the ratio set the height, so a cell is always
+     square. The three bounds are: the room there is, a cell's natural size, and
+     the width whose derived height still fits the stage. */
+  width: min(
+    100%,
+    calc(var(--ms-cols) * 54px),
+    calc(74vh * var(--ms-cols) / var(--ms-rows))
+  );
+  height: auto;
+  max-height: 74vh;
   margin: auto;
 }
 
