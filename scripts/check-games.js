@@ -2,7 +2,8 @@
 // library's: the chess material read, the review maths, the variation tree, the
 // clocks, Connect Four's rules and opponent, Go's rules and scoring, Reversi's
 // turning and passing, draughts' compulsory captures and chains, minesweeper's
-// safe first click, backgammon's dice rules, and the room's move rules.
+// safe first click, backgammon's dice rules, the room's move rules, and a pass over
+// the rules an implementation usually gets wrong.
 //   npm run check
 const assert = require("node:assert/strict");
 const { Chess } = require("chess.js");
@@ -760,6 +761,207 @@ async function main() {
     bgState = rooms.publicState(rooms.getRoom(bgCode), bgHost.token);
     assert.equal(bgState.played.length, 0, "and a turn can be taken back to where it started");
     assert.equal(bgState.used.filter(Boolean).length, 0);
+  }
+
+  /* the rules an implementation usually gets wrong ------------------------ */
+  {
+    const S = 9;
+    const at = (row, col) => go.pointOf(S, row, col);
+
+    // filling your own last liberty is suicide — unless the same stone takes
+    // something, which is checked first
+    const snap = go.emptyBoard(S);
+    snap[at(0, 0)] = "w";
+    snap[at(0, 1)] = "b";
+    snap[at(1, 1)] = "b";
+    snap[at(2, 0)] = "b";
+    const takes = go.play(snap, S, at(1, 0), "b");
+    assert.equal(takes.error, undefined, "it captures, so it is not suicide");
+    assert.deepEqual(takes.captured, [at(0, 0)]);
+
+    // a whole string comes off at once, and taking more than one stone can
+    // never be a ko
+    const pair = go.emptyBoard(S);
+    pair[at(0, 0)] = "w";
+    pair[at(0, 1)] = "w";
+    pair[at(1, 0)] = "b";
+    pair[at(1, 1)] = "b";
+    const both = go.play(pair, S, at(0, 2), "b");
+    assert.deepEqual(both.captured.sort((a, b) => a - b), [at(0, 0), at(0, 1)]);
+    assert.equal(both.ko, null, "two stones off is never a ko");
+
+    // and the ko point reopens the moment anybody plays elsewhere
+    const koShape = go.emptyBoard(S);
+    for (const [r, c] of [[0, 1], [1, 0], [2, 1]]) koShape[at(r, c)] = "b";
+    for (const [r, c] of [[0, 2], [1, 3], [2, 2], [1, 1]]) koShape[at(r, c)] = "w";
+    const took = go.play(koShape, S, at(1, 2), "b");
+    assert.equal(go.play(took.board, S, at(6, 6), "w", took.ko).ko, null, "a plain move clears it");
+
+    // an empty point touching both colours belongs to neither
+    const dame = go.emptyBoard(S);
+    for (let row = 0; row < S; row += 1) {
+      dame[at(row, 3)] = "b";
+      dame[at(row, 5)] = "w";
+    }
+    const { owner } = go.territoryOf(dame, S);
+    for (let row = 0; row < S; row += 1) {
+      assert.equal(owner[at(row, 4)], null, "the column between two walls is neutral");
+    }
+
+    // nobody fills a one-point eye: its owner will not, and the other side
+    // cannot, because playing there is suicide
+    const eye = go.emptyBoard(S);
+    eye[at(0, 1)] = "b";
+    eye[at(1, 0)] = "b";
+    eye[at(1, 1)] = "b";
+    assert.ok(!go.legalMoves(eye, S, "b").includes(at(0, 0)), "black leaves its own eye alone");
+    assert.equal(go.play(eye, S, at(0, 0), "w").error, "suicide");
+
+    // one live enemy stone gives a region a second border, so the whole of it
+    // counts as neutral. Marking that stone dead is what hands the region over,
+    // and it is worth far more than the stone.
+    const invaded = go.emptyBoard(S);
+    for (let row = 0; row < S; row += 1) {
+      invaded[at(row, 4)] = "b";
+      invaded[at(row, 5)] = "w";
+    }
+    invaded[at(0, 0)] = "w";
+    const standing = go.score(invaded, S, 0);
+    const marked = go.score(invaded, S, 0, [at(0, 0)]);
+    assert.equal(standing.b, 9, "black scores its wall and nothing else");
+    assert.equal(marked.b, 45, "and the whole region once the stone is dead");
+    assert.equal(marked.w, standing.w - 1, "white loses only the stone itself");
+
+    /* backgammon ---------------------------------------------------------- */
+    const bare = () => ({
+      board: new Array(24).fill(0),
+      bar: { w: 0, b: 0 },
+      off: { w: 0, b: 0 },
+    });
+
+    // both dice have to be played when just one order of them works: here the
+    // three is shut, so the four must go first or the turn dies half-played
+    const order = bare();
+    order.board[12] = 1;
+    order.board[9] = -2;
+    const forcedOrder = bg.turnOptions(order, "w", [3, 4]);
+    assert.equal(forcedOrder[0].length, 2, "both dice get played");
+    assert.equal(forcedOrder[0][0].die, 4, "and the four has to go first");
+
+    // nothing bears off while a checker is still sitting on the bar
+    const barredOff = bare();
+    barredOff.board[3] = 1;
+    barredOff.bar.w = 1;
+    assert.ok(
+      bg.playsWithDie(barredOff, "w", 4).every((play) => play.to !== "off"),
+      "the bar comes first, always"
+    );
+
+    // coming in off the bar can send a blot back
+    const entering = bare();
+    entering.bar.w = 1;
+    entering.board[21] = -1;
+    const entry = bg.playsWithDie(entering, "w", 3);
+    assert.equal(entry.length, 1);
+    assert.equal(entry[0].hit, true);
+    const entered = bg.applyPlay(entering, "w", entry[0]);
+    assert.equal(entered.bar.b, 1, "and the blot goes to the bar");
+    assert.equal(entered.board[21], 1);
+
+    // what the win is worth: one off is a plain game, none off is a gammon,
+    // and stranded in the winner's home or on the bar is a backgammon
+    const plain = bare();
+    plain.off.w = 15;
+    plain.off.b = 1;
+    assert.equal(bg.isOver(plain).value, 1);
+    const gammon = bare();
+    gammon.off.w = 15;
+    gammon.board[12] = -1;
+    assert.equal(bg.isOver(gammon).value, 2);
+    const backgammon = bare();
+    backgammon.off.w = 15;
+    backgammon.board[2] = -1;
+    assert.equal(bg.isOver(backgammon).value, 3, "still in white's home");
+    const onTheBar = bare();
+    onTheBar.off.w = 15;
+    onTheBar.bar.b = 1;
+    assert.equal(bg.isOver(onTheBar).value, 3, "and so is the bar");
+
+    // doubles bring in four checkers off the bar
+    const flooded = bare();
+    flooded.bar.w = 4;
+    const allFour = bg.turnOptions(flooded, "w", [2, 2, 2, 2]);
+    assert.equal(allFour[0].length, 4);
+    assert.ok(allFour[0].every((play) => play.from === "bar"));
+
+    /* checkers ------------------------------------------------------------ */
+
+    // offered a single take and a double, the whole move is the double
+    const branching = new Array(64).fill(null);
+    branching[chk.index(1, 2)] = "b";
+    branching[chk.index(2, 3)] = "r";
+    branching[chk.index(4, 5)] = "r";
+    branching[chk.index(2, 1)] = "r";
+    assert.equal(
+      Math.max(...chk.fullMoves(branching, "b").map((move) => move.path.length)),
+      3,
+      "the two-jump chain is found"
+    );
+
+    // a king carries a chain backwards
+    const royal = new Array(64).fill(null);
+    royal[chk.index(3, 2)] = "B";
+    royal[chk.index(4, 3)] = "r";
+    royal[chk.index(4, 5)] = "r";
+    const down = chk.applyStep(royal, chk.index(3, 2), chk.index(5, 4));
+    assert.equal(down.mustContinue, true);
+    const backUp = chk.applyStep(down.board, chk.index(5, 4), chk.index(3, 6), chk.index(5, 4));
+    assert.equal(backUp.captured, chk.index(4, 5), "and takes the second going the other way");
+
+    // a king that leaves the crown row is still a king
+    const stepping = new Array(64).fill(null);
+    stepping[chk.index(7, 4)] = "B";
+    assert.equal(
+      chk.applyStep(stepping, chk.index(7, 4), chk.index(6, 3)).board[chk.index(6, 3)],
+      "B"
+    );
+
+    // pieces on the board are not the same as a move on the board
+    const boxed = new Array(64).fill(null);
+    boxed[chk.index(0, 1)] = "r";
+    boxed[chk.index(1, 0)] = "b";
+    boxed[chk.index(1, 2)] = "b";
+    assert.equal(chk.stepsFor(boxed, "r").length, 0, "red is boxed in");
+    assert.deepEqual(chk.outcomeOf(boxed, "r"), { winner: "b", reason: "no move" });
+
+    /* reversi ------------------------------------------------------------- */
+
+    // one disc can turn a run in every direction at once
+    const star = new Array(64).fill(null);
+    for (const [dr, dc] of [[-1, -1], [-1, 0], [-1, 1], [0, -1], [0, 1], [1, -1], [1, 0], [1, 1]]) {
+      star[rev.index(4 + dr, 4 + dc)] = "w";
+      star[rev.index(4 + dr * 2, 4 + dc * 2)] = "b";
+    }
+    assert.equal(rev.flipsFor(star, rev.index(4, 4), "b").length, 8, "all eight runs turn");
+
+    // a gap breaks a run, however it ends
+    const gapped = new Array(64).fill(null);
+    gapped[rev.index(4, 5)] = "w";
+    gapped[rev.index(4, 7)] = "b";
+    assert.deepEqual(rev.flipsFor(gapped, rev.index(4, 4), "b"), [], "the empty square breaks it");
+
+    // a side with no move is passed over, and the turn comes straight back
+    const noReply = new Array(64).fill("b");
+    noReply[rev.index(0, 0)] = null;
+    noReply[rev.index(0, 1)] = "w";
+    assert.equal(rev.legalMoves(noReply, "w").size, 0, "white has nothing");
+    assert.equal(rev.turnAfter(noReply, "b"), "b", "so black goes again");
+    assert.equal(rev.outcomeOf(noReply), null, "and the game is still on");
+
+    // but when neither can move it is over, however empty the board is
+    const stuck = new Array(64).fill(null);
+    stuck[rev.index(0, 0)] = "b";
+    assert.equal(rev.outcomeOf(stuck).winner, "b", "one disc and nowhere to play");
   }
 
   /* every game the catalog lists can be today's --------------------------- */
