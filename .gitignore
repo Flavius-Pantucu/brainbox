@@ -42,3 +42,4 @@ yarn-error.log*
 
 # stockfish is copied in by npm install, not committed
 /public/engine/
+/public/live/

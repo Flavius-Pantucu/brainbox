@@ -1664,13 +1664,19 @@ button {
   border-color: var(--signal);
 }
 
+/* Letter-spacing is added AFTER the last character too, so a centred code sits
+   one whole space left of centre and crowds the left edge. Indenting by the
+   same amount puts it back. The extra padding is what stops four wide glyphs
+   touching the border of a narrow field. */
 .field__input--code {
   font-family: var(--font-display), sans-serif;
   font-weight: 600;
   font-size: 1.5rem;
   letter-spacing: 0.3em;
+  text-indent: 0.3em;
   text-align: center;
   text-transform: uppercase;
+  padding-inline: calc(var(--u) * 2);
 }
 
 .rule {
@@ -1754,12 +1760,20 @@ button {
   background: color-mix(in srgb, var(--signal) 12%, transparent);
 }
 
+/* Tic-tac-toe hangs a single letter here and chess hangs the word "White", so
+   this cannot be a fixed 18px box: the word overflowed it and the player's name
+   printed straight over the top. A minimum keeps the single letters lined up
+   with each other; the word takes the room it needs. */
 .seat__mark {
+  flex: none;
+  min-width: 18px;
   font-family: var(--font-display), sans-serif;
   font-weight: 600;
-  font-size: 1.2rem;
+  /* one size that carries both: big enough to read as the seat's label, small
+     enough that "White" is not shouting over the name beside it */
+  font-size: 1.05rem;
+  line-height: 1.1;
   color: var(--signal-ink);
-  width: 18px;
 }
 
 .seat__name {
@@ -3177,10 +3191,18 @@ span.movelist__half {
   gap: var(--u);
 }
 
+/* In the band the code sits in a row of keys, so it takes their height and
+   their type size rather than the display face a full-width field can carry. */
 .rooms__join .field__input {
-  width: 7.5rem;
+  width: 8.5rem;
+  padding: calc(var(--u) * 1.25) calc(var(--u) * 1.5);
+  font-family: var(--font-label), ui-sans-serif, sans-serif;
+  font-size: 0.86rem;
+  font-weight: 600;
+  text-align: center;
   text-transform: uppercase;
   letter-spacing: 0.22em;
+  text-indent: 0.22em;
   font-variant-numeric: tabular-nums;
 }
 

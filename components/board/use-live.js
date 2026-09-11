@@ -2,6 +2,29 @@
 
 import { useEffect, useRef, useState } from "react";
 
+// Loaded from /public with a script tag rather than imported, because the
+// bundler will not parse Ably's build — see scripts/copy-engine.js. One promise
+// for the whole page, so two rooms on screen fetch it once.
+let loading = null;
+
+function loadAbly() {
+  if (window.Ably) return Promise.resolve(window.Ably);
+  if (!loading) {
+    loading = new Promise((resolve, reject) => {
+      const tag = document.createElement("script");
+      tag.src = "/live/ably.min.js";
+      tag.async = true;
+      tag.onload = () => (window.Ably ? resolve(window.Ably) : reject(new Error("loaded but empty")));
+      tag.onerror = () => {
+        loading = null; // let the next room try again
+        reject(new Error("could not load /live/ably.min.js"));
+      };
+      document.head.appendChild(tag);
+    });
+  }
+  return loading;
+}
+
 // Listens on one channel and says when something moved. It does not carry the
 // thing that moved: the caller already knows how to fetch a room, and having
 // one path to state rather than two is the whole point. See lib/live.js.
@@ -32,15 +55,11 @@ export function useLive(channel, onMoved) {
       const probe = await token().catch(() => null);
       if (!probe?.ok || stopped) return;
 
-      // Modular, and dynamic. Modular because the pre-bundled browser build
-      // does not survive webpack; dynamic so a visitor who never opens a room
-      // never downloads any of it. Two plugins is all a subscriber needs —
-      // no presence, no encryption, no message pack.
-      const { BaseRealtime, WebSocketTransport, FetchRequest } = await import("ably/modular");
+      // fetched only now, so a visitor who never opens a room never pays for it
+      const { Realtime } = await loadAbly();
       if (stopped) return;
 
-      client = new BaseRealtime({
-        plugins: { WebSocketTransport, FetchRequest },
+      client = new Realtime({
         // The browser is never given the key. Each renewal asks the server for
         // a fresh token scoped to this one channel, subscribe only.
         authCallback: async (_params, done) => {
