@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useLive } from "./use-live";
 
 const KEY = (code) => `brainbox.lobby.${code}`;
 const SEAT_KEY = (code) => `brainbox.room.${code}`;
@@ -42,6 +43,9 @@ export async function openLobby(name, game = "tictactoe") {
 const POLL_MIN_MS = 1200;
 const POLL_MAX_MS = 5000;
 
+// A live channel turns the loop into a net rather than the way news arrives.
+const LIVE_IDLE_MS = 30000;
+
 // Holds one private room: joins it, keeps asking what has changed, and posts
 // whatever the people in it do.
 export function useLobby(code) {
@@ -53,6 +57,9 @@ export function useLobby(code) {
   const poll = useRef(null);
   const stop = useRef(null);
   const version = useRef(0);
+  // set by openStream, so the live channel can make it ask now
+  const poke = useRef(null);
+  const liveUp = useRef(false);
 
   const closeStream = useCallback(() => {
     if (poll.current) clearTimeout(poll.current);
@@ -79,7 +86,7 @@ export function useLobby(code) {
           { cache: "no-store" }
         );
         if (res.status === 304) {
-          wait = Math.min(POLL_MAX_MS, Math.round(wait * 1.4));
+          wait = Math.min(liveUp.current ? LIVE_IDLE_MS : POLL_MAX_MS, Math.round(wait * 1.4));
         } else if (res.status === 404) {
           stopped = true;
           setGone(true);
@@ -106,8 +113,10 @@ export function useLobby(code) {
     document.addEventListener("visibilitychange", wake);
 
     poll.current = setTimeout(ask, 0);
+    poke.current = wake;
     stop.current = () => {
       stopped = true;
+      poke.current = null;
       document.removeEventListener("visibilitychange", wake);
     };
   }, []);
@@ -182,6 +191,12 @@ export function useLobby(code) {
     }
     token.current = null;
   }, [act, closeStream, code]);
+
+  // Somebody said something, ticked ready, or the host set the table: the
+  // server says so the moment it happens and the ask below fetches it.
+  liveUp.current = useLive(code ? `lobby:${String(code).toUpperCase()}` : null, () =>
+    poke.current?.()
+  );
 
   useEffect(() => () => closeStream(), [closeStream]);
 

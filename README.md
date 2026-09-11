@@ -151,16 +151,42 @@ Generation takes about a millisecond, so "new grid" really is a new grid.
 Keyboard: arrows move, 1–9 place, 0 or backspace erases, `N` notes, `U` undo, `H` hint,
 space pauses.
 
-## Online tic-tac-toe
+## Playing someone
 
-One player opens a room and gets a four-character code plus an invite link; the other joins
-with either. Both boards stay in step over server-sent events — no polling.
+Seven of the nine games take a second player: chess, go, backgammon, checkers, reversi,
+connect four and tic-tac-toe. Sudoku and minesweeper are yours alone.
 
-Rooms live in the memory of the node process serving the site (`lib/rooms.js`), which is enough
-for `npm run dev` and a self-hosted `npm start`. They expire two hours after the last move, hold
-no identity beyond a name typed for the round, and are stored nowhere else. Deploying to a
-serverless platform with more than one instance means replacing that one module with a shared
-store; nothing above it changes.
+Open a private room from the board and you get a four-character code plus an invite link.
+A room holds up to eight people; the game seats two, so the rest watch. Everyone in a chair
+has to tick ready before the host can start, and the room outlives the game — finish one,
+come back, set the table for something else. There is a chat, a running series score, and
+a shared view of today's challenge.
+
+Rooms live in Redis when `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN` are set and
+answering, and in Postgres otherwise (`lib/rooms-store.js`). A Redis that dies mid-game drops
+through to Postgres rather than taking the game with it. Either way they expire two hours
+after the last thing that happens in them and hold no identity beyond a name typed for the
+round. `/api/health` says which store a deployment actually picked.
+
+### How a move reaches the other screen
+
+The client holds the room's `version` and asks with it; a room that has not moved answers
+`304` with no body. That loop is the floor, and on its own it puts a move on the other
+screen somewhere between 1.2 and 8 seconds later, depending on how long the room has been
+quiet.
+
+Set `ABLY_API_KEY` and the server publishes a nudge — just the new version number — the
+instant a room is written, and the other browser asks at once. About a tenth of a second in
+practice, and far fewer reads, because nothing is fetched while nothing is happening.
+
+Deliberately a nudge and not the state itself: `publicState` is computed per viewer, so one
+broadcast payload would either leak one player's view to the other or need a channel each.
+Sending the version keeps one shape of state, and means a dropped socket degrades to the
+polling that was already there rather than to a dead board. The browser never holds the Ably
+key — it asks `/api/live/token` for a short-lived one, subscribe only, scoped to its own room.
+
+Without the key none of this runs and the board polls, which is a supported way to deploy,
+not a broken one.
 
 ## Where the data lives
 

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { nudge } from "../../lib/nudge";
+import { useLive } from "../board/use-live";
 
 const KEY = (code) => `brainbox.room.${code}`;
 
@@ -28,6 +29,11 @@ function recallToken(code) {
 const POLL_MIN_MS = 1200;
 const POLL_MAX_MS = 8000;
 
+// With a live channel up, the loop is no longer how a move arrives — it is the
+// net under one. Half a minute between asks is enough to catch a room that
+// changed while the socket was down.
+const LIVE_IDLE_MS = 30000;
+
 // Holds one online room: creates or joins it, keeps asking what has changed,
 // and posts whatever actions the game on top of it defines.
 export function useRoom(game = "tictactoe") {
@@ -41,6 +47,9 @@ export function useRoom(game = "tictactoe") {
   const token = useRef(null);
   const poll = useRef(null);
   const cleanup = useRef(null);
+  // set by openStream, so something outside the loop can make it ask now
+  const poke = useRef(null);
+  const liveUp = useRef(false);
   // the last version seen, so the server can answer "nothing new" cheaply
   const version = useRef(0);
 
@@ -76,8 +85,10 @@ export function useRoom(game = "tictactoe") {
           );
 
           if (res.status === 304) {
-            // quiet: ask a little less often, up to the ceiling
-            wait = Math.min(POLL_MAX_MS, Math.round(wait * 1.5));
+            // quiet: ask a little less often, up to the ceiling — which is much
+            // further away when a live channel is carrying the news instead
+            const ceiling = liveUp.current ? LIVE_IDLE_MS : POLL_MAX_MS;
+            wait = Math.min(ceiling, Math.round(wait * 1.5));
           } else if (res.ok) {
             const data = await res.json();
             version.current = data.state.version ?? 0;
@@ -107,8 +118,10 @@ export function useRoom(game = "tictactoe") {
       document.addEventListener("visibilitychange", wake);
 
       poll.current = setTimeout(ask, 0);
+      poke.current = wake;
       cleanup.current = () => {
         stopped = true;
+        poke.current = null;
         document.removeEventListener("visibilitychange", wake);
       };
     },
@@ -225,6 +238,11 @@ export function useRoom(game = "tictactoe") {
     join(roomCode, params.get("as") || "");
   }, [join, watch]);
 
+  // Something moved in this room, said by the server the instant it happened.
+  // All that arrives is "there is something past N"; the fetch below is the
+  // same one the loop makes, so there is only ever one shape of state.
+  liveUp.current = useLive(code ? `room:${code}` : null, () => poke.current?.());
+
   // Your move, in a tab you are not looking at. Nothing is pushed: this is the
   // poll that is already running, saying so out loud. See lib/nudge.js.
   const wasTurn = useRef(null);
@@ -279,7 +297,8 @@ export function useRoom(game = "tictactoe") {
     seat,
     error,
     busy,
-    live,
+    // connected either way: the loop is answering, or the channel is
+    live: live || liveUp.current,
     watching,
     host,
     join,
