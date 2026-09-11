@@ -3445,9 +3445,16 @@ span.movelist__half {
   }
 }
 
-/* and out the other side */
+/* and out the other side.
+   `backwards`, not `both`: a forwards fill leaves the `to` keyframe applied
+   for good, and its identity transform and blur(0) are each enough to make
+   the stage the containing block for anything `position: fixed` inside it.
+   The dragged piece is positioned from clientX/clientY, so it landed a
+   sidebar and a rail away from the cursor — 208px across and 69px down.
+   Backwards still holds the opening frame before the animation runs, which
+   is the only reason the fill was here. */
 .stage {
-  animation: arrive 340ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation: arrive 340ms cubic-bezier(0.16, 1, 0.3, 1) backwards;
 }
 
 @keyframes arrive {

@@ -129,7 +129,9 @@ export function Board({
       setDrag({
         from: square,
         piece,
-        size: event.currentTarget.offsetWidth,
+        // the piece, not the square it stands on: a piece is 88% of its square,
+        // so measuring the square made it jump bigger the moment it was lifted
+        size: event.currentTarget.querySelector("img")?.offsetWidth || event.currentTarget.offsetWidth,
         x: event.clientX,
         y: event.clientY,
       });
