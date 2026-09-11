@@ -102,12 +102,21 @@ function Heat({ sessions }) {
 export function StandingsBoard() {
   const [range, setRange] = useState("season");
   const [board, setBoard] = useState(null);
+  const [ladder, setLadder] = useState(null);
 
   useEffect(() => {
     let live = true;
     getBoard().then((next) => {
       if (live) setBoard(next);
     });
+    // The ladder is everybody's, so it does not come from the board — and a
+    // signed-out visitor still gets to see it, minus their own rung.
+    fetch("/api/standings", { cache: "no-store" })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (live) setLadder(data);
+      })
+      .catch(() => {});
     return () => {
       live = false;
     };
@@ -174,6 +183,56 @@ export function StandingsBoard() {
           )}
         </div>
       </div>
+
+      {/* --- everybody, counted rather than invented --- */}
+      <section aria-labelledby="zone-ladder">
+        <ZoneLabel count={ladder ? `${ladder.counted}${ladder.deeper ? "+" : ""} playing` : null}>
+          <span id="zone-ladder">The ladder</span>
+        </ZoneLabel>
+
+        {!ladder ? (
+          <p className="chalk">Counting the board…</p>
+        ) : ladder.rungs.length === 0 ? (
+          <p className="chalk">
+            Nobody has finished a game yet. The first person to hang one takes the top rung.
+          </p>
+        ) : (
+          <>
+            <ol className="ladder">
+              {ladder.rungs.map((rung) => (
+                <li className={`rung ${rung.you ? "is-you" : ""}`} key={rung.rank}>
+                  <span className="rung__no">{rung.rank}</span>
+                  <span className="rung__name">
+                    {rung.name}
+                    {rung.you && <em> (you)</em>}
+                  </span>
+                  <span className="rung__figure">
+                    <b>{rung.played}</b> played
+                  </span>
+                  <span className="rung__figure">
+                    <b>{rung.wins}</b> won
+                  </span>
+                  <span className="rung__figure rung__figure--thin">
+                    <b>{rung.days}</b> days
+                  </span>
+                </li>
+              ))}
+            </ol>
+
+            {ladder.you && ladder.you.rank > ladder.rungs.length && (
+              <p className="note">
+                You sit at <b>#{ladder.you.rank}</b> with {ladder.you.played} played.
+              </p>
+            )}
+            {!ladder.you && (
+              <p className="note">
+                Rungs are ranked by games finished. <Link href="/sign-up">Open an account</Link> to
+                take one.
+              </p>
+            )}
+          </>
+        )}
+      </section>
 
       <section aria-labelledby="zone-form">
         <ZoneLabel count={form.length ? `last ${form.length}` : null}>

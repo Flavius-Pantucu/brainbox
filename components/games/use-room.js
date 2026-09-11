@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { nudge } from "../../lib/nudge";
 
 const KEY = (code) => `brainbox.room.${code}`;
 
@@ -36,6 +37,7 @@ export function useRoom(game = "tictactoe") {
   const [error, setError] = useState(null);
   const [busy, setBusy] = useState(false);
   const [live, setLive] = useState(false);
+  const [watching, setWatching] = useState(false);
   const token = useRef(null);
   const poll = useRef(null);
   const cleanup = useRef(null);
@@ -187,18 +189,53 @@ export function useRoom(game = "tictactoe") {
     [openStream, refresh]
   );
 
+  // A seat is not the only way to be in a room. Watching asks for the same
+  // state with no token in hand: the server answers with a view that has no
+  // seat in it, so every move the board offers is refused anyway.
+  const watch = useCallback(
+    (roomCode) => {
+      const clean = String(roomCode || "").trim().toUpperCase();
+      if (!clean) return;
+      token.current = null;
+      setWatching(true);
+      setCode(clean);
+      setSeat(null);
+      version.current = 0;
+      openStream(clean, "");
+    },
+    [openStream]
+  );
+
   // Walked in from a private room: the code, the name and the intent are all in
   // the link, so there is nothing left for the player to press.
   const invited = useRef(false);
   useEffect(() => {
     if (invited.current || typeof window === "undefined") return;
     const params = new URLSearchParams(window.location.search);
-    if (params.get("join") !== "1") return;
     const roomCode = params.get("room");
     if (!roomCode) return;
+
+    if (params.get("watch") === "1") {
+      invited.current = true;
+      watch(roomCode);
+      return;
+    }
+    if (params.get("join") !== "1") return;
     invited.current = true;
     join(roomCode, params.get("as") || "");
-  }, [join]);
+  }, [join, watch]);
+
+  // Your move, in a tab you are not looking at. Nothing is pushed: this is the
+  // poll that is already running, saying so out loud. See lib/nudge.js.
+  const wasTurn = useRef(null);
+  useEffect(() => {
+    const turn = state?.turn ?? null;
+    const mine = !!state?.seat && turn === state.seat && state.status === "playing";
+    if (mine && wasTurn.current === false) {
+      nudge("Your move", `Room ${state.code} is waiting on you.`);
+    }
+    wasTurn.current = state?.seat ? mine : null;
+  }, [state?.turn, state?.seat, state?.status, state?.code]);
 
   const act = useCallback(
     async (action, extra = {}) => {
@@ -227,13 +264,14 @@ export function useRoom(game = "tictactoe") {
   );
 
   const leave = useCallback(async () => {
-    await act("leave");
+    if (!watching) await act("leave");
     closeStream();
     setState(null);
     setCode(null);
     setSeat(null);
+    setWatching(false);
     token.current = null;
-  }, [act, closeStream]);
+  }, [act, closeStream, watching]);
 
   return {
     state,
@@ -242,8 +280,10 @@ export function useRoom(game = "tictactoe") {
     error,
     busy,
     live,
+    watching,
     host,
     join,
+    watch,
     leave,
     act,
     move: (payload) => act("move", typeof payload === "number" ? { index: payload } : payload),

@@ -616,22 +616,6 @@ button {
 }
 
 /* =========================================================================
-   ROUTED SLOT — a channel cut into the board
-   ========================================================================= */
-
-.slot {
-  position: relative;
-  background: var(--routed);
-  border-radius: var(--radius-slot);
-  box-shadow: var(--cut);
-  padding: calc(var(--u) * 2);
-}
-
-.slot--deep {
-  padding: calc(var(--u) * 2.5);
-}
-
-/* =========================================================================
    BRASS PLATE — the primary action. A pressed fitting, not a button.
    ========================================================================= */
 
@@ -872,211 +856,6 @@ button {
 }
 
 /* =========================================================================
-   LAYOUT — the board's regions
-   ========================================================================= */
-
-.deck {
-  display: grid;
-  gap: calc(var(--u) * 3);
-  padding: calc(var(--u) * 2.5) 0 calc(var(--u) * 8);
-  grid-template-columns: repeat(12, minmax(0, 1fr));
-  align-items: start;
-}
-
-.deck__today {
-  grid-column: span 5;
-}
-.deck__games {
-  grid-column: span 7;
-}
-
-@media (max-width: 1000px) {
-  .deck__today,
-  .deck__games {
-    grid-column: span 12;
-  }
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-/* =========================================================================
-   THE RUN — seven day hooks
-   ========================================================================= */
-
-.run {
-  display: grid;
-  grid-template-columns: repeat(7, minmax(0, 1fr));
-  gap: calc(var(--u) * 1.25);
-}
-
-.day {
-  text-align: center;
-  min-width: 0;
-}
-
-.day .plate__body {
-  padding: 10px 6px 12px;
-}
-
-.day__label {
-  font-family: var(--font-label), ui-sans-serif, sans-serif;
-  font-size: 0.58rem;
-  letter-spacing: 0.13em;
-  text-transform: uppercase;
-  color: var(--ink-faint);
-  margin-bottom: calc(var(--u) * 0.75);
-}
-
-.day__plate {
-  aspect-ratio: 1 / 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-family: var(--font-display), sans-serif;
-  font-weight: 600;
-  font-size: 1.5rem;
-  font-variant-numeric: tabular-nums;
-}
-
-.day__plate .day__mark {
-  width: 22px;
-  height: 22px;
-}
-
-.bests {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: calc(var(--u) * 1.5);
-}
-
-.best__value {
-  font-size: clamp(1.7rem, 3.4vw, 2.3rem);
-}
-
-.best__value {
-  font-family: var(--font-display), sans-serif;
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
-  font-size: clamp(1.9rem, 4.5vw, 2.6rem);
-  line-height: 0.9;
-  color: var(--plate-ink);
-  display: block;
-}
-
-.best__value--unset {
-  font-family: var(--font-label), ui-sans-serif, sans-serif;
-  font-size: 0.86rem;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  line-height: 2.6;
-  color: var(--ink-faint);
-}
-
-.best__unit {
-  font-family: var(--font-label), ui-sans-serif, sans-serif;
-  font-size: 0.6rem;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--plate-ink-quiet);
-  display: block;
-  margin-top: calc(var(--u) * 1);
-}
-
-/* =========================================================================
-   TODAY — the oversized plate
-   ========================================================================= */
-
-
-
-
-
-
-
-
-
-/* =========================================================================
-   STANDINGS LADDER — one hook per rung
-   ========================================================================= */
-
-.ladder {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: grid;
-  /* the lug rises above each plate, so rungs need clearance for it */
-  gap: calc(var(--u) * 2.5);
-}
-
-.ladder__rung {
-  display: grid;
-  grid-template-columns: 26px minmax(0, 1fr);
-  align-items: end;
-  gap: calc(var(--u) * 2);
-}
-
-.ladder__no {
-  font-family: var(--font-display), sans-serif;
-  font-weight: 600;
-  font-size: 1.1rem;
-  font-variant-numeric: tabular-nums;
-  color: var(--ink-faint);
-  text-align: right;
-  padding-bottom: 12px;
-}
-
-.ladder .plate__body {
-  padding: calc(var(--u) * 1.25) calc(var(--u) * 2) calc(var(--u) * 1.25)
-    calc(var(--u) * 5);
-}
-
-.ladder__row {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: calc(var(--u) * 2);
-}
-
-.ladder__name {
-  font-family: var(--font-label), ui-sans-serif, sans-serif;
-  font-weight: 600;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  font-size: 0.76rem;
-}
-
-.ladder__score {
-  font-family: var(--font-display), sans-serif;
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
-  font-size: 1.15rem;
-}
-
-/* =========================================================================
    PLAY FRAME — the board opens and a game sits in the slot
    ========================================================================= */
 
@@ -1128,50 +907,6 @@ button {
 
 .play__back:hover {
   color: var(--signal);
-}
-
-/* =========================================================================
-   NAME PLATE (local identity — no accounts fitted yet)
-   ========================================================================= */
-
-.nameplate {
-  display: inline-flex;
-  align-items: center;
-  gap: calc(var(--u) * 1.25);
-  background: var(--plate-face);
-  color: var(--plate-ink);
-  border: 1px solid rgba(0, 0, 0, 0.3);
-  border-radius: var(--radius-sm);
-  box-shadow: var(--lift-1);
-  padding: 7px 12px 6px;
-  font-family: var(--font-label), ui-sans-serif, sans-serif;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.12em;
-  font-size: 0.7rem;
-  cursor: text;
-  max-width: 190px;
-}
-
-.nameplate__input {
-  appearance: none;
-  background: transparent;
-  border: 0;
-  padding: 0;
-  width: 100%;
-  min-width: 60px;
-  font: inherit;
-  color: inherit;
-  text-transform: uppercase;
-  letter-spacing: 0.12em;
-}
-
-.nameplate__input:focus {
-  outline: none;
-}
-
-.nameplate:focus-within {
-  border-color: var(--paint-navy);
 }
 
 /* =========================================================================
@@ -5493,4 +5228,269 @@ span.movelist__half {
 .tile__name svg {
   flex: none;
   color: var(--signal);
+}
+
+/* ---------- naming the room ---------- */
+
+.titling {
+  display: flex;
+  align-items: center;
+  gap: var(--u);
+  margin-top: calc(var(--u) * 0.5);
+}
+
+.titling .field__input {
+  width: 14rem;
+}
+
+.titling__edit {
+  margin-left: calc(var(--u) * 1.5);
+  padding: 0;
+  border: 0;
+  background: none;
+  font-family: var(--font-label);
+  font-size: 0.56rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  cursor: pointer;
+  vertical-align: middle;
+}
+
+.titling__edit:hover {
+  color: var(--signal-ink);
+}
+
+/* ---------- today's challenge, taken together ---------- */
+
+.parlour__daily {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: calc(var(--u) * 1.5);
+  margin: calc(var(--u) * 2) 0;
+  padding: calc(var(--u) * 1.5) calc(var(--u) * 2);
+  border-radius: var(--radius);
+  background: var(--routed);
+  box-shadow: var(--cut);
+  font-size: 0.85rem;
+  color: var(--ink-quiet);
+}
+
+.parlour__dailymark {
+  display: flex;
+  color: var(--signal);
+}
+
+.parlour__dailytask {
+  flex: 1;
+  min-width: 18ch;
+}
+
+.parlour__dailytask b {
+  color: var(--ink);
+}
+
+.parlour__dailywho {
+  font-size: 0.74rem;
+  color: var(--ink-faint);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- chairs and the rail behind them ---------- */
+
+.parlour__rail {
+  margin: calc(var(--u) * 2) 0 var(--u);
+  font-family: var(--font-label);
+  font-size: 0.56rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.chair--watcher {
+  background: transparent;
+  border: 1px solid var(--keyline);
+  box-shadow: none;
+}
+
+.chair--watcher .chair__pip {
+  background: color-mix(in srgb, var(--ink) 14%, transparent);
+}
+
+/* cleared today's challenge — a tick, not a colour */
+.chair__daily {
+  display: inline-flex;
+  color: var(--signal-ink);
+}
+
+/* the running series, one number per person */
+.chair__wins {
+  min-width: 1.4rem;
+  padding: 1px 6px;
+  border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--signal) 20%, transparent);
+  font-variant-numeric: tabular-nums;
+  font-size: 0.74rem;
+  font-weight: 600;
+  text-align: center;
+  color: var(--ink);
+}
+
+.chair__move {
+  padding: 2px 8px;
+  border: 1px solid var(--keyline-strong);
+  border-radius: var(--radius-pill);
+  background: none;
+  font-family: var(--font-label);
+  font-size: 0.52rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-quiet);
+  cursor: pointer;
+}
+
+.chair__move:hover {
+  color: var(--ink);
+  border-color: var(--signal);
+}
+
+.parlour__series {
+  margin: 0 0 calc(var(--u) * 1.5);
+  font-size: 0.78rem;
+  color: var(--ink-faint);
+}
+
+.parlour__watching {
+  align-self: center;
+  font-size: 0.82rem;
+  color: var(--ink-faint);
+}
+
+/* ---------- the two nudges ---------- */
+
+.parlour__switches {
+  display: grid;
+  gap: calc(var(--u) * 0.75);
+  margin-top: calc(var(--u) * 2);
+  padding-top: calc(var(--u) * 1.5);
+  border-top: 1px solid var(--keyline);
+}
+
+.switch {
+  display: flex;
+  align-items: center;
+  gap: var(--u);
+  font-size: 0.78rem;
+  color: var(--ink-quiet);
+  cursor: pointer;
+}
+
+.switch input {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--signal);
+  cursor: pointer;
+}
+
+/* ---------- saying something without typing ---------- */
+
+.talk__quick {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: var(--u);
+}
+
+.talk__react {
+  padding: 4px 10px;
+  border: 1px solid var(--keyline);
+  border-radius: var(--radius-pill);
+  background: none;
+  font: inherit;
+  font-size: 0.82rem;
+  color: var(--ink-quiet);
+  cursor: pointer;
+  transition: border-color 160ms ease-out, color 160ms ease-out;
+}
+
+.talk__react:hover {
+  border-color: var(--signal);
+  color: var(--ink);
+}
+
+/* =========================================================================
+   THE LADDER — everybody, counted
+   ========================================================================= */
+
+.ladder {
+  list-style: none;
+  display: grid;
+  gap: 2px;
+  margin: 0 0 calc(var(--u) * 2);
+  padding: 0;
+}
+
+.rung {
+  display: grid;
+  grid-template-columns: 2rem minmax(0, 1fr) 6rem 5rem 5rem;
+  align-items: center;
+  gap: calc(var(--u) * 1.5);
+  padding: calc(var(--u) * 1.1) calc(var(--u) * 1.5);
+  border-radius: var(--radius-sm);
+}
+
+.rung:nth-child(odd) {
+  background: color-mix(in srgb, var(--ink) 4%, transparent);
+}
+
+/* your own rung, found without counting down the list */
+.rung.is-you {
+  background: color-mix(in srgb, var(--signal) 16%, transparent);
+  box-shadow: inset 2px 0 0 var(--signal);
+}
+
+.rung__no {
+  font-family: var(--font-label);
+  font-size: 0.72rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-faint);
+}
+
+.rung__name {
+  min-width: 0;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rung__name em {
+  font-style: normal;
+  font-weight: 400;
+  color: var(--ink-faint);
+}
+
+.rung__figure {
+  font-size: 0.78rem;
+  color: var(--ink-faint);
+  font-variant-numeric: tabular-nums;
+}
+
+.rung__figure b {
+  font-weight: 600;
+  color: var(--ink);
+}
+
+@media (max-width: 720px) {
+  .rung {
+    grid-template-columns: 1.75rem minmax(0, 1fr) 5rem;
+  }
+
+  .rung__figure--thin {
+    display: none;
+  }
 }

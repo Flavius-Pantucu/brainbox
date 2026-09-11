@@ -207,8 +207,12 @@ export function useLobby(code) {
     say: (text) => act("say", { text }),
     ready: (on) => act("ready", { ready: on }),
     rename: (name) => act("rename", { name }),
+    title: (title) => act("title", { title }),
+    daily: (done) => act("daily", { done }),
+    seat: (member) => act("seat", { member }),
     pick: (game) => act("pick", { game }),
     start: () => act("start"),
+    again: () => act("again"),
     end: () => act("end"),
     clearError: () => setError(null),
   };

@@ -96,7 +96,7 @@ export function PlayFrame({ gameId }) {
   return (
     <div className="stage">
       <div className="stage__bar">
-        <Link href={lobby ? `/room/${lobby}` : "/"} className="stage__back">
+        <Link href={lobby ? `/room/${lobby}?from=game` : "/"} className="stage__back">
           <ArrowLeft />
           {lobby ? "Room" : "Board"}
         </Link>

@@ -120,6 +120,13 @@ function Rooms() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
 
+  // A link with the code already in it should not ask for it again.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const invited = new URLSearchParams(window.location.search).get("code");
+    if (invited) setCode(invited.toUpperCase().slice(0, 6));
+  }, []);
+
   const open = async () => {
     setBusy(true);
     setError(null);

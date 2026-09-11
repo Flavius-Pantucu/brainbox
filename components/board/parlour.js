@@ -7,10 +7,14 @@ import { useLobby } from "./use-lobby";
 import { GamePreview } from "./preview";
 import { Tag } from "./tag";
 import { ZoneLabel } from "./plate";
-import { ArrowLeft, Check, Copy, GAME_MARKS, Users } from "./icons";
+import { ArrowLeft, Check, Copy, GAME_MARKS, Replay, Users } from "./icons";
 import { ONLINE, gameName } from "../../lib/games";
 import { getBoard } from "../../lib/board";
+import { dailyChallenge, isDoneToday } from "../../lib/daily";
+import { nudgeOn, setNudge, setSound, soundOn, tick } from "../../lib/nudge";
 import { useSession } from "../../lib/auth-client";
+
+const REACTIONS = ["👍", "😂", "😮", "🔥", "gg", "your move"];
 
 const clock = (at) =>
   new Date(at).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
@@ -25,12 +29,28 @@ export function Parlour({ code }) {
   const [name, setName] = useState(null); // null until the board has answered
   const [draft, setDraft] = useState("");
   const [copied, setCopied] = useState(null);
+  const [titling, setTitling] = useState(false);
+  const [sound, setSoundState] = useState(false);
+  const [notify, setNotify] = useState(false);
+  const [backIn, setBackIn] = useState(0);
   const asked = useRef(false);
-  const walking = useRef(false);
+  const walking = useRef(null); // set once the query string has been read
+  const toldDaily = useRef(false);
+  const wasReady = useRef(false);
   const log = useRef(null);
 
   const state = lobby.state;
   const me = state?.members.find((m) => m.you);
+  const challenge = useMemo(() => dailyChallenge(), []);
+
+  useEffect(() => {
+    setSoundState(soundOn());
+    setNotify(nudgeOn());
+    // Walking back in from a running game is a deliberate visit to the room,
+    // not a wrong turn. Bouncing them straight back to the board would make
+    // "Room" in the stage bar do nothing at all.
+    walking.current = new URLSearchParams(window.location.search).get("from") === "game";
+  }, []);
 
   /* --- who you are: the board knows, or you say so once --- */
 
@@ -39,11 +59,13 @@ export function Parlour({ code }) {
     getBoard().then((board) => {
       if (!live) return;
       setName(board.player?.name || session?.user?.name || "");
+      // whether today's challenge is cleared is known here and nowhere else
+      if (isDoneToday(board.sessions ?? [], challenge)) toldDaily.current = "yes";
     });
     return () => {
       live = false;
     };
-  }, [session?.user?.name]);
+  }, [session?.user?.name, challenge]);
 
   useEffect(() => {
     if (asked.current || !name) return;
@@ -51,19 +73,40 @@ export function Parlour({ code }) {
     lobby.join(name);
   }, [name, lobby]);
 
+  // told once, after there is a seat to hang it on
+  useEffect(() => {
+    if (!me || toldDaily.current !== "yes") return;
+    toldDaily.current = "sent";
+    lobby.daily(true);
+  }, [me, lobby]);
+
+  /* --- the chime when the last person ticks --- */
+
+  useEffect(() => {
+    const now = !!state?.canStart;
+    if (now && !wasReady.current) tick();
+    wasReady.current = now;
+  }, [state?.canStart]);
+
   /* --- the walk to the board and back --- */
 
   useEffect(() => {
     const play = state?.play;
-    if (!play || walking.current) return;
+    if (!play || walking.current !== false) return;
     walking.current = true;
-    lobby.keepSeat(play.code, play.token);
+
     const game = ONLINE.find((g) => g.id === play.game);
+    const to = `/play/${game?.slug || play.game}`;
+
+    if (play.watching) {
+      router.push(`${to}?room=${play.code}&watch=1&lobby=${code}`);
+      return;
+    }
+    lobby.keepSeat(play.code, play.token);
     router.push(
-      `/play/${game?.slug || play.game}?room=${play.code}&join=1` +
-        `&as=${encodeURIComponent(me?.name || name || "")}&lobby=${code}`
+      `${to}?room=${play.code}&join=1&as=${encodeURIComponent(me?.name || name || "")}&lobby=${code}`
     );
-  }, [state?.play, lobby, router, code, me?.name, name]);
+  }, [state?.play, lobby, router, code, me?.name, name, backIn]);
 
   /* --- the chat sticks to the bottom --- */
 
@@ -148,8 +191,10 @@ export function Parlour({ code }) {
   }
 
   const picked = ONLINE.find((g) => g.id === state.game);
-  const short = state.members.length < state.minSeats;
-  const crowded = state.members.length > state.seats;
+  const lastGame = state.lastPlay ? ONLINE.find((g) => g.id === state.lastPlay.game) : null;
+  const short = state.playing < state.minSeats;
+  const watchers = state.members.filter((m) => !m.playing);
+  const series = state.series || { played: 0, draws: 0 };
 
   /* ------------------------------------------------------------- the room --- */
 
@@ -161,7 +206,37 @@ export function Parlour({ code }) {
             <ArrowLeft />
             Back to the board
           </Link>
-          <h1 className="play__title">Your room</h1>
+
+          {titling ? (
+            <form
+              className="titling"
+              onSubmit={(e) => {
+                e.preventDefault();
+                lobby.title(String(new FormData(e.currentTarget).get("title") || ""));
+                setTitling(false);
+              }}>
+              <input
+                className="field__input"
+                name="title"
+                defaultValue={state.title}
+                maxLength={32}
+                placeholder="Thursday club"
+                autoFocus
+              />
+              <button className="key" type="submit">
+                Name it
+              </button>
+            </form>
+          ) : (
+            <h1 className="play__title">
+              {state.title || "Your room"}
+              {state.host && (
+                <button type="button" className="titling__edit" onClick={() => setTitling(true)}>
+                  Rename
+                </button>
+              )}
+            </h1>
+          )}
         </div>
 
         <div className="roomcode roomcode--head">
@@ -187,38 +262,86 @@ export function Parlour({ code }) {
       {state.play && (
         <div className="parlour__onair">
           <Tag tone="live" mark="live">
-            Game on
+            {state.play.watching ? "Watching" : "Game on"}
           </Tag>
           <span>
             {gameName(state.play.game)} is running in room <b>{state.play.code}</b>.
           </span>
+          <button
+            type="button"
+            className="key"
+            onClick={() => {
+              walking.current = false;
+              setBackIn((n) => n + 1);
+            }}>
+            Rejoin
+          </button>
           <button type="button" className="key key--quiet" onClick={() => lobby.end()}>
             End it and come back
           </button>
         </div>
       )}
 
+      {/* today's challenge, taken together */}
+      <div className="parlour__daily">
+        <span className="parlour__dailymark" aria-hidden="true">
+          {GAME_MARKS[challenge.game.id] &&
+            (() => {
+              const M = GAME_MARKS[challenge.game.id];
+              return <M size={16} />;
+            })()}
+        </span>
+        <span className="parlour__dailytask">
+          <b>Today:</b> {challenge.task}
+        </span>
+        <span className="parlour__dailywho">
+          {state.members.filter((m) => m.daily).length} of {state.members.length} cleared it
+        </span>
+        <Link className="key key--quiet" href={`/play/${challenge.game.slug}`}>
+          Take it on
+        </Link>
+      </div>
+
       <div className="parlour">
         {/* ---------------------------------------------------- the table --- */}
         <section className="parlour__table" aria-labelledby="zone-table">
-          <ZoneLabel count={`${state.members.length} of ${state.seats}`}>
+          <ZoneLabel count={`${state.playing} of ${state.seats} in chairs`}>
             <span id="zone-table">At the table</span>
           </ZoneLabel>
 
           <ul className="chairs">
-            {state.members.map((member) => (
-              <li key={member.id} className={`chair ${member.ready ? "is-ready" : ""}`}>
-                <span className="chair__pip" aria-hidden="true" />
-                <span className="chair__name">
-                  {member.name}
-                  {member.you && <em> (you)</em>}
-                </span>
-                {member.host && <span className="chair__role">Host</span>}
-                <span className="chair__state">{member.ready ? "Ready" : "Waiting"}</span>
-              </li>
-            ))}
+            {state.members
+              .filter((m) => m.playing)
+              .map((member) => (
+                <li key={member.id} className={`chair ${member.ready ? "is-ready" : ""}`}>
+                  <span className="chair__pip" aria-hidden="true" />
+                  <span className="chair__name">
+                    {member.name}
+                    {member.you && <em> (you)</em>}
+                  </span>
+                  {member.host && <span className="chair__role">Host</span>}
+                  {member.daily && (
+                    <span className="chair__daily" title="Cleared today's challenge">
+                      <Check size={11} />
+                      <span className="sr-only">Cleared today&rsquo;s challenge</span>
+                    </span>
+                  )}
+                  {series.played > 0 && <span className="chair__wins">{member.wins}</span>}
+                  <span className="chair__state">
+                    {member.away ? "Away" : member.ready ? "Ready" : "Waiting"}
+                  </span>
+                  {state.host && !state.play && !member.you && (
+                    <button
+                      type="button"
+                      className="chair__move"
+                      onClick={() => lobby.seat(member.id)}>
+                      Sit out
+                    </button>
+                  )}
+                </li>
+              ))}
 
-            {Array.from({ length: Math.max(0, state.seats - state.members.length) }).map((_, i) => (
+            {Array.from({ length: Math.max(0, state.seats - state.playing) }).map((_, i) => (
               <li className="chair chair--open" key={`open-${i}`}>
                 <span className="chair__pip" aria-hidden="true" />
                 <span className="chair__name">Open chair</span>
@@ -227,26 +350,78 @@ export function Parlour({ code }) {
             ))}
           </ul>
 
+          {watchers.length > 0 && (
+            <>
+              <p className="parlour__rail">Watching</p>
+              <ul className="chairs">
+                {watchers.map((member) => (
+                  <li key={member.id} className="chair chair--watcher">
+                    <span className="chair__pip" aria-hidden="true" />
+                    <span className="chair__name">
+                      {member.name}
+                      {member.you && <em> (you)</em>}
+                    </span>
+                    {member.daily && (
+                      <span className="chair__daily" title="Cleared today's challenge">
+                        <Check size={11} />
+                      </span>
+                    )}
+                    <span className="chair__state">{member.away ? "Away" : "Watching"}</span>
+                    {state.host && !state.play && (
+                      <button
+                        type="button"
+                        className="chair__move"
+                        onClick={() => lobby.seat(member.id)}>
+                        Sit them down
+                      </button>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
+
+          {series.played > 0 && (
+            <p className="parlour__series">
+              {gameName(series.game)} series — {series.played} played
+              {series.draws ? `, ${series.draws} drawn` : ""}
+            </p>
+          )}
+
           <div className="parlour__controls">
-            <button
-              type="button"
-              className={`key ${me?.ready ? "key--quiet" : ""}`}
-              onClick={() => lobby.ready(!me?.ready)}
-              disabled={!!state.play}>
-              {me?.ready ? "Not ready" : "I'm ready"}
-            </button>
+            {me?.playing ? (
+              <button
+                type="button"
+                className={`key ${me?.ready ? "key--quiet" : ""}`}
+                onClick={() => lobby.ready(!me?.ready)}
+                disabled={!!state.play}>
+                {me?.ready ? "Not ready" : "I'm ready"}
+              </button>
+            ) : (
+              <span className="parlour__watching">You are watching this one.</span>
+            )}
 
             {state.host && (
               <button
                 type="button"
                 className="key"
                 onClick={() => lobby.start()}
-                disabled={!state.canStart || !!state.play}>
+                disabled={!state.canStart}>
                 Start {picked?.name}
               </button>
             )}
 
-            <button type="button" className="key key--quiet" onClick={() => lobby.leave().then(() => router.push("/"))}>
+            {state.host && state.lastPlay && !state.play && (
+              <button type="button" className="key key--quiet" onClick={() => lobby.again()}>
+                <Replay size={14} />
+                Same again
+              </button>
+            )}
+
+            <button
+              type="button"
+              className="key key--quiet"
+              onClick={() => lobby.leave().then(() => router.push("/"))}>
               Leave
             </button>
           </div>
@@ -255,15 +430,46 @@ export function Parlour({ code }) {
             {state.play
               ? "A game is running. End it to set the table again."
               : short
-              ? `${picked?.name} needs ${state.minSeats} people. One more to go.`
-              : crowded
-              ? `${picked?.name} seats ${state.seats}. Someone has to sit this one out.`
+              ? `${picked?.name} needs ${state.minSeats} in chairs.`
               : state.canStart
               ? state.host
                 ? "Everyone is ready. Start when you like."
                 : "Everyone is ready. Waiting on the host."
-              : `${state.ready} of ${state.members.length} ready.`}
+              : `${state.ready} of ${state.playing} ready.`}
           </p>
+
+          {lastGame && !state.play && (
+            <p className="note">
+              <Link href={`/play/${lastGame.slug}?room=${state.lastPlay.code}&watch=1&lobby=${code}`}>
+                Watch the last {lastGame.name} game back
+              </Link>{" "}
+              — rooms keep for two hours.
+            </p>
+          )}
+
+          {/* the two nudges, both off until asked for */}
+          <div className="parlour__switches">
+            <label className="switch">
+              <input
+                type="checkbox"
+                checked={sound}
+                onChange={(e) => {
+                  setSound(e.target.checked);
+                  setSoundState(e.target.checked);
+                  if (e.target.checked) tick();
+                }}
+              />
+              <span>Chime when everyone is ready</span>
+            </label>
+            <label className="switch">
+              <input
+                type="checkbox"
+                checked={notify}
+                onChange={async (e) => setNotify(await setNudge(e.target.checked))}
+              />
+              <span>Tell me when it is my move</span>
+            </label>
+          </div>
 
           {lobby.error && <p className="notice">{lobby.error}</p>}
         </section>
@@ -286,6 +492,18 @@ export function Parlour({ code }) {
                 </p>
               ))
             )}
+          </div>
+
+          <div className="talk__quick">
+            {REACTIONS.map((mark) => (
+              <button
+                key={mark}
+                type="button"
+                className="talk__react"
+                onClick={() => lobby.say(mark)}>
+                {mark}
+              </button>
+            ))}
           </div>
 
           <form className="talk__form" onSubmit={send}>
