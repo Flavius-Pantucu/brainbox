@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import TicTacToe from "../games/tictactoe/tictactoe";
 import Sudoku from "../games/sudoku/sudoku";
 import Chess from "../games/chess/chess";
@@ -83,14 +83,22 @@ export function PlayFrame({ gameId }) {
     };
   }, [gameId, isTodays]);
 
+  // Walked in from a private room? Then the way out is back to it, not to the
+  // board — the people you came with are still sitting there.
+  const [lobby, setLobby] = useState(null);
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    setLobby(new URLSearchParams(window.location.search).get("lobby"));
+  }, []);
+
   if (!game || !Surface) return null;
 
   return (
     <div className="stage">
       <div className="stage__bar">
-        <Link href="/" className="stage__back">
+        <Link href={lobby ? `/room/${lobby}` : "/"} className="stage__back">
           <ArrowLeft />
-          Board
+          {lobby ? "Room" : "Board"}
         </Link>
         <h1 className="stage__title">{game.name}</h1>
         <span className="stage__spacer" />

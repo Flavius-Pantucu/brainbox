@@ -187,6 +187,19 @@ export function useRoom(game = "tictactoe") {
     [openStream, refresh]
   );
 
+  // Walked in from a private room: the code, the name and the intent are all in
+  // the link, so there is nothing left for the player to press.
+  const invited = useRef(false);
+  useEffect(() => {
+    if (invited.current || typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("join") !== "1") return;
+    const roomCode = params.get("room");
+    if (!roomCode) return;
+    invited.current = true;
+    join(roomCode, params.get("as") || "");
+  }, [join]);
+
   const act = useCallback(
     async (action, extra = {}) => {
       if (!code || !token.current) return;

@@ -14,6 +14,7 @@
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
     "check:backend": "node scripts/check-backend.js",
+    "check:lobby": "node scripts/check-lobby.js",
     "build:only": "next build"
   },
   "dependencies": {

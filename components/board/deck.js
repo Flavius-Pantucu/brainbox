@@ -1,93 +1,178 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { Opening } from "./opening";
 import { ZoneLabel } from "./plate";
 import { Tag } from "./tag";
 import { Counter } from "./counter";
-import { GAME_MARKS } from "./icons";
+import { GAME_MARKS, Users } from "./icons";
 import { GAMES } from "../../lib/games";
 import { getBoard, summarise } from "../../lib/board";
 import { dailyChallenge, isDoneToday } from "../../lib/daily";
+import { openLobby } from "./use-lobby";
 
 function longDate(date) {
-  return date.toLocaleDateString(undefined, { day: "numeric", month: "long" });
+  return date.toLocaleDateString(undefined, {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+  });
+}
+
+// Midnight is when the challenge turns over, so the board says how long that is
+// rather than making anyone work it out.
+function untilMidnight(now = new Date()) {
+  const next = new Date(now);
+  next.setHours(24, 0, 0, 0);
+  const mins = Math.round((next - now) / 60000);
+  const h = Math.floor(mins / 60);
+  return h >= 1 ? `${h}h left` : `${mins}m left`;
 }
 
 /* ---------------------------------------------------------------- today --- */
 
-function Today({ challenge, done }) {
+// The band across the top: what today asks, how the week has gone, and one way
+// in. Everything else on this page is a choice; this is the suggestion.
+function Today({ challenge, done, summary, loading }) {
   const Mark = GAME_MARKS[challenge.game.id];
+  const [left, setLeft] = useState(null);
+
+  // rendered on the client only, because the server's midnight is not yours
+  useEffect(() => {
+    setLeft(untilMidnight());
+    const id = setInterval(() => setLeft(untilMidnight()), 60000);
+    return () => clearInterval(id);
+  }, []);
+
   return (
-    <section className="today" aria-label="Today's challenge">
-      <span className="today__day">{longDate(challenge.date)}</span>
+    <section className="today" aria-label="Today">
+      <div className="today__main">
+        <p className="today__day">
+          {longDate(challenge.date)}
+          {left && <span className="today__left">{left}</span>}
+        </p>
 
-      <p className="today__task">
-        <Mark size={18} />
-        <strong>{challenge.game.name}</strong>
-        <span>{challenge.task}</span>
-      </p>
+        <h1 className="today__task">
+          <Mark size={22} />
+          <span>{challenge.task}</span>
+        </h1>
 
-      {done ? (
-        <Tag tone="on" mark="on">
-          Played
-        </Tag>
-      ) : (
-        <Tag tone="off" mark="off">
-          Open
-        </Tag>
-      )}
+        <p className="today__sub">
+          {challenge.game.name}
+          {done ? (
+            <Tag tone="on" mark="on">
+              Played today
+            </Tag>
+          ) : (
+            <Tag tone="live" mark="live">
+              Open
+            </Tag>
+          )}
+        </p>
 
-      <Link href={`/play/${challenge.game.slug}`} className="key today__key">
-        {done ? "Play it again" : "Take it on"}
-      </Link>
+        <Link href={`/play/${challenge.game.slug}`} className="key today__key">
+          {done ? "Play it again" : "Take it on"}
+        </Link>
+      </div>
+
+      {/* the week, one peg a day — the only figure on this page */}
+      <div className="today__week" aria-label="The last seven days">
+        <div className="week">
+          {summary.run.map((day) => (
+            <span
+              key={day.key}
+              className={`week__day ${day.count ? "is-hung" : ""} ${day.today ? "is-today" : ""}`}
+              title={`${day.weekday}: ${day.count} played`}>
+              <i aria-hidden="true" />
+              <em>{day.weekday.slice(0, 1)}</em>
+            </span>
+          ))}
+        </div>
+
+        <p className="today__run">
+          {loading ? (
+            <span className="today__runwait" aria-hidden="true" />
+          ) : (
+            <>
+              <Counter value={summary.streak.length} />
+              <span>{summary.streak.length === 1 ? "day run" : "day run"}</span>
+            </>
+          )}
+        </p>
+
+        <Link href="/standings" className="today__more">
+          The full reading
+        </Link>
+      </div>
     </section>
   );
 }
 
-/* ----------------------------------------------------------------- line --- */
+/* ---------------------------------------------------------------- rooms --- */
 
-// One line of figures where there used to be a grid of panels holding one
-// number each. The rest of the reading lives on the standings board.
-function Tally({ summary }) {
-  const { streak, played, minutes } = summary;
+// A private room is the other reason to be here, and it was buried inside each
+// game's own panel. It belongs on the way in.
+function Rooms() {
+  const router = useRouter();
+  const [code, setCode] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState(null);
 
-  if (summary.everPlayed === 0) {
-    return (
-      <p className="tally tally--empty">
-        Nothing hangs on this board yet. Finish a game and the figures start.
-      </p>
-    );
-  }
+  const open = async () => {
+    setBusy(true);
+    setError(null);
+    try {
+      const board = await getBoard();
+      router.push(`/room/${await openLobby(board.player?.name || "")}`);
+    } catch {
+      setError("Could not open a room. Try again.");
+      setBusy(false);
+    }
+  };
+
+  const enter = (event) => {
+    event.preventDefault();
+    const clean = code.trim().toUpperCase();
+    if (clean.length < 4) {
+      setError("A room code is four characters.");
+      return;
+    }
+    router.push(`/room/${clean}`);
+  };
 
   return (
-    <p className="tally">
-      <span className="tally__figure">
-        <Counter value={streak.length} />
-        <span>day run</span>
+    <section className="rooms" aria-label="Play someone">
+      <span className="rooms__mark" aria-hidden="true">
+        <Users size={18} />
       </span>
-      <span className="tally__figure">
-        <Counter value={played} />
-        <span>{played === 1 ? "game" : "games"}</span>
-      </span>
-      <span className="tally__figure">
-        <Counter value={minutes} />
-        <span>minutes at the board</span>
-      </span>
-      {streak.alive ? (
-        <Tag tone="on" mark="on">
-          {streak.playedToday ? "Today is hung" : "Run alive"}
-        </Tag>
-      ) : (
-        <Tag tone="off" mark="off">
-          No run
-        </Tag>
-      )}
-      <Link href="/standings" className="tally__more">
-        The full reading
-      </Link>
-    </p>
+
+      <div className="rooms__say">
+        <b>Play someone</b>
+        <span>Open a room, send the code, talk while you wait.</span>
+      </div>
+
+      <button type="button" className="key" onClick={open} disabled={busy}>
+        {busy ? "Opening…" : "Open a room"}
+      </button>
+
+      <form className="rooms__join" onSubmit={enter}>
+        <input
+          className="field__input field__input--code"
+          value={code}
+          onChange={(e) => setCode(e.target.value.toUpperCase().slice(0, 6))}
+          placeholder="CODE"
+          aria-label="Room code"
+          spellCheck={false}
+        />
+        <button type="submit" className="key key--quiet" disabled={code.trim().length < 4}>
+          Join
+        </button>
+      </form>
+
+      {error && <p className="rooms__error">{error}</p>}
+    </section>
   );
 }
 
@@ -114,8 +199,8 @@ export function Deck() {
 
   return (
     <>
-      <Today challenge={challenge} done={done} />
-      <Tally summary={summary} />
+      <Today challenge={challenge} done={done} summary={summary} loading={board === null} />
+      <Rooms />
 
       <section aria-labelledby="zone-games">
         <ZoneLabel count={`${GAMES.length} fitted`}>

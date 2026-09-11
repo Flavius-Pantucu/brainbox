@@ -515,15 +515,15 @@ button {
 
 /* an empty hook: the board admits it has nothing to hang */
 .plate--empty {
-  background: transparent;
-  border: 1px dashed var(--keyline-strong);
+  background: color-mix(in srgb, var(--paint-bone) 3%, transparent);
+  border: 1px solid var(--keyline);
   box-shadow: none;
   color: var(--ink-quiet);
 }
 
 .plate--empty .plate__lug {
   background: transparent;
-  border: 1px dashed var(--keyline-strong);
+  border: 1px solid var(--keyline);
   border-bottom: 0;
 }
 
@@ -673,7 +673,7 @@ button {
   cursor: not-allowed;
   background: transparent;
   color: var(--ink-faint);
-  border: 1px dashed var(--keyline-strong);
+  border: 1px solid var(--keyline);
   box-shadow: none;
   transform: none;
 }
@@ -784,8 +784,7 @@ button {
 
 .tag--off {
   color: var(--ink-faint);
-  border-style: dashed;
-  background: transparent;
+  background: color-mix(in srgb, var(--ink) 5%, transparent);
 }
 
 .tag--chalk {
@@ -3215,103 +3214,169 @@ span.movelist__half {
 }
 
 /* =========================================================================
-   THE BOARD — today's band, the tally, and the openings
+   THE BOARD — today's band, the rooms band, and the openings
    ========================================================================= */
 
+/* Today is one suggestion, not a dashboard. It gets the width, the display face
+   and the only cobalt edge on the page; everything below it is a choice the
+   player makes instead. */
 .today {
-  display: flex;
-  align-items: center;
-  gap: calc(var(--u) * 2);
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: calc(var(--u) * 4);
   margin-top: calc(var(--u) * 3.5);
-  padding: calc(var(--u) * 1.75) calc(var(--u) * 2.25);
+  padding: calc(var(--u) * 3) calc(var(--u) * 3.5);
   border-radius: var(--radius-lg);
-  background: var(--routed);
-  box-shadow: var(--cut);
+  border-left: 3px solid var(--signal);
+  background: var(--panel);
+  box-shadow: var(--lift-1);
+}
+
+.today__main {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: calc(var(--u) * 1.5);
+  min-width: 0;
 }
 
 .today__day {
+  display: flex;
+  align-items: center;
+  gap: calc(var(--u) * 1.5);
+  margin: 0;
   font-family: var(--font-label);
   font-size: 0.62rem;
   font-weight: 600;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--ink-faint);
 }
 
-.today__task {
-  display: flex;
-  align-items: center;
-  gap: var(--u);
-  flex: 1;
-  min-width: 16ch;
-  margin: 0;
-  font-size: 0.95rem;
+/* how long the challenge has left, because midnight is when it turns over */
+.today__left {
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--ink) 8%, transparent);
+  letter-spacing: 0.08em;
   color: var(--ink-quiet);
 }
 
-.today__task strong {
+.today__task {
+  display: flex;
+  align-items: baseline;
+  gap: calc(var(--u) * 1.5);
+  margin: 0;
+  max-width: 30ch;
   font-family: var(--font-display), sans-serif;
+  font-size: clamp(1.4rem, 2.6vw, 2.1rem);
   font-weight: 600;
+  line-height: 1.1;
+  letter-spacing: -0.01em;
   color: var(--ink);
 }
 
 .today__task svg {
-  color: var(--signal);
   flex: none;
+  color: var(--signal);
+  transform: translateY(3px);
+}
+
+.today__sub {
+  display: flex;
+  align-items: center;
+  gap: var(--u);
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--ink-quiet);
 }
 
 .today__key {
+  margin-top: var(--u);
   text-decoration: none;
 }
 
-/* ---------- the tally ---------- */
+/* --- the week, down the right-hand side --- */
 
-.tally {
+.today__week {
   display: flex;
-  align-items: baseline;
-  flex-wrap: wrap;
-  gap: calc(var(--u) * 3);
-  margin: calc(var(--u) * 3) 0 calc(var(--u) * 4);
-  padding-bottom: calc(var(--u) * 2.5);
-  border-bottom: 1px solid var(--keyline);
+  flex-direction: column;
+  align-items: flex-end;
+  gap: calc(var(--u) * 1.5);
 }
 
-.tally--empty {
-  display: block;
-  font-size: 0.9rem;
-  color: var(--ink-quiet);
-  max-width: 52ch;
-}
-
-.tally__figure {
+.week {
   display: flex;
-  align-items: baseline;
-  gap: var(--u);
-  font-family: var(--font-display), sans-serif;
-  font-size: clamp(1.5rem, 3vw, 2.1rem);
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
-  color: var(--ink);
-  line-height: 1;
+  gap: 6px;
 }
 
-.tally__figure span {
-  font-family: var(--font-text);
-  font-size: 0.78rem;
-  font-weight: 400;
-  letter-spacing: 0;
+.week__day {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+}
+
+.week__day i {
+  width: 14px;
+  height: 22px;
+  border-radius: var(--radius-xs);
+  background: var(--routed);
+  box-shadow: var(--cut);
+}
+
+.week__day.is-hung i {
+  background: var(--signal);
+  box-shadow: none;
+}
+
+.week__day.is-today i {
+  outline: 1px solid var(--keyline-strong);
+  outline-offset: 2px;
+}
+
+.week__day em {
+  font-family: var(--font-label);
+  font-style: normal;
+  font-size: 0.56rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
   color: var(--ink-faint);
 }
 
-.tally .tag {
-  align-self: center;
+.today__run {
+  display: flex;
+  align-items: baseline;
+  gap: var(--u);
+  margin: 0;
+  font-family: var(--font-display), sans-serif;
+  font-size: clamp(1.4rem, 2.6vw, 1.9rem);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  color: var(--ink);
 }
 
-.tally__more {
-  margin-left: auto;
-  align-self: center;
-  font-size: 0.78rem;
+.today__run span {
+  font-family: var(--font-text);
+  font-size: 0.74rem;
+  font-weight: 400;
+  color: var(--ink-faint);
+}
+
+.today__runwait {
+  display: block;
+  width: 3.5rem;
+  height: 1.5rem;
+  border-radius: var(--radius-sm);
+  background: var(--routed);
+  box-shadow: var(--cut);
+  opacity: 0.55;
+}
+
+.today__more {
+  font-size: 0.74rem;
   color: var(--ink-quiet);
   text-decoration: none;
   border-bottom: 1px solid var(--keyline-strong);
@@ -3319,26 +3384,96 @@ span.movelist__half {
   transition: color 160ms ease-out, border-color 160ms ease-out;
 }
 
-.tally__more:hover {
+.today__more:hover {
   color: var(--signal-ink);
   border-color: var(--signal);
 }
 
+/* ---------- the rooms band ---------- */
+
+/* Playing another person used to be a panel buried inside each game. It is half
+   the point of the place, so it sits on the way in. */
+.rooms {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: calc(var(--u) * 2);
+  margin: calc(var(--u) * 2.5) 0 calc(var(--u) * 4);
+  padding: calc(var(--u) * 2) calc(var(--u) * 2.5);
+  border-radius: var(--radius-lg);
+  background: var(--routed);
+  box-shadow: var(--cut);
+}
+
+.rooms__mark {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  flex: none;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--signal) 18%, transparent);
+  color: var(--signal-ink);
+}
+
+.rooms__say {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 18ch;
+}
+
+.rooms__say b {
+  font-family: var(--font-display), sans-serif;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.rooms__say span {
+  font-size: 0.78rem;
+  color: var(--ink-faint);
+}
+
+.rooms__join {
+  display: flex;
+  align-items: center;
+  gap: var(--u);
+}
+
+.rooms__join .field__input {
+  width: 7.5rem;
+  text-transform: uppercase;
+  letter-spacing: 0.22em;
+  font-variant-numeric: tabular-nums;
+}
+
+.rooms__error {
+  flex-basis: 100%;
+  margin: 0;
+  font-size: 0.78rem;
+  color: var(--fault, #b3241a);
+}
+
 /* ---------- the openings ---------- */
 
+/* Five to a row. Nine games used to take three screens of scrolling at one card
+   each; the picture is what identifies a game, so the picture stays and the
+   prose goes. */
 .doorways {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: calc(var(--u) * 2.5);
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: calc(var(--u) * 1.75);
 }
 
 .opening {
   position: relative;
   display: flex;
   flex-direction: column;
-  gap: calc(var(--u) * 1.5);
-  padding: calc(var(--u) * 1.75);
-  border-radius: var(--radius-lg);
+  gap: var(--u);
+  padding: calc(var(--u) * 1.25);
+  border-radius: var(--radius);
   background: var(--panel);
   box-shadow: var(--lift-1);
   color: var(--ink);
@@ -3354,7 +3489,7 @@ span.movelist__half {
   box-shadow: var(--lift-2);
 }
 
-/* the name is the link; it reaches over the whole row */
+/* the name is the link; it reaches over the whole tile */
 .opening__link {
   color: inherit;
   text-decoration: none;
@@ -3377,7 +3512,7 @@ span.movelist__half {
   position: relative;
   width: 100%;
   aspect-ratio: 1;
-  border-radius: var(--radius);
+  border-radius: var(--radius-sm);
   background: var(--routed);
   box-shadow: var(--cut);
   overflow: hidden;
@@ -3413,28 +3548,69 @@ span.movelist__half {
 }
 
 .opening:hover .opening__mouth::after,
-.opening:focus-within .opening__mouth::after {
+.opening:focus-within .opening__mouth::after,
+.opening.is-today .opening__mouth::after {
   box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--paint-cobalt) 62%, transparent),
     inset 0 1px 0 color-mix(in srgb, var(--paint-bone) 26%, transparent),
     inset 0 -18px 26px -22px #000;
 }
 
+/* today's game, said on the sill rather than in a row of its own */
+.opening__flag {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  z-index: 1;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: var(--signal);
+  color: var(--signal-on);
+  font-family: var(--font-label);
+  font-size: 0.54rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+/* a game you can play against a person carries a lit pip */
+.opening__pair {
+  position: absolute;
+  right: 7px;
+  bottom: 7px;
+  z-index: 1;
+}
+
+.opening__pair i {
+  display: block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--paint-bone) 52%, transparent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--paint-navy) 55%, transparent);
+}
+
+.opening:hover .opening__pair i,
+.opening:focus-within .opening__pair i {
+  background: var(--signal);
+}
+
 .opening__face {
   display: flex;
   flex-direction: column;
-  gap: var(--u);
+  gap: 3px;
   min-width: 0;
 }
 
 .opening__name {
   display: flex;
   align-items: center;
-  gap: var(--u);
+  gap: calc(var(--u) * 0.75);
   font-family: var(--font-display), sans-serif;
-  font-size: clamp(1.1rem, 1.7vw, 1.4rem);
+  font-size: 0.95rem;
   font-weight: 600;
-  line-height: 1;
+  line-height: 1.1;
   color: var(--ink);
+  min-width: 0;
 }
 
 .opening__name svg {
@@ -3442,67 +3618,16 @@ span.movelist__half {
   flex: none;
 }
 
-.opening__line {
-  flex: 1;
-  font-size: 0.8rem;
-  line-height: 1.45;
-  color: var(--ink-quiet);
+.opening__link {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.opening__foot {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: var(--u);
-  padding-top: var(--u);
-  border-top: 1px solid var(--keyline);
-}
-
-.opening__stats {
-  font-size: 0.78rem;
+.opening__meta {
+  font-size: 0.68rem;
   color: var(--ink-faint);
   font-variant-numeric: tabular-nums;
-}
-
-.opening__stats b {
-  font-weight: 600;
-  color: var(--ink-quiet);
-}
-
-.opening__stats em {
-  font-style: normal;
-}
-
-.opening__enter {
-  display: flex;
-  align-items: center;
-  gap: calc(var(--u) * 0.75);
-  flex: none;
-  font-family: var(--font-label);
-  font-size: 0.58rem;
-  font-weight: 600;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--ink-faint);
-  transition: color 200ms ease-out, transform 320ms var(--swing);
-}
-
-.opening__enter::after {
-  content: "";
-  width: 14px;
-  height: 1px;
-  background: currentColor;
-  transition: width 320ms var(--swing);
-}
-
-.opening:hover .opening__enter,
-.opening:focus-within .opening__enter {
-  color: var(--signal-ink);
-  transform: translateX(4px);
-}
-
-.opening:hover .opening__enter::after {
-  width: 24px;
 }
 
 /* ---------- walking through ---------- */
@@ -3617,53 +3742,39 @@ span.movelist__half {
   box-shadow: none;
 }
 
-@media (max-width: 1180px) {
+@media (max-width: 1240px) {
   .doorways {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 }
 
-@media (max-width: 720px) {
+@media (max-width: 1000px) {
   .doorways {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .today {
     grid-template-columns: minmax(0, 1fr);
-    gap: calc(var(--u) * 2);
+    align-items: start;
   }
 
-  .opening {
-    flex-direction: row;
-    align-items: center;
-    gap: calc(var(--u) * 2);
+  .today__week {
+    align-items: flex-start;
+  }
+}
+
+@media (max-width: 640px) {
+  .doorways {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--u);
   }
 
-  .opening__mouth {
-    width: clamp(96px, 30vw, 140px);
-    flex: none;
+  .today {
+    padding: calc(var(--u) * 2.25) calc(var(--u) * 2);
   }
 
-  .opening__face {
-    flex: 1;
-    min-width: 0;
-  }
-
-  .opening__line {
-    display: none;
-  }
-
-  .opening__foot {
-    border-top: 0;
-    padding-top: 0;
-  }
-
-  .opening__enter {
-    display: none;
-  }
-
-  .tally {
-    gap: calc(var(--u) * 2);
-  }
-
-  .tally__more {
-    margin-left: 0;
+  .rooms__join .field__input {
+    width: 6rem;
   }
 }
 
@@ -4696,56 +4807,9 @@ span.movelist__half {
 /* Links in this prose are cobalt — but a .key IS cobalt, so colouring its label
    the same way painted the primary button's text onto its own background and
    left an empty blue pill. A button carries its own colours. */
-.auth__swap a,
-.you a:not(.key) {
+.auth__swap a {
   color: var(--signal);
   text-underline-offset: 3px;
-}
-
-/* ---------- the card ---------- */
-
-.you {
-  /* the column sets the width now */
-  max-width: none;
-}
-
-.you__who {
-  display: grid;
-  gap: calc(var(--u) * 2);
-}
-
-.you__email {
-  /* an address is long and must not push the plate wider than the board */
-  overflow-wrap: anywhere;
-  font-size: 0.82rem;
-}
-
-.you__actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--u);
-  margin-top: calc(var(--u) * 2);
-}
-
-/* the four figures, side by side until there is no room for four */
-.you__figures {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr));
-  gap: calc(var(--u) * 2);
-  margin-bottom: calc(var(--u) * 3);
-}
-
-.you__figure {
-  text-align: center;
-}
-
-.you__number {
-  display: block;
-  font-family: var(--font-display), ui-sans-serif, sans-serif;
-  font-size: 2rem;
-  font-variant-numeric: tabular-nums;
-  line-height: 1.1;
-  margin-top: 4px;
 }
 
 /* a game's row carries its mark, so the eye finds the row by shape */
@@ -4759,12 +4823,6 @@ span.movelist__half {
 .ruled__name svg {
   flex: none;
   opacity: 0.75;
-}
-
-@media (max-width: 900px) {
-  .you__figures {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
 }
 
 /* who is signed in, sitting in the head rail beside the lamp */
@@ -4793,12 +4851,646 @@ span.movelist__half {
   color: var(--signal);
 }
 
-/* a figure that is not known yet holds its place without claiming a number */
-.you__number--waiting {
+
+
+/* =========================================================================
+   PLAIN SURFACES — a card, a band of figures, and the readings on them
+   ========================================================================= */
+
+/* The hung enamel plate is the board's signature and it was being asked to
+   carry forms, tables and paragraphs it was never cut for. Anything that is
+   read rather than admired sits on a plain card now. */
+.card {
+  display: grid;
+  gap: calc(var(--u) * 2);
+  padding: calc(var(--u) * 3);
+  border-radius: var(--radius-lg);
+  background: var(--panel);
+  box-shadow: var(--lift-1);
+}
+
+.card--quiet {
+  background: var(--routed);
+  box-shadow: var(--cut);
+}
+
+.card__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--u);
+}
+
+.card a:not(.key) {
+  color: var(--signal);
+  text-underline-offset: 3px;
+}
+
+/* ---------- who you are ---------- */
+
+.who {
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: start;
+  column-gap: calc(var(--u) * 3);
+}
+
+/* Initials, not a photograph: nothing to upload, nothing to store, and it is
+   still yours at a glance. */
+.who__mark {
+  display: grid;
+  place-items: center;
+  width: 72px;
+  height: 72px;
+  border-radius: var(--radius);
+  background: color-mix(in srgb, var(--signal) 22%, transparent);
+  color: var(--ink);
+  font-family: var(--font-display), sans-serif;
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+.who__body {
+  display: grid;
+  gap: calc(var(--u) * 2.5);
+  min-width: 0;
+}
+
+.who__field {
+  max-width: 22rem;
+}
+
+.who__facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+  gap: calc(var(--u) * 2);
+  margin: 0;
+}
+
+.who__facts dt {
+  font-family: var(--font-label);
+  font-size: 0.58rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.who__facts dd {
+  margin: 4px 0 0;
+  font-size: 0.85rem;
+  color: var(--ink);
+}
+
+.who__email {
+  overflow-wrap: anywhere;
+  font-size: 0.8rem;
+}
+
+.who__actions {
+  grid-column: 1 / -1;
+}
+
+@media (max-width: 640px) {
+  .who {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* ---------- a band of figures ---------- */
+
+.figures {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: calc(var(--u) * 3.5);
+  margin: calc(var(--u) * 2) 0 calc(var(--u) * 4);
+  padding-bottom: calc(var(--u) * 2.5);
+  border-bottom: 1px solid var(--keyline);
+}
+
+.figure {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.figure__value {
+  font-family: var(--font-display), sans-serif;
+  font-size: clamp(1.6rem, 3vw, 2.2rem);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  color: var(--ink);
+}
+
+.figure__label {
+  font-family: var(--font-label);
+  font-size: 0.58rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.figure--state {
+  align-self: center;
+}
+
+.figure__wait {
   display: block;
-  height: 2.2rem;
+  width: 2.6rem;
+  height: 1.7rem;
   border-radius: var(--radius-sm);
   background: var(--routed);
   box-shadow: var(--cut);
   opacity: 0.55;
+}
+
+/* ---------- form: the last however-many, the way a league prints it ---------- */
+
+.form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: calc(var(--u) * 4);
+}
+
+.form__pip {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: var(--radius-xs);
+  font-family: var(--font-label);
+  font-size: 0.64rem;
+  font-weight: 600;
+  background: color-mix(in srgb, var(--ink) 7%, transparent);
+  color: var(--ink-quiet);
+}
+
+.form__pip--won {
+  background: var(--signal);
+  color: var(--signal-on);
+}
+
+.form__pip--lost {
+  background: color-mix(in srgb, var(--fault) 64%, transparent);
+  color: var(--paint-bone);
+}
+
+.form__pip--drawn {
+  background: color-mix(in srgb, var(--ink) 16%, transparent);
+  color: var(--ink);
+}
+
+/* ---------- the habit: twelve weeks of days ---------- */
+
+.heat {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: var(--u);
+  margin-bottom: calc(var(--u) * 4);
+  overflow-x: auto;
+}
+
+.heat__rows {
+  display: grid;
+  grid-template-rows: repeat(7, 14px);
+  gap: 3px;
+  font-family: var(--font-label);
+  font-size: 0.52rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.heat__rows span:nth-child(1) {
+  grid-row: 1;
+}
+.heat__rows span:nth-child(2) {
+  grid-row: 3;
+}
+.heat__rows span:nth-child(3) {
+  grid-row: 5;
+}
+
+.heat__grid {
+  display: grid;
+  grid-auto-flow: column;
+  grid-template-rows: repeat(7, 14px);
+  grid-auto-columns: 14px;
+  gap: 3px;
+}
+
+/* four steps, because a continuous scale is a colour you have to look up */
+.heat__cell {
+  width: 14px;
+  height: 14px;
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--ink) 7%, transparent);
+}
+
+.heat__cell--1 {
+  background: color-mix(in srgb, var(--signal) 32%, transparent);
+}
+
+.heat__cell--2 {
+  background: color-mix(in srgb, var(--signal) 64%, transparent);
+}
+
+.heat__cell--3 {
+  background: var(--signal);
+}
+
+.heat__cell--pad {
+  background: transparent;
+}
+
+.heat__cell.is-today {
+  outline: 1px solid var(--keyline-strong);
+  outline-offset: 1px;
+}
+
+.heat__key {
+  grid-column: 2;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 6px;
+  font-family: var(--font-label);
+  font-size: 0.52rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+/* ---------- game by game, in order ---------- */
+
+.standing {
+  list-style: none;
+  display: grid;
+  gap: 2px;
+  margin: 0 0 calc(var(--u) * 4);
+  padding: 0;
+}
+
+.standing__row {
+  display: grid;
+  grid-template-columns: 1.6rem minmax(7rem, 12rem) minmax(4rem, 1fr) 3rem auto;
+  align-items: center;
+  gap: calc(var(--u) * 2);
+  padding: calc(var(--u) * 1.1) calc(var(--u) * 1.5);
+  border-radius: var(--radius-sm);
+}
+
+.standing__row:nth-child(odd) {
+  background: color-mix(in srgb, var(--ink) 4%, transparent);
+}
+
+.standing__no {
+  font-family: var(--font-label);
+  font-size: 0.72rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-faint);
+}
+
+.standing__name {
+  display: flex;
+  align-items: center;
+  gap: calc(var(--u) * 0.75);
+  min-width: 0;
+  font-weight: 600;
+}
+
+.standing__name a {
+  color: inherit;
+  text-decoration: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.standing__name a:hover {
+  color: var(--signal-ink);
+}
+
+.standing__name svg {
+  flex: none;
+  color: var(--signal);
+  opacity: 0.8;
+}
+
+.standing__bar {
+  display: block;
+  height: 6px;
+  border-radius: var(--radius-pill);
+  background: var(--routed);
+  box-shadow: var(--cut);
+  overflow: hidden;
+}
+
+.standing__bar i {
+  display: block;
+  height: 100%;
+  border-radius: var(--radius-pill);
+  background: var(--signal);
+}
+
+.standing__rate {
+  text-align: right;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.standing__count {
+  font-size: 0.72rem;
+  color: var(--ink-faint);
+  white-space: nowrap;
+}
+
+.scroller {
+  overflow-x: auto;
+  margin-bottom: calc(var(--u) * 4);
+}
+
+@media (max-width: 720px) {
+  .standing__row {
+    grid-template-columns: 1.5rem minmax(0, 1fr) 3rem;
+  }
+
+  .standing__bar,
+  .standing__count {
+    display: none;
+  }
+}
+
+/* =========================================================================
+   THE PRIVATE ROOM — chairs, talk, and setting the table
+   ========================================================================= */
+
+.roomcode--head {
+  margin: 0;
+}
+
+.roomcode__value--button {
+  border: 0;
+  background: none;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+  padding: 0;
+}
+
+.parlour {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: calc(var(--u) * 4);
+  margin-bottom: calc(var(--u) * 4);
+}
+
+@media (max-width: 900px) {
+  .parlour {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.parlour__onair {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: calc(var(--u) * 1.5);
+  margin: calc(var(--u) * 2) 0;
+  padding: calc(var(--u) * 1.75) calc(var(--u) * 2.25);
+  border-radius: var(--radius);
+  background: color-mix(in srgb, var(--signal) 15%, transparent);
+  font-size: 0.88rem;
+  color: var(--ink);
+}
+
+.chairs {
+  list-style: none;
+  display: grid;
+  gap: 6px;
+  margin: 0 0 calc(var(--u) * 2.5);
+  padding: 0;
+}
+
+.chair {
+  display: flex;
+  align-items: center;
+  gap: calc(var(--u) * 1.5);
+  padding: calc(var(--u) * 1.25) calc(var(--u) * 1.5);
+  border-radius: var(--radius-sm);
+  background: var(--routed);
+  box-shadow: var(--cut);
+}
+
+/* ready is a lit pip and a written word — never colour on its own */
+.chair__pip {
+  flex: none;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--ink) 24%, transparent);
+}
+
+.chair.is-ready .chair__pip {
+  background: var(--signal);
+}
+
+.chair__name {
+  min-width: 0;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chair__name em {
+  font-style: normal;
+  font-weight: 400;
+  color: var(--ink-faint);
+}
+
+.chair__role {
+  padding: 2px 7px;
+  border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--ink) 9%, transparent);
+  font-family: var(--font-label);
+  font-size: 0.54rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-quiet);
+}
+
+.chair__state {
+  margin-left: auto;
+  font-size: 0.72rem;
+  color: var(--ink-faint);
+}
+
+.chair--open {
+  background: transparent;
+  border: 1px solid var(--keyline);
+  box-shadow: none;
+}
+
+.chair--open .chair__name {
+  font-weight: 400;
+  color: var(--ink-faint);
+}
+
+.parlour__controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--u);
+  margin-bottom: calc(var(--u) * 1.5);
+}
+
+/* ---------- talk ---------- */
+
+.talk {
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--u) * 0.75);
+  height: 17rem;
+  overflow-y: auto;
+  padding: calc(var(--u) * 2);
+  border-radius: var(--radius);
+  background: var(--routed);
+  box-shadow: var(--cut);
+}
+
+.talk__line {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: calc(var(--u) * 0.75);
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--ink);
+}
+
+.talk__who {
+  font-weight: 600;
+  color: var(--signal-ink);
+}
+
+.talk__text {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.talk__at {
+  font-size: 0.62rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-faint);
+}
+
+/* the room's own voice — somebody came in, the table changed */
+.talk__line--house {
+  font-size: 0.78rem;
+  font-style: italic;
+  color: var(--ink-faint);
+}
+
+.talk__form {
+  display: flex;
+  gap: var(--u);
+  margin-top: var(--u);
+}
+
+.talk__form .field__input {
+  flex: 1;
+}
+
+/* ---------- setting the table ---------- */
+
+.picker {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: calc(var(--u) * 1.5);
+}
+
+@media (max-width: 1000px) {
+  .picker {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .picker {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.tile {
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--u) * 0.75);
+  padding: var(--u);
+  border: 0;
+  border-radius: var(--radius);
+  background: var(--panel);
+  box-shadow: var(--lift-1);
+  color: var(--ink);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: transform 220ms var(--swing), box-shadow 220ms var(--swing);
+}
+
+.tile:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: var(--lift-2);
+}
+
+.tile:disabled {
+  cursor: default;
+  opacity: 0.8;
+}
+
+.tile.is-on {
+  outline: 2px solid var(--signal);
+  outline-offset: 2px;
+}
+
+.tile__mouth {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: var(--radius-sm);
+  background: var(--routed);
+  box-shadow: var(--cut);
+  overflow: hidden;
+}
+
+.tile__room {
+  position: absolute;
+  inset: 9%;
+  display: grid;
+  place-items: center;
+  filter: brightness(0.66) saturate(0.85);
+  transition: filter 260ms ease-out;
+}
+
+.tile:hover .tile__room,
+.tile.is-on .tile__room {
+  filter: none;
+}
+
+.tile__name {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  font-family: var(--font-display), sans-serif;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.tile__name svg {
+  flex: none;
+  color: var(--signal);
 }

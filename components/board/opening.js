@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useRef } from "react";
 import { GamePreview } from "./preview";
-import { Tag } from "./tag";
 import { GAME_MARKS } from "./icons";
 
 // How long the opening takes to swallow the screen before the route changes.
@@ -17,6 +16,18 @@ function reducedMotion() {
   );
 }
 
+// When you last sat at this one. A date is a fact; "yesterday" is a nudge, and
+// this line exists to nudge.
+function lastSeen(at) {
+  if (!at) return "New to you";
+  const days = Math.floor((Date.now() - at.getTime()) / 86400000);
+  if (days <= 0) return "Played today";
+  if (days === 1) return "Yesterday";
+  if (days < 7) return `${days} days ago`;
+  if (days < 28) return `${Math.floor(days / 7)} weeks ago`;
+  return at.toLocaleDateString(undefined, { day: "numeric", month: "short" });
+}
+
 // One game, seen through an opening cut in the board's face. Pressing it walks
 // through: the opening takes the window, then the room is on the other side.
 export function Opening({ game, stats, today, entering, onEnter }) {
@@ -24,7 +35,6 @@ export function Opening({ game, stats, today, entering, onEnter }) {
   const mouth = useRef(null);
   const Mark = GAME_MARKS[game.id];
   const href = `/play/${game.slug}`;
-  const never = stats.everPlayed === 0;
 
   const press = (event) => {
     if (event.metaKey || event.ctrlKey || event.shiftKey || event.button !== 0) return;
@@ -50,57 +60,30 @@ export function Opening({ game, stats, today, entering, onEnter }) {
   };
 
   return (
-    // A card-shaped link would put the preview's own buttons inside an anchor,
-    // which is invalid and unfocusable in the right order. The link is the
-    // game's name; it stretches over the whole row instead.
-    <div className={`opening ${entering ? "is-entering" : ""}`}>
+    <div className={`opening ${entering ? "is-entering" : ""} ${today ? "is-today" : ""}`}>
       <span className="opening__mouth" ref={mouth}>
         <span className="opening__room">
           <GamePreview gameId={game.id} />
         </span>
+
+        {/* two things worth knowing before you go in, cut into the sill */}
+        {today && <span className="opening__flag">Today</span>}
+        {game.online && (
+          <span className="opening__pair" title="Can be played against another person">
+            <i aria-hidden="true" />
+            <span className="sr-only">Plays online</span>
+          </span>
+        )}
       </span>
 
       <span className="opening__face">
         <span className="opening__name">
-          <Mark size={18} />
+          <Mark size={15} />
           <Link href={href} className="opening__link" onClick={press} prefetch>
             {game.name}
           </Link>
-          {today && (
-            <Tag tone="live" mark="live">
-              Today
-            </Tag>
-          )}
         </span>
-
-        <span className="opening__line">{game.line}</span>
-
-        <span className="opening__foot">
-          <span className="opening__stats">
-            {never ? (
-              <em>Not played yet</em>
-            ) : (
-              <>
-                <b>{stats.played}</b> played
-                {game.outcomes && stats.winRate != null && (
-                  <>
-                    {" · "}
-                    <b>{stats.winRate}%</b> won
-                  </>
-                )}
-                {game.measure === "time" && stats.bestTime && (
-                  <>
-                    {" · best "}
-                    <b>{stats.bestTime}</b>
-                  </>
-                )}
-              </>
-            )}
-          </span>
-          <span className="opening__enter" aria-hidden="true">
-            Enter
-          </span>
-        </span>
+        <span className="opening__meta">{lastSeen(stats?.lastPlayedAt)}</span>
       </span>
     </div>
   );
