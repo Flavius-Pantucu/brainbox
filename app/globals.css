@@ -245,11 +245,13 @@ button {
   min-height: 0;
 }
 
+/* Every board page sits in here, so the page owns its breathing room: room
+   under the rail, and room above the footer so the last row never meets it. */
 .board__inner {
   width: 100%;
   max-width: var(--board-max);
   margin: 0 auto;
-  padding: 0 var(--gutter);
+  padding: calc(var(--u) * 3.5) var(--gutter) calc(var(--u) * 8);
 }
 
 /* =========================================================================
@@ -878,7 +880,6 @@ button {
   align-items: flex-end;
   justify-content: space-between;
   gap: calc(var(--u) * 2);
-  padding-top: calc(var(--u) * 3);
   flex-wrap: wrap;
 }
 
@@ -3304,7 +3305,6 @@ span.movelist__half {
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: end;
   gap: calc(var(--u) * 4);
-  margin-top: calc(var(--u) * 3.5);
   padding: calc(var(--u) * 3) calc(var(--u) * 3.5);
   border-radius: var(--radius-lg);
   border-left: 3px solid var(--signal);

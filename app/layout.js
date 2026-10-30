@@ -56,7 +56,7 @@ export default function RootLayout({ children }) {
           </div>
           <footer className="foot">
             <div className="foot__inner">
-              <span>BrainBox — three games, one board</span>
+              <span>BrainBox — logic games, one board</span>
               <span>Everything here is kept in this browser</span>
             </div>
           </footer>
