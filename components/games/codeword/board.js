@@ -1,12 +1,12 @@
 "use client";
 
 // The Codeword sheet, on its own so the dashboard can show one without
-// starting a game on it. Every row is a guess and its score: a filled dot for
-// each letter in the right place, a ring for each one in the word elsewhere,
-// each with its number beside it. Which letters those are, the sheet never says.
-export function CodewordBoard({ length, limit, rows, typing = "", live = true, shake = 0 }) {
+// starting a game on it. Every row is a guess, each letter coloured by how it
+// fared: green in place, orange elsewhere in the word, grey not in it. The
+// newest row (`flip`) turns over tile by tile.
+export function CodewordBoard({ length, limit, rows, typing = "", live = true, shake = 0, flip = false }) {
   const lines = Array.from({ length: limit }, (_, i) => {
-    if (i < rows.length) return { ...rows[i], kind: "done" };
+    if (i < rows.length) return { ...rows[i], kind: "done", fresh: flip && i === rows.length - 1 };
     if (i === rows.length && live) return { word: typing, kind: "typing" };
     return { word: "", kind: "empty" };
   });
@@ -20,28 +20,17 @@ export function CodewordBoard({ length, limit, rows, typing = "", live = true, s
             className={`cw__row cw__row--${line.kind} ${line.kind === "typing" && shake ? "is-shaking" : ""}`}
             aria-label={
               line.kind === "done"
-                ? `${line.word}: ${line.score.inPlace} in place, ${line.score.elsewhere} elsewhere`
+                ? `${line.word}: ${line.marks.map((m, k) => `${line.word[k]} ${m === "right" ? "in place" : m === "near" ? "elsewhere" : "not in the word"}`).join(", ")}`
                 : undefined
             }>
             {Array.from({ length }, (_, k) => (
-              <span key={k} className={`cw__tile ${line.word[k] ? "is-set" : ""}`}>
+              <span
+                key={k}
+                className={`cw__tile ${line.word[k] ? "is-set" : ""} ${line.kind === "done" ? `is-${line.marks[k]}` : ""} ${line.fresh ? "is-flipping" : ""}`}
+                style={line.fresh ? { "--k": k } : undefined}>
                 {line.word[k] || ""}
               </span>
             ))}
-            <span className="cw__score" aria-hidden="true">
-              {line.kind === "done" && (
-                <>
-                  <span className="cw__count">
-                    <i className="cw__dot" />
-                    {line.score.inPlace}
-                  </span>
-                  <span className="cw__count">
-                    <i className="cw__ring" />
-                    {line.score.elsewhere}
-                  </span>
-                </>
-              )}
-            </span>
           </li>
         ))}
       </ol>

@@ -19,7 +19,7 @@ Games:
 - [x] **Minesweeper** — beginner to expert, with a first click that is always safe
 - [x] **Sudoku** — a fresh puzzle every game, generated in the browser, at four difficulties
 - [x] **PiCross** — nonograms from 5×5 to 15×15 at four difficulties, each a fresh picture that logic alone solves
-- [x] **Codeword** — find a hidden word when each guess is scored with two numbers and nothing more
+- [x] **Codeword** — find a hidden word in six guesses, each letter coloured green, orange or grey
 - [x] **Hangman** — eight categories, three difficulties, six wrong letters
 - [x] **Go** — 9×9 to 19×19, against the machine, against the next chair, or online by room code
 - [x] **Backgammon** — against the machine, against the next chair, or online by room code
@@ -175,12 +175,9 @@ is final. Keyboard: arrows move, space or `F` fills, `X` crosses, `M` swaps the 
 
 ## Codeword
 
-A word-deduction game in the family of the old pen-and-paper "bulls and cows", in
-`lib/codeword.js`. Each guess is scored with two numbers: letters in the right place (a filled
-dot) and letters in the word somewhere else (a ring). Which letters earned them is never
-shown. Twelve guesses at 4, 5 or 6 letters. The letter keys double as a notepad — Mark letters,
-or right-click a key, to strike a letter out or ring it in — and a guess that scores nothing,
-or scores every letter, marks its own letters automatically.
+A Wordle-style word game in `lib/codeword.js`. Six guesses at 4, 5 or 6 letters; each guess
+flips over tile by tile, green for a letter in the right place, orange for one in the word
+elsewhere, grey for one that is not in it. The keys take the best colour each letter has earned.
 
 Answers are hand-picked common words. Guesses are checked against `public/words/{3..6}.txt`,
 generated from Webster's Second (`/usr/share/dict/web2`, public domain) with

@@ -4,18 +4,17 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ANSWERS,
   LEVELS,
-  deduce,
+  grade,
   isWord,
   levelOf,
   loadDictionary,
   pick,
-  score,
 } from "../../../lib/codeword";
 import { CodewordBoard } from "./board";
 import { Keyboard } from "../keyboard";
 import { Peg } from "../../board/peg";
 import { Verdict } from "../../board/verdict";
-import { Pencil, Replay } from "../../board/icons";
+import { Replay } from "../../board/icons";
 
 function clock(seconds) {
   const m = Math.floor(seconds / 60);
@@ -23,7 +22,20 @@ function clock(seconds) {
   return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
 }
 
-const NEXT_NOTE = { undefined: "out", out: "in", in: undefined };
+// a row turns over one tile at a time: this is how long until the last one lands
+const FLIP_MS = 300;
+const revealMs = (length) => (length - 1) * FLIP_MS + 600;
+
+// the best a letter has earned over the guesses shown so far
+const RANK = { gone: 0, near: 1, right: 2 };
+function keyStates(rows) {
+  const states = {};
+  for (const { word, marks } of rows)
+    [...word].forEach((l, k) => {
+      if (!states[l] || RANK[marks[k]] > RANK[states[l]]) states[l] = marks[k];
+    });
+  return states;
+}
 
 export default function Codeword({ onResult }) {
   const [levelId, setLevelId] = useState("medium");
@@ -31,8 +43,8 @@ export default function Codeword({ onResult }) {
   const [secret, setSecret] = useState(null);
   const [rows, setRows] = useState([]);
   const [typing, setTyping] = useState("");
-  const [notes, setNotes] = useState({});
-  const [marking, setMarking] = useState(false);
+  const [shown, setShown] = useState(0); // rows whose reveal has finished
+  const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState("playing"); // playing | won | lost
   const [seconds, setSeconds] = useState(0);
   const [started, setStarted] = useState(false);
@@ -48,7 +60,8 @@ export default function Codeword({ onResult }) {
     setSecret(pick(id));
     setRows([]);
     setTyping("");
-    setNotes({});
+    setShown(0);
+    setBusy(false);
     setStatus("playing");
     setSeconds(0);
     setStarted(false);
@@ -91,7 +104,7 @@ export default function Codeword({ onResult }) {
     });
   }, [status, seconds, levelId, rows.length, onResult]);
 
-  const playing = status === "playing" && !!secret;
+  const playing = status === "playing" && !!secret && !busy;
 
   const refuse = (text) => {
     setMessage(text);
@@ -111,11 +124,6 @@ export default function Codeword({ onResult }) {
     setMessage(null);
   };
 
-  const mark = (letter) => {
-    if (!playing) return;
-    setNotes((current) => ({ ...current, [letter]: NEXT_NOTE[current[letter]] }));
-  };
-
   const submit = () => {
     if (!playing) return;
     const word = typing;
@@ -126,24 +134,20 @@ export default function Codeword({ onResult }) {
     if (dictionary && !isWord(word, dictionary, ANSWERS[level.length]))
       return refuse(`${word.toUpperCase()} is not in the word list.`);
 
-    const result = score(secret, word);
-    const next = [...rows, { word, score: result }];
+    const marks = grade(secret, word);
+    const next = [...rows, { word, marks }];
     setRows(next);
     setTyping("");
     setMessage(null);
+    setBusy(true);
 
-    const proven = deduce(word, result);
-    if (proven.out.length || proven.in.length) {
-      setNotes((current) => {
-        const updated = { ...current };
-        proven.out.forEach((l) => (updated[l] = "out"));
-        proven.in.forEach((l) => (updated[l] = "in"));
-        return updated;
-      });
-    }
-
-    if (result.inPlace === level.length) setStatus("won");
-    else if (next.length >= level.guesses) setStatus("lost");
+    // keys, verdict and the next row wait for the last tile to land
+    setTimeout(() => {
+      setShown(next.length);
+      setBusy(false);
+      if (marks.every((m) => m === "right")) setStatus("won");
+      else if (next.length >= level.guesses) setStatus("lost");
+    }, revealMs(level.length));
   };
 
   // The physical keyboard types; the letter board types too, or takes notes.
@@ -166,7 +170,8 @@ export default function Codeword({ onResult }) {
     return () => window.removeEventListener("keydown", onKey);
   });
 
-  const ruledOut = Object.values(notes).filter((n) => n === "out").length;
+  const notes = keyStates(rows.slice(0, shown));
+  const ruledOut = Object.values(notes).filter((n) => n === "gone").length;
 
   return (
     <div className="cw">
@@ -179,6 +184,7 @@ export default function Codeword({ onResult }) {
             typing={typing}
             live={playing}
             shake={shake}
+            flip={busy}
           />
           <Verdict
             open={status !== "playing" && !dismissed}
@@ -201,8 +207,7 @@ export default function Codeword({ onResult }) {
         <Keyboard
           states={notes}
           disabled={!playing}
-          onKey={marking ? mark : type}
-          onMark={mark}
+          onKey={type}
           onEnter={submit}
           onBack={back}
         />
@@ -234,15 +239,6 @@ export default function Codeword({ onResult }) {
         </div>
 
         <div className="tools">
-          <button
-            type="button"
-            className={`tool ${marking ? "is-on" : ""}`}
-            aria-pressed={marking}
-            disabled={!playing}
-            onClick={() => setMarking((m) => !m)}>
-            <Pencil size={18} />
-            <span>Mark letters</span>
-          </button>
           <button type="button" className="tool" onClick={() => newGame(levelId)}>
             <Replay size={18} />
             <span>New word</span>
@@ -251,20 +247,22 @@ export default function Codeword({ onResult }) {
 
         <div className="cw__legend">
           <span className="cw__count">
-            <i className="cw__dot" />
+            <i className="cw__chip is-right" />
             in the right place
           </span>
           <span className="cw__count">
-            <i className="cw__ring" />
+            <i className="cw__chip is-near" />
             in the word, elsewhere
+          </span>
+          <span className="cw__count">
+            <i className="cw__chip is-gone" />
+            not in the word
           </span>
         </div>
 
         <p className="chalk chalk--tight">
-          Find the hidden word in {level.guesses} guesses. Each guess is scored with two numbers
-          and nothing more: which letters earned them is yours to work out. Turn on{" "}
-          <b>Mark letters</b> (or right-click a key) to strike a letter out or ring it in; a guess
-          that scores nothing, or scores every letter, marks its letters for you.
+          Find the hidden word in {level.guesses} guesses. Every guess must be a real word; after
+          each one, its letters turn green, orange or grey to show how close they are.
         </p>
       </div>
     </div>

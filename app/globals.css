@@ -1904,6 +1904,33 @@ button {
   transform: rotate(-38deg);
 }
 
+/* Codeword's verdicts, shared by keys, tiles and the legend */
+.kb__key.is-right,
+.kb__key.is-near,
+.kb__key.is-gone,
+.cw__tile.is-right,
+.cw__tile.is-near,
+.cw__tile.is-gone,
+.cw__chip {
+  --cw-bg: var(--cw-gone);
+}
+
+.is-right {
+  --cw-bg: var(--cw-right) !important;
+}
+
+.is-near {
+  --cw-bg: var(--cw-orange) !important;
+}
+
+.kb__key.is-right,
+.kb__key.is-near,
+.kb__key.is-gone {
+  background: var(--cw-bg);
+  border-color: var(--cw-bg);
+  color: #fff;
+}
+
 /* noted by the player: ringed in */
 .kb__key.is-in {
   background: color-mix(in srgb, var(--signal) 14%, var(--panel));
@@ -1918,6 +1945,9 @@ button {
 .cw,
 .hm {
   display: contents;
+  --cw-right: #3f8f5a;
+  --cw-orange: #d9822b;
+  --cw-gone: #5d636b;
 }
 
 .cw__field,
@@ -1964,8 +1994,8 @@ button {
   --g: 6px;
   --t: min(
     calc((100cqh - (var(--limit) - 1) * var(--g)) / var(--limit)),
-    calc((100cqw - var(--len) * var(--g)) / (var(--len) + 2.4)),
-    56px
+    calc((100cqw - (var(--len) - 1) * var(--g)) / var(--len)),
+    64px
   );
   display: grid;
   gap: var(--g);
@@ -1976,7 +2006,7 @@ button {
 
 .cw__row {
   display: grid;
-  grid-template-columns: repeat(var(--len), var(--t)) calc(var(--t) * 2.4);
+  grid-template-columns: repeat(var(--len), var(--t));
   gap: var(--g);
 }
 
@@ -2012,8 +2042,41 @@ button {
 }
 
 .cw__row--done .cw__tile {
-  background: var(--panel);
-  border-color: var(--keyline-strong);
+  background: var(--cw-bg);
+  border-color: var(--cw-bg);
+  color: #fff;
+}
+
+/* turns over tile by tile; the colour swaps while the tile is edge-on */
+.cw__tile.is-flipping {
+  animation: cw-flip 600ms ease-in-out both;
+  animation-delay: calc(var(--k) * 300ms);
+}
+
+@keyframes cw-flip {
+  0% {
+    transform: rotateX(0);
+    background: var(--plate-face);
+    border-color: var(--signal);
+    color: var(--plate-ink);
+  }
+  49% {
+    background: var(--plate-face);
+    border-color: var(--signal);
+    color: var(--plate-ink);
+  }
+  50% {
+    transform: rotateX(90deg);
+    background: var(--cw-bg);
+    border-color: var(--cw-bg);
+    color: #fff;
+  }
+  100% {
+    transform: rotateX(0);
+    background: var(--cw-bg);
+    border-color: var(--cw-bg);
+    color: #fff;
+  }
 }
 
 .cw__row.is-shaking {
@@ -2037,38 +2100,18 @@ button {
   }
 }
 
-.cw__score {
-  display: flex;
-  align-items: center;
-  gap: calc(var(--t) * 0.3);
-  padding-left: calc(var(--t) * 0.15);
-  font-family: var(--font-display), sans-serif;
-  font-weight: 600;
-  font-size: calc(var(--t) * 0.46);
-  font-variant-numeric: tabular-nums;
-  color: var(--ink);
-}
-
 .cw__count {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
 }
 
-.cw__dot,
-.cw__ring {
+.cw__chip {
   flex: none;
-  width: max(10px, calc(var(--t, 36px) * 0.28));
+  width: 16px;
   aspect-ratio: 1;
-  border-radius: 50%;
-}
-
-.cw__dot {
-  background: var(--signal);
-}
-
-.cw__ring {
-  border: 2px solid var(--signal);
+  border-radius: var(--radius-xs);
+  background: var(--cw-bg);
 }
 
 .cw__message {
@@ -2190,6 +2233,7 @@ button {
 
   .cw__row.is-shaking,
   .cw__tile.is-set,
+  .cw__tile.is-flipping,
   .hm__slot.is-shown {
     animation: none;
   }
@@ -2224,10 +2268,10 @@ button {
     container-type: inline-size;
   }
 
-  /* twelve rows and the keys have to share one phone screen */
+  /* tiles stretch the full width of the sheet */
   .cw__rows {
-    --g: 4px;
-    --t: min(calc((100cqw - var(--len) * var(--g)) / (var(--len) + 2.4)), 27px);
+    --g: 5px;
+    --t: calc((100cqw - (var(--len) - 1) * var(--g)) / var(--len));
   }
 
   .hm__stage {
@@ -2239,8 +2283,18 @@ button {
     height: 220px;
   }
 
+  /* keys share the whole width */
+  .kb {
+    max-width: none;
+  }
+
   .kb__key {
     height: 54px;
+    max-width: none;
+  }
+
+  .kb__key--wide {
+    max-width: none;
   }
 }
 

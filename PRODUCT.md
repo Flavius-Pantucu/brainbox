@@ -57,9 +57,8 @@ Shipped and working today (product truth to preserve):
   randomised backtracking, then symmetric digging that keeps exactly one solution, at four
   difficulties (Easy 42 clues, Medium ~34, Hard ~29, Evil ~26). Notes, undo, hints, erase,
   pause, a clock, three mistakes, and full keyboard control.
-- **Codeword** — word deduction (`lib/codeword.js`): each guess scored with two counts only (in
-  place, elsewhere), twelve guesses at 4/5/6 letters, a letter notepad with automatic marks for
-  what a score proves. Guesses checked against public-domain Webster's Second lists in
+- **Codeword** — Wordle-style word game (`lib/codeword.js`): six guesses at 4/5/6 letters, each
+  letter graded green / orange / grey with a tile-flip reveal. Guesses checked against public-domain Webster's Second lists in
   `public/words/`. Deliberately not a copy of any branded word game.
 - **Hangman** — `lib/hangman.js`: eight categories as the clue, six wrong letters, difficulty by
   word length (long is easy, short is hard).

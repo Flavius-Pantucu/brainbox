@@ -10,6 +10,9 @@ const SAID = {
   miss: "not in the word",
   in: "marked in",
   out: "ruled out",
+  right: "in the right place",
+  near: "in the word, elsewhere",
+  gone: "not in the word",
 };
 
 // The letter keys the word games share. `states` maps a letter to hit / miss

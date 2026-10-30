@@ -582,17 +582,15 @@ async function main() {
   assert.ok(!pic.solveByLines(picPreview.clues, picPreview.n).includes(-1), "the dashboard picture is a fair puzzle");
 
   /* codeword -------------------------------------------------------------- */
-  assert.deepEqual(cw.score("plant", "plant"), { inPlace: 5, elsewhere: 0 });
-  assert.deepEqual(cw.score("plant", "stone"), { inPlace: 1, elsewhere: 1 }, "N in place, T elsewhere");
-  // a repeated letter counts only as often as the secret holds it
-  assert.deepEqual(cw.score("crane", "eerie"), { inPlace: 1, elsewhere: 1 });
-  assert.deepEqual(cw.score("speed", "erase"), { inPlace: 0, elsewhere: 3 });
+  assert.deepEqual(cw.grade("plant", "plant"), ["right", "right", "right", "right", "right"]);
+  assert.deepEqual(cw.grade("plant", "stone"), ["gone", "near", "gone", "right", "gone"], "N in place, T elsewhere");
+  // a repeated letter is graded only as often as the secret holds it
+  assert.deepEqual(cw.grade("crane", "eerie"), ["gone", "gone", "near", "gone", "right"]);
+  assert.deepEqual(cw.grade("speed", "erase"), ["near", "gone", "gone", "near", "near"]);
   const dict = new Set(["tree", "box", "walk"]);
   assert.ok(cw.isWord("trees", dict), "a plural of a listed word is a word");
   assert.ok(cw.isWord("boxes", dict) && cw.isWord("walked", dict), "so are -es and -ed");
   assert.ok(!cw.isWord("treex", dict));
-  assert.deepEqual(cw.deduce("fuzzy", { inPlace: 0, elsewhere: 0 }).out, ["f", "u", "z", "y"]);
-  assert.deepEqual(cw.deduce("lapnt", { inPlace: 1, elsewhere: 4 }).in, ["l", "a", "p", "n", "t"]);
   for (const level of cw.LEVELS) {
     const list = cw.ANSWERS[level.length];
     assert.ok(list.length >= 150, `${level.label} has a deep answer list`);
