@@ -3,10 +3,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   CROSSED,
+  DIFFICULTIES,
   EMPTY,
   FILLED,
   SIZES,
   colAt,
+  difficultyOf,
   generate,
   isSolved,
   lineDone,
@@ -26,6 +28,7 @@ function clock(seconds) {
 
 export default function Picross({ onResult }) {
   const [sizeId, setSizeId] = useState("medium");
+  const [difficulty, setDifficulty] = useState("medium");
   const [deal, setDeal] = useState(null);
   const [cells, setCells] = useState([]);
   const [cursor, setCursor] = useState(null);
@@ -44,8 +47,8 @@ export default function Picross({ onResult }) {
 
   // Generated after mount, never on the server: a random picture would not
   // match between the two renders.
-  const newGame = useCallback((id) => {
-    const next = generate(id);
+  const newGame = useCallback((id, level) => {
+    const next = generate(id, level);
     history.current = [];
     stroke.current = null;
     cellRefs.current = [];
@@ -60,8 +63,8 @@ export default function Picross({ onResult }) {
   }, []);
 
   useEffect(() => {
-    newGame(sizeId);
-  }, [sizeId, newGame]);
+    newGame(sizeId, difficulty);
+  }, [sizeId, difficulty, newGame]);
 
   // --- clock: from the first mark to the last ------------------------------
 
@@ -81,7 +84,7 @@ export default function Picross({ onResult }) {
     onResult?.({
       outcome: "won",
       durationMs: seconds * 1000,
-      meta: { size: deal.size, seconds, undos },
+      meta: { size: deal.size, difficulty: deal.difficulty, seconds, undos },
     });
   }, [cells, deal, status, seconds, undos, onResult]);
 
@@ -229,7 +232,7 @@ export default function Picross({ onResult }) {
 
   const filled = cells.filter((c) => c === FILLED).length;
   const target = deal ? deal.solution.filter(Boolean).length : 0;
-  const label = sizeOf(sizeId).label;
+  const label = `${difficultyOf(difficulty).label} ${sizeOf(sizeId).label}`;
 
   // --- render --------------------------------------------------------------
 
@@ -256,7 +259,7 @@ export default function Picross({ onResult }) {
               line={`${label} in ${clock(seconds)}${
                 undos ? `, ${undos} undo${undos > 1 ? "s" : ""}` : ", clean"
               }.`}
-              actions={[{ label: "New picture", onClick: () => newGame(sizeId) }]}
+              actions={[{ label: "New picture", onClick: () => newGame(sizeId, difficulty) }]}
               onClose={() => setDismissed(true)}
             />
           </PicrossGrid>
@@ -299,6 +302,18 @@ export default function Picross({ onResult }) {
           />
         </div>
 
+        <div className="stack" style={{ gap: 10 }}>
+          <span className="zone-label" style={{ margin: 0 }}>
+            Difficulty
+          </span>
+          <Peg
+            options={DIFFICULTIES.map((d) => ({ id: d.id, label: d.label }))}
+            value={difficulty}
+            onChange={setDifficulty}
+            label="Difficulty"
+          />
+        </div>
+
         <div className="tools pic__tools">
           <button
             type="button"
@@ -334,7 +349,7 @@ export default function Picross({ onResult }) {
             <Eraser size={18} />
             <span>Clear</span>
           </button>
-          <button type="button" className="tool pic__new" onClick={() => newGame(sizeId)}>
+          <button type="button" className="tool pic__new" onClick={() => newGame(sizeId, difficulty)}>
             <Replay size={18} />
             <span>New picture</span>
           </button>

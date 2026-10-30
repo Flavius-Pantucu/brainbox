@@ -59,7 +59,8 @@ Shipped and working today (product truth to preserve):
   pause, a clock, three mistakes, and full keyboard control.
 - **PiCross** — nonograms generated in the browser per game (`lib/picross.js`): a mirrored,
   smoothed random picture kept only when a line solver finishes it, so every puzzle is unique and
-  needs no guessing. 5×5, 10×10 and 15×15; drag-to-paint along a line, crosses, undo, clear, a
+  needs no guessing. 5×5, 10×10 and 15×15 at Easy, Medium, Hard and Extreme, banded by how many
+  solver sweeps a picture takes; drag-to-paint along a line, crosses, undo, clear, a
   clock from the first mark, and full keyboard control. Solo — no rooms, no opponent.
 - **Tic-Tac-Toe** — three opponents: the machine (Loose / Fair / Perfect, minimax with
   alpha-beta in `lib/ttt.js`), two people on one device, and **online play by room code**.

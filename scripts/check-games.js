@@ -562,12 +562,18 @@ async function main() {
   assert.deepEqual(pic.solveLine([7], new Array(10).fill(-1)), [-1, -1, -1, 1, 1, 1, 1, -1, -1, -1]);
   assert.equal(pic.solveLine([3], [1, 0, 1, -1, -1]), null, "a clue that cannot fit is a contradiction");
   for (const size of pic.SIZES) {
-    for (let i = 0; i < 5; i += 1) {
-      const deal = pic.generate(size.id);
-      const solved = pic.solveByLines(deal.clues, deal.n);
-      assert.ok(!solved.includes(-1), `${size.label} solves by line logic alone`);
-      assert.deepEqual(solved.map(Boolean), deal.solution, "and logic reaches the drawn picture");
-      assert.ok(pic.isSolved(deal.solution.map(Number), deal.clues, deal.n));
+    for (const level of pic.DIFFICULTIES) {
+      const [low, high] = level.rounds[size.n];
+      for (let i = 0; i < 4; i += 1) {
+        const deal = pic.generate(size.id, level.id);
+        const stats = {};
+        const solved = pic.solveByLines(deal.clues, deal.n, stats);
+        const name = `${level.label} ${size.label}`;
+        assert.ok(!solved.includes(-1), `${name} solves by line logic alone`);
+        assert.deepEqual(solved.map(Boolean), deal.solution, "and logic reaches the drawn picture");
+        assert.ok(pic.isSolved(deal.solution.map(Number), deal.clues, deal.n));
+        assert.ok(stats.rounds >= low && stats.rounds <= high, `${name} takes ${stats.rounds} sweeps`);
+      }
     }
   }
   const picPreview = (await import("../lib/previews.js")).PICROSS_PREVIEW;

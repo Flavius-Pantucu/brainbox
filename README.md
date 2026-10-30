@@ -18,7 +18,7 @@ Games:
 
 - [x] **Minesweeper** — beginner to expert, with a first click that is always safe
 - [x] **Sudoku** — a fresh puzzle every game, generated in the browser, at four difficulties
-- [x] **PiCross** — nonograms from 5×5 to 15×15, each a fresh picture that logic alone solves
+- [x] **PiCross** — nonograms from 5×5 to 15×15 at four difficulties, each a fresh picture that logic alone solves
 - [x] **Go** — 9×9 to 19×19, against the machine, against the next chair, or online by room code
 - [x] **Backgammon** — against the machine, against the next chair, or online by room code
 - [x] **Checkers** — against the machine, against the next chair, or online by room code
@@ -158,7 +158,11 @@ space pauses.
 Nonograms, generated in `lib/picross.js`: a picture is drawn at random — mirrored down the
 middle and smoothed so it reads as a figure — and kept only if a line solver finishes it
 without guessing, which also proves it has exactly one answer. Three sizes: 5×5, 10×10 and
-15×15. Every clue greys out once its line matches, and the clock runs from the first mark.
+15×15, each at four difficulties. Difficulty is measured, not guessed: the solver counts how
+many sweeps over the board logic needs, and each level keeps only pictures inside its band.
+Easy draws dense, smoothed, mirrored pictures whose long runs settle on the first read;
+Extreme drops the smoothing and the mirror for thin, broken clues that give way a cell at a
+time (13+ sweeps at 15×15). Every clue greys out once its line matches, and the clock runs from the first mark.
 
 Drag paints a run along one row or column; right-click (or the Cross tool on touch) marks a
 square as empty. Keyboard: arrows move, space or `F` fills, `X` crosses, backspace clears,

@@ -1711,6 +1711,12 @@ button {
   color: var(--ink-quiet);
 }
 
+/* four difficulties in a 300px rail: a slimmer pill keeps them on one groove
+   (the peg still wraps if the rail runs narrower than that) */
+.pic__side .peg__option {
+  padding-inline: calc(var(--u) * 0.9);
+}
+
 .pic__new {
   grid-column: 1 / -1;
   justify-content: center;
