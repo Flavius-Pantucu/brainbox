@@ -24,85 +24,85 @@ colors:
   keyline-strong: "color-mix(in srgb, var(--paint-bone) 32%, transparent)"
 typography:
   display:
-    fontFamily: "Fredoka, ui-sans-serif, sans-serif"
+    fontFamily: "Barlow Semi Condensed, ui-sans-serif, sans-serif"
     fontSize: "clamp(2.6rem, 6vw, 4.2rem)"
     fontWeight: 600
     lineHeight: 0.88
     letterSpacing: "-0.015em"
     fontFeature: "tabular-nums"
   headline:
-    fontFamily: "Fredoka, ui-sans-serif, sans-serif"
+    fontFamily: "Barlow Semi Condensed, ui-sans-serif, sans-serif"
     fontSize: "clamp(2rem, 5vw, 3.2rem)"
     fontWeight: 600
     lineHeight: 0.9
     letterSpacing: "-0.01em"
   numeral:
-    fontFamily: "Fredoka, ui-sans-serif, sans-serif"
+    fontFamily: "Barlow Semi Condensed, ui-sans-serif, sans-serif"
     fontSize: "clamp(1.9rem, 4.5vw, 2.6rem)"
     fontWeight: 600
     lineHeight: 0.9
     fontFeature: "tabular-nums"
   numeral-wide:
-    fontFamily: "Fredoka, ui-sans-serif, sans-serif"
+    fontFamily: "Barlow Semi Condensed, ui-sans-serif, sans-serif"
     fontSize: "clamp(1.7rem, 3.4vw, 2.3rem)"
     fontWeight: 600
     lineHeight: 0.86
     fontFeature: "tabular-nums"
   numeral-small:
-    fontFamily: "Fredoka, ui-sans-serif, sans-serif"
+    fontFamily: "Barlow Semi Condensed, ui-sans-serif, sans-serif"
     fontSize: "clamp(1.4rem, 2.4vw, 1.9rem)"
     fontWeight: 600
     lineHeight: 1
     fontFeature: "tabular-nums"
   stage-title:
-    fontFamily: "Fredoka, ui-sans-serif, sans-serif"
+    fontFamily: "Barlow Semi Condensed, ui-sans-serif, sans-serif"
     fontSize: "clamp(1.4rem, 2.6vw, 2rem)"
     fontWeight: 600
     lineHeight: 1
     letterSpacing: "-0.01em"
   wordmark:
-    fontFamily: "Fredoka, ui-sans-serif, sans-serif"
+    fontFamily: "Barlow Semi Condensed, ui-sans-serif, sans-serif"
     fontSize: "clamp(1.3rem, 2.3vw, 1.6rem)"
     fontWeight: 500
     lineHeight: 1
     letterSpacing: "0.005em"
   title:
-    fontFamily: "Nunito, ui-sans-serif, sans-serif"
+    fontFamily: "IBM Plex Sans, ui-sans-serif, sans-serif"
     fontSize: "0.86rem"
     fontWeight: 600
     lineHeight: 1
     letterSpacing: "0.14em"
   body:
-    fontFamily: "Nunito, ui-sans-serif, system-ui, sans-serif"
+    fontFamily: "IBM Plex Sans, ui-sans-serif, system-ui, sans-serif"
     fontSize: "16px"
     fontWeight: 400
     lineHeight: 1.5
     fontFeature: "tabular-nums"
   chalk:
-    fontFamily: "Nunito, ui-sans-serif, system-ui, sans-serif"
+    fontFamily: "IBM Plex Sans, ui-sans-serif, system-ui, sans-serif"
     fontSize: "0.82rem"
     fontWeight: 400
     lineHeight: 1.45
   label:
-    fontFamily: "Nunito, ui-sans-serif, sans-serif"
+    fontFamily: "IBM Plex Sans, ui-sans-serif, sans-serif"
     fontSize: "0.72rem"
     fontWeight: 600
     lineHeight: 1
     letterSpacing: "0.14em"
   micro:
-    fontFamily: "Nunito, ui-sans-serif, sans-serif"
+    fontFamily: "IBM Plex Sans, ui-sans-serif, sans-serif"
     fontSize: "0.62rem"
     fontWeight: 600
     lineHeight: 1
     letterSpacing: "0.12em"
   nano:
-    fontFamily: "Nunito, ui-sans-serif, sans-serif"
+    fontFamily: "IBM Plex Sans, ui-sans-serif, sans-serif"
     fontSize: "0.56rem"
     fontWeight: 600
     lineHeight: 1
     letterSpacing: "0.13em"
   cell:
-    fontFamily: "Fredoka, ui-sans-serif, sans-serif"
+    fontFamily: "Barlow Semi Condensed, ui-sans-serif, sans-serif"
     fontSize: "5.4cqmin"
     fontWeight: 600
     lineHeight: 1
@@ -233,7 +233,7 @@ The board itself is a list of openings, not a grid of panels. A figure earns a p
 - Five paints, closed; every other tone is a mix of two of them
 - Two coats that swap roles, not paints (night is default; day is a relight)
 - One rounded corner scale (8/12/16/20/999px); nothing gets a bespoke radius
-- Two faces, two-and-a-half roles: Fredoka is the voice, Nunito is the reading and, set in caps and tracked, the labels
+- Two faces, two-and-a-half roles: Barlow Semi Condensed is the voice, IBM Plex Sans is the reading and, set in caps and tracked, the labels
 - Display weight is capped at 600 — the board never shouts
 - Depth is offset-plus-blur shadow standing off the board, or an inset routed channel cut into it — never both directions in one element
 - A single fixed speckle layer over the whole window; no per-element texture
@@ -270,11 +270,11 @@ Cold, printed enamel: a near-black navy ground, a bone plate face, a steel grey 
 
 ## Typography
 
-**Display Font:** Fredoka (self-hosted via `next/font`, `--font-display`, weights 400/500/600)
-**Body Font:** Nunito (self-hosted via `next/font`, `--font-text`, weights 400/500/600/700)
-**Label Font:** Nunito, aliased as `--font-label` — labels are the body face set in caps and tracked, not a third family.
+**Display Font:** Barlow Semi Condensed (self-hosted via `next/font`, `--font-display`, weights 400/500/600)
+**Body Font:** IBM Plex Sans (self-hosted via `next/font`, `--font-text`, weights 400/500/600/700)
+**Label Font:** IBM Plex Sans, aliased as `--font-label` — labels are the body face set in caps and tracked, not a third family.
 
-**Character:** Two faces, warm on both sides of the pairing. Fredoka is geometric and soft-cornered — the voice, carrying every large figure and every title. Nunito is humanist with rounded terminals; it reads at 16px, sets every sentence, and — uppercased and letterspaced — does the board's own painted labelling. The rounder faces made the old heavy tracking unnecessary, so label tracking was eased across the sheet.
+**Character:** Two faces, professional on both sides of the pairing. Barlow Semi Condensed has squared shoulders and straight strokes — the voice, carrying every large figure and every title. IBM Plex Sans is engineered with flat-cut terminals; it reads at 16px, sets every sentence, and — uppercased and letterspaced — does the board's own painted labelling. No rounded or soft-cornered faces.
 
 ### Hierarchy
 - **Display** (600, `clamp(2.6rem, 6vw, 4.2rem)`, 0.88, `-0.015em`): the day's game on the oversized dashboard plate. One per screen.
@@ -284,7 +284,7 @@ Cold, printed enamel: a near-black navy ground, a bone plate face, a steel grey 
 - **Stage title** (600, `clamp(1.4rem, 2.6vw, 2rem)`, 1): the game name in the stage bar. Deliberately smaller than the dashboard display — inside a game, the board yields to the board.
 - **Fixed figures** (600, `1.1rem`–`1.7rem`): readout values and day plates at `1.5rem`, room code at `1.7rem`/`0.15em`, ladder score at `1.15rem`, ladder number at `1.1rem`, seat mark at `1.2rem`, number-pad digits at `clamp(1.4rem, 2.4vw, 1.9rem)`.
 - **Cell figures** (600, `5.4cqmin`; notes `1.9cqmin`): sudoku digits size to their own container, not to the viewport, so the grid stays typographically correct at any board size.
-- **Wordmark** (Fredoka 500, `clamp(1.3rem, 2.3vw, 1.6rem)`, `0.005em`): the rail mark only. Mixed case, near-neutral tracking — the name is spoken, not stamped.
+- **Wordmark** (Barlow Semi Condensed 500, `clamp(1.3rem, 2.3vw, 1.6rem)`, `0.005em`): the rail mark only. Mixed case, near-neutral tracking — the name is spoken, not stamped.
 - **Title** (600, `0.86rem`, `0.14em`, uppercase): game names on slot plates; ladder names at `0.76rem`/`0.12em`.
 - **Body** (400, `16px`, 1.5): the document default, with `tabular-nums` set on `body`.
 - **Chalk** (400, `0.82rem`, 1.45): the annotation voice — game one-liners, notes, empty-state explanation. Tight variant `0.76rem`. Max measure 46–62ch.
@@ -293,9 +293,9 @@ Cold, printed enamel: a near-black navy ground, a bone plate face, a steel grey 
 - **Nano** (600, `0.56rem`–`0.58rem`, `0.13em`–`0.15em`, uppercase): readout labels, field labels, room-code label, the divider rule.
 
 ### Named Rules
-**The Two Faces Rule.** Fredoka and Nunito, both self-hosted through `next/font`, no third family and no system display stack. `--font-label` is an alias of `--font-text`, not a new face. A new weight inside the loaded set is allowed; a new family is a system change.
+**The Two Faces Rule.** Barlow Semi Condensed and IBM Plex Sans, both self-hosted through `next/font`, no third family and no system display stack. `--font-label` is an alias of `--font-text`, not a new face. A new weight inside the loaded set is allowed; a new family is a system change.
 
-**The Quiet Ceiling Rule.** Display type stops at 600. No 700, 800 or 900 anywhere in the display role — the ramp gets its emphasis from size, never from mass. Nunito's 700 exists for inline body emphasis only.
+**The Quiet Ceiling Rule.** Display type stops at 600. No 700, 800 or 900 anywhere in the display role — the ramp gets its emphasis from size, never from mass. IBM Plex Sans's 700 exists for inline body emphasis only.
 
 **The Caps-For-Labels Rule.** The label role is the body face uppercased and tracked: wordmarkless labelling — zone labels, tags, button faces, column headers, unit lines. It is always uppercase, always letterspaced between `0.12em` and `0.16em`, and never sets a sentence.
 
@@ -385,7 +385,7 @@ Two container species, and only two.
 - **Nameplate:** local identity styled as a screwed-on plate with a borderless transparent input inside; focus tightens the border to navy.
 
 ### Navigation — the rail
-Sticky, ground-colored, strong keyline beneath, seated with the rail shadow. It opens with the 30px mark and the Fredoka 500 wordmark, and nothing else identifies the product. Links are the label face at 600, `0.76rem`/`0.13em` uppercase in quiet ink, going full ink on hover. The current page is marked by a 3px cobalt underline sitting on the rail's bottom edge with its own 1px hard shadow — the one place cobalt fills a bar. Under 720px the rail shrinks to 60px, the nameplate drops out, and links tighten.
+Sticky, ground-colored, strong keyline beneath, seated with the rail shadow. It opens with the 30px mark and the Barlow Semi Condensed 500 wordmark, and nothing else identifies the product. Links are the label face at 600, `0.76rem`/`0.13em` uppercase in quiet ink, going full ink on hover. The current page is marked by a 3px cobalt underline sitting on the rail's bottom edge with its own 1px hard shadow — the one place cobalt fills a bar. Under 720px the rail shrinks to 60px, the nameplate drops out, and links tighten.
 
 ### Game furniture (shared by every game)
 The stage side rail is assembled from a fixed vocabulary, and a new game should reuse it rather than invent:
@@ -396,6 +396,9 @@ The stage side rail is assembled from a fixed vocabulary, and a new game should 
 
 ### Sudoku board
 A container-query grid: `container-type: size` on the board, so cell type is sized in `cqmin` and the grid is correct at any dimension. Enamel face at 16px radius, 2px navy frame, 1px 22%-navy cell rules with 2px navy box rules on the third edges. Highlight steps escalate in one hue: peer 8% navy, match 30% cobalt, selected 46% cobalt. Givens are navy 600; entries are `--signal-ink`; a wrong entry is fault red on a 16% fault wash (30% when selected). Pencil notes are a 3×3 sub-grid at `1.9cqmin`. `.sud__veil` covers the board for dealing, paused, won and lost with an 88% ground wash, a 3px blur, a label line and a display verdict.
+
+### Chess table
+The board, its gauge and a table are one piece of furniture: `.chess` is a size container over the whole stage body, so the board is the largest square that leaves the table (`clamp(280px, 27cqw, 360px)`) its width, and the side column is exactly the board's height. The table is a panel-face surface holding, top to bottom, the far player's strip, a status line, the scoresheet, a walk bar of drawn icons (start, back, on, end | flip, engine) and the near player's strip; strips carry the clock at 1.75rem display figures, the running one lifted onto plate face. The scoresheet is a three-column grid — a 6%-ink number gutter, then white and black — with the current move on a 30% cobalt wash. Settings sit under the table in a `details` drawer drawn with a 1.6-weight chevron; a bot game's setup closes while a game is running. The board itself is the light coat of the palette (bone-over-steel and steel-over-navy), with last move, selection and drop target as 30/50/36% cobalt tints laid over the square's own paint, coordinates in the corners in the other square's paint, and pieces that slide between squares (220ms, Web Animations) unless dropped by hand or under reduced motion. Under 900px the board goes edge to edge, the strips move above and below it, and the scoresheet runs as one horizontal line.
 
 ### PiCross board
 The sudoku board's enamel, extended by two clue bands: a `.pic__wrap` whose aspect ratio is the grid plus its bands, sized `min(100cqw, 100cqh × ratio)` against the field as a size container, and itself an inline-size container so clue type is set in cells (`--cell`, figures at 0.44 of a cell) rather than viewport units. Rules repeat sudoku's two weights — 1px at 22% navy, 2px navy every fifth line, on the bands and the grid alike. Clue lines are banded at 5% navy so a long row can be followed; the line under the cursor lights 30% cobalt; a satisfied clue drops to 34% navy and says "done" in its label. A filled square is a square-cornered navy tile inset 9% — a pixel, so it takes no radius; a crossed square is a 1.6-weight X masked from an SVG and painted in 52% navy so it relights from tokens. On solve the rules go transparent, crosses fade, and the tiles close up to full cells in a diagonal wave (`pic-close`, 560ms on `--swing`, 24ms per step), removed under reduced motion. The grid takes `touch-action: none` because a drag paints. Under 900px the board is held to 66svh so the Fill/Cross switch, moved to the head of the side rail, stays near the thumb.

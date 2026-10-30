@@ -1,20 +1,20 @@
-import { Fredoka, Nunito } from "next/font/google";
+import { Barlow_Semi_Condensed, IBM_Plex_Sans } from "next/font/google";
 import "./globals.css";
 import { Rail } from "../components/board/rail";
 import { Sidebar } from "../components/board/sidebar";
 
-// Nunito carries the reading: humanist, rounded terminals, friendly at small
-// sizes and still precise enough for figures.
-const text = Nunito({
+// IBM Plex Sans carries the reading: engineered, flat-cut terminals, crisp at
+// small sizes and precise for figures.
+const text = IBM_Plex_Sans({
   subsets: ["latin"],
   weight: ["400", "500", "600", "700"],
   variable: "--font-text",
   display: "swap",
 });
 
-// Fredoka is the voice: geometric, soft-cornered, curvy. Held to 400-600 so the
-// display never shouts.
-const display = Fredoka({
+// Barlow Semi Condensed is the voice: squared shoulders, straight strokes,
+// compact enough for headings without shouting.
+const display = Barlow_Semi_Condensed({
   subsets: ["latin"],
   weight: ["400", "500", "600"],
   variable: "--font-display",
