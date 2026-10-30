@@ -144,7 +144,40 @@ export function BackgammonMark({ size = 20, ...rest }) {
   );
 }
 
+export function PicrossMark({ size = 20, ...rest }) {
+  // Clues down the side and across the top, and the picture they make.
+  return (
+    <svg {...base} width={size} height={size} {...rest}>
+      <rect x="3.5" y="3.5" width="17" height="17" rx="1.5" />
+      <path d="M9 3.5v17M3.5 9h17" strokeWidth="1.1" />
+      <path d="M5.4 12.4h1.8M5.4 17.2h1.8M12.4 5.4v1.8M17.2 5.4v1.8" />
+      <rect x="10.6" y="10.6" width="3.6" height="3.6" fill="currentColor" stroke="none" />
+      <rect x="15.4" y="10.6" width="3.6" height="3.6" fill="currentColor" stroke="none" />
+      <rect x="10.6" y="15.4" width="3.6" height="3.6" fill="currentColor" stroke="none" />
+    </svg>
+  );
+}
+
+export function FillMark({ size = 18, ...rest }) {
+  return (
+    <svg {...base} width={size} height={size} {...rest}>
+      <rect x="4.5" y="4.5" width="15" height="15" rx="1.5" />
+      <rect x="8" y="8" width="8" height="8" fill="currentColor" stroke="none" />
+    </svg>
+  );
+}
+
+export function CrossMark({ size = 18, ...rest }) {
+  return (
+    <svg {...base} width={size} height={size} {...rest}>
+      <rect x="4.5" y="4.5" width="15" height="15" rx="1.5" />
+      <path d="M8.5 8.5l7 7M15.5 8.5l-7 7" />
+    </svg>
+  );
+}
+
 export const GAME_MARKS = {
+  picross: PicrossMark,
   chess: ChessMark,
   sudoku: SudokuMark,
   tictactoe: TicTacToeMark,

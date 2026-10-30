@@ -21,7 +21,7 @@ react-hook-form, modulo-x.
 
 Primary user: a person who wants a short, self-contained session of a classic logic game
 (chess, Go, backgammon, checkers, Reversi, Connect Four,
-minesweeper, sudoku, tic-tac-toe) in the browser, with no install and no lobby wait. They arrive
+minesweeper, sudoku, PiCross, tic-tac-toe) in the browser, with no install and no lobby wait. They arrive
 on a break or in an idle moment, want to be inside a game within a few seconds, and want a
 reason to come back tomorrow.
 
@@ -57,6 +57,10 @@ Shipped and working today (product truth to preserve):
   randomised backtracking, then symmetric digging that keeps exactly one solution, at four
   difficulties (Easy 42 clues, Medium ~34, Hard ~29, Evil ~26). Notes, undo, hints, erase,
   pause, a clock, three mistakes, and full keyboard control.
+- **PiCross** — nonograms generated in the browser per game (`lib/picross.js`): a mirrored,
+  smoothed random picture kept only when a line solver finishes it, so every puzzle is unique and
+  needs no guessing. 5×5, 10×10 and 15×15; drag-to-paint along a line, crosses, undo, clear, a
+  clock from the first mark, and full keyboard control. Solo — no rooms, no opponent.
 - **Tic-Tac-Toe** — three opponents: the machine (Loose / Fair / Perfect, minimax with
   alpha-beta in `lib/ttt.js`), two people on one device, and **online play by room code**.
 - **Connect Four** — the same three opponents, over `lib/connect4.js` (alpha-beta scored on runs

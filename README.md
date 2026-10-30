@@ -1,7 +1,7 @@
 # BrainBox
 
 A portal for browser-based logic games — chess, Go, backgammon, checkers, Reversi,
-Connect Four, minesweeper, sudoku and tic-tac-toe — built with
+Connect Four, minesweeper, sudoku, PiCross and tic-tac-toe — built with
 [Next.js](https://nextjs.org/).
 
 The interface is a hand-operated club board, painted in navy and steel: today's challenge,
@@ -18,6 +18,7 @@ Games:
 
 - [x] **Minesweeper** — beginner to expert, with a first click that is always safe
 - [x] **Sudoku** — a fresh puzzle every game, generated in the browser, at four difficulties
+- [x] **PiCross** — nonograms from 5×5 to 15×15, each a fresh picture that logic alone solves
 - [x] **Go** — 9×9 to 19×19, against the machine, against the next chair, or online by room code
 - [x] **Backgammon** — against the machine, against the next chair, or online by room code
 - [x] **Checkers** — against the machine, against the next chair, or online by room code
@@ -39,6 +40,7 @@ Games:
 | `/play/minesweeper` | Minesweeper, inside the play frame                              |
 | `/play/backgammon` | Backgammon, inside the play frame                                |
 | `/play/sudoku`   | Sudoku, inside the play frame                                      |
+| `/play/picross`  | PiCross, inside the play frame                                     |
 | `/play/tictactoe`| Tic-Tac-Toe, inside the play frame                                 |
 | `/standings`     | The ladder and your card — recent games, wins, day run             |
 | `/api/health`    | Health check                                                       |
@@ -151,10 +153,21 @@ Generation takes about a millisecond, so "new grid" really is a new grid.
 Keyboard: arrows move, 1–9 place, 0 or backspace erases, `N` notes, `U` undo, `H` hint,
 space pauses.
 
+## PiCross
+
+Nonograms, generated in `lib/picross.js`: a picture is drawn at random — mirrored down the
+middle and smoothed so it reads as a figure — and kept only if a line solver finishes it
+without guessing, which also proves it has exactly one answer. Three sizes: 5×5, 10×10 and
+15×15. Every clue greys out once its line matches, and the clock runs from the first mark.
+
+Drag paints a run along one row or column; right-click (or the Cross tool on touch) marks a
+square as empty. Keyboard: arrows move, space or `F` fills, `X` crosses, backspace clears,
+`U` undoes, `M` swaps the tool.
+
 ## Playing someone
 
 Seven of the nine games take a second player: chess, go, backgammon, checkers, reversi,
-connect four and tic-tac-toe. Sudoku and minesweeper are yours alone.
+connect four and tic-tac-toe. Sudoku, PiCross and minesweeper are yours alone.
 
 Open a private room from the board and you get a four-character code plus an invite link.
 A room holds up to eight people; the game seats two, so the rest watch. Everyone in a chair

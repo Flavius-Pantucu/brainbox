@@ -1,7 +1,7 @@
 // One runnable check for the parts of the games that are ours rather than a
 // library's: the chess material read, the review maths, the variation tree, the
 // clocks, Connect Four's rules and opponent, Go's rules and scoring, Reversi's
-// turning and passing, draughts' compulsory captures and chains, minesweeper's
+// turning and passing, draughts' compulsory captures and chains, PiCross's line logic, minesweeper's
 // safe first click, backgammon's dice rules, the room's move rules, and a pass over
 // the rules an implementation usually gets wrong.
 //   npm run check
@@ -20,6 +20,7 @@ async function main() {
   const rev = await import("../lib/reversi.js");
   const chk = await import("../lib/checkers.js");
   const ms = await import("../lib/minesweeper.js");
+  const pic = await import("../lib/picross.js");
   const bg = await import("../lib/backgammon.js");
   const daily = await import("../lib/daily.js");
   const games = await import("../lib/games.js");
@@ -553,6 +554,24 @@ async function main() {
   assert.equal(tttState.status, "won");
   assert.equal(tttState.winner, "X");
   assert.deepEqual(tttState.line, [0, 1, 2]);
+
+  /* picross --------------------------------------------------------------- */
+  assert.deepEqual(pic.runsOf([1, 1, 0, 1, 2, 1]), [2, 1, 1], "a cross breaks a run like a gap");
+  assert.deepEqual(pic.runsOf([0, 2, 0]), [0], "an empty line's clue is a zero");
+  // the classic overlap: a run of 7 in 10 must cover the middle four
+  assert.deepEqual(pic.solveLine([7], new Array(10).fill(-1)), [-1, -1, -1, 1, 1, 1, 1, -1, -1, -1]);
+  assert.equal(pic.solveLine([3], [1, 0, 1, -1, -1]), null, "a clue that cannot fit is a contradiction");
+  for (const size of pic.SIZES) {
+    for (let i = 0; i < 5; i += 1) {
+      const deal = pic.generate(size.id);
+      const solved = pic.solveByLines(deal.clues, deal.n);
+      assert.ok(!solved.includes(-1), `${size.label} solves by line logic alone`);
+      assert.deepEqual(solved.map(Boolean), deal.solution, "and logic reaches the drawn picture");
+      assert.ok(pic.isSolved(deal.solution.map(Number), deal.clues, deal.n));
+    }
+  }
+  const picPreview = (await import("../lib/previews.js")).PICROSS_PREVIEW;
+  assert.ok(!pic.solveByLines(picPreview.clues, picPreview.n).includes(-1), "the dashboard picture is a fair puzzle");
 
   /* minesweeper ----------------------------------------------------------- */
   const beginner = ms.levelOf("beginner");

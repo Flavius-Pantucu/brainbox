@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import TicTacToe from "../games/tictactoe/tictactoe";
 import Sudoku from "../games/sudoku/sudoku";
+import Picross from "../games/picross/picross";
 import Chess from "../games/chess/chess";
 import Connect4 from "../games/connect4/connect4";
 import Go from "../games/go/go";
@@ -26,6 +27,7 @@ const SURFACES = {
   minesweeper: Minesweeper,
   backgammon: Backgammon,
   sudoku: Sudoku,
+  picross: Picross,
   tictactoe: TicTacToe,
 };
 

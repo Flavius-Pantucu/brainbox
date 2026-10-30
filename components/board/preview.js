@@ -9,6 +9,7 @@ import { CheckersGrid } from "../games/checkers/grid";
 import { MineField } from "../games/minesweeper/grid";
 import { ReversiGrid } from "../games/reversi/grid";
 import { SudokuGrid } from "../games/sudoku/grid";
+import { PicrossGrid } from "../games/picross/grid";
 import { Board as TicTacToeBoard } from "../games/tictactoe/board";
 import {
   BACKGAMMON_PREVIEW,
@@ -17,6 +18,7 @@ import {
   CONNECT4_PREVIEW,
   GO_PREVIEW,
   MINESWEEPER_PREVIEW,
+  PICROSS_PREVIEW,
   REVERSI_PREVIEW,
   SUDOKU_PREVIEW,
   TICTACTOE_PREVIEW,
@@ -140,6 +142,18 @@ export function GamePreview({ gameId }) {
             selectedValue={0}
           />
         </div>
+      </Inert>
+    );
+  }
+
+  if (gameId === "picross") {
+    return (
+      <Inert>
+        <PicrossGrid
+          n={PICROSS_PREVIEW.n}
+          clues={PICROSS_PREVIEW.clues}
+          cells={PICROSS_PREVIEW.cells}
+        />
       </Inert>
     );
   }
