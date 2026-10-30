@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { FILES, RANKS, pieceImage, PIECE_NAME } from "../../../lib/chess-core";
 
 const PROMOTIONS = ["q", "r", "b", "n"];
@@ -40,6 +40,77 @@ function Arrow({ from, to, orientation, tone }) {
   );
 }
 
+// Where a square sits on screen, in squares from the top-left corner.
+function cellOf(square, orientation) {
+  const file = FILES.indexOf(square[0]);
+  const rank = RANKS.indexOf(square[1]);
+  return orientation === "w" ? { col: file, row: rank } : { col: 7 - file, row: 7 - rank };
+}
+
+const SLIDE_MS = 220;
+
+// Pieces travel. After each render the board compares where every piece stood
+// with where it stands now, pairs each arrival with the nearest departure of
+// the same piece, and slides it across from there — a move, a castle, a step
+// back through the list or a whole reset all glide instead of blinking. A
+// piece dropped by hand is already where it belongs, so it does not travel.
+function useSlide(board, orientation, dropped) {
+  const pieces = useRef(new Map());
+  const before = useRef(null);
+
+  useLayoutEffect(() => {
+    const now = new Map();
+    for (const row of board) for (const p of row) if (p) now.set(p.square, p.color + p.type);
+    const prev = before.current;
+    before.current = now;
+    if (!prev || typeof window === "undefined") return;
+    if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
+
+    const gone = [...prev].filter(([square, id]) => now.get(square) !== id);
+    const came = [...now].filter(([square, id]) => prev.get(square) !== id);
+    if (!came.length || came.length > 16) return;
+
+    for (const [square, id] of came) {
+      if (square === dropped.current) continue;
+      const to = cellOf(square, orientation);
+      let best = -1;
+      let far = Infinity;
+      gone.forEach(([from, was], k) => {
+        if (was !== id) return;
+        const at = cellOf(from, orientation);
+        const d = Math.hypot(at.col - to.col, at.row - to.row);
+        if (d < far) {
+          far = d;
+          best = k;
+        }
+      });
+      if (best < 0) continue;
+      const [from] = gone.splice(best, 1)[0];
+      const node = pieces.current.get(square);
+      const cell = node?.parentElement;
+      if (!node || !cell) continue;
+      const at = cellOf(from, orientation);
+      const size = cell.offsetWidth;
+      cell.style.zIndex = "3";
+      node
+        .animate(
+          [
+            { transform: `translate(${(at.col - to.col) * size}px, ${(at.row - to.row) * size}px)` },
+            { transform: "translate(0, 0)" },
+          ],
+          { duration: SLIDE_MS, easing: "cubic-bezier(0.22, 0.8, 0.3, 1)" }
+        )
+        .finished.catch(() => {})
+        .finally(() => {
+          cell.style.zIndex = "";
+        });
+    }
+    dropped.current = null;
+  }, [board, orientation, dropped]);
+
+  return pieces;
+}
+
 export function Board({
   board,
   orientation = "w",
@@ -63,6 +134,8 @@ export function Board({
   children,
 }) {
   const [drag, setDrag] = useState(null);
+  const dropped = useRef(null);
+  const pieces = useSlide(board, orientation, dropped);
   const rows = orientation === "w" ? board : [...board].reverse().map((row) => [...row].reverse());
 
   const targetSet = new Map(targets.map((move) => [move.to, move]));
@@ -74,7 +147,10 @@ export function Board({
         const to = squareUnder(event.clientX, event.clientY);
         // dragged clean off the board: in set-up mode that means "take it away"
         if (!to) onOffBoard?.(active.from);
-        else if (to !== active.from) onMove?.(active.from, to);
+        else if (to !== active.from) {
+          dropped.current = to;
+          onMove?.(active.from, to);
+        }
         return null;
       });
     },
@@ -84,7 +160,16 @@ export function Board({
   useEffect(() => {
     if (!drag) return undefined;
     const move = (event) =>
-      setDrag((active) => (active ? { ...active, x: event.clientX, y: event.clientY } : null));
+      setDrag((active) =>
+        active
+          ? {
+              ...active,
+              x: event.clientX,
+              y: event.clientY,
+              over: squareUnder(event.clientX, event.clientY),
+            }
+          : null
+      );
     const drop = () => setDrag(null);
     // touch-action alone has let the page scroll out from under a drag on some
     // phones; refusing the touchmove outright cannot
@@ -156,6 +241,8 @@ export function Board({
               "chesssq",
               dark ? "chesssq--dark" : "chesssq--light",
               selected === square ? "is-selected" : "",
+              target ? "is-target" : "",
+              drag?.over === square && drag.from !== square ? "is-over" : "",
               lastMove && (lastMove.from === square || lastMove.to === square) ? "is-last" : "",
               checkSquare === square ? "is-check" : "",
               marks.includes(square) ? "is-marked" : "",
@@ -175,6 +262,10 @@ export function Board({
                 {rowIndex === 7 && <span className="chesssq__file">{FILES[file]}</span>}
                 {piece && (
                   <img
+                    ref={(node) => {
+                      if (node) pieces.current.set(square, node);
+                      else pieces.current.delete(square);
+                    }}
                     className="chesspiece"
                     src={pieceImage(piece.color, piece.type)}
                     alt={`${piece.color === "w" ? "White" : "Black"} ${PIECE_NAME[piece.type]}`}

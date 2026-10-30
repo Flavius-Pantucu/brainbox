@@ -3,6 +3,7 @@
 import { useEffect, useRef } from "react";
 import { VERDICTS } from "../../../lib/chess-core";
 import { mainLineFrom } from "../../../lib/chess-tree";
+import { StepBack, StepOn, ToEnd, ToStart } from "../../board/icons";
 
 // The move number is in the position the move was played from, so a board set
 // up mid-game still numbers its moves the way the game did.
@@ -92,8 +93,9 @@ function Variation({ tree, id, current, onJump, verdicts, depth }) {
 }
 
 // The scoresheet. The main line is a numbered grid; anything played off it
-// hangs under the move it branched from.
-export function MoveList({ tree, current, onJump, verdicts = null, result = null }) {
+// hangs under the move it branched from. The walk buttons sit under it, and
+// anything handed in as children joins them on the same bar.
+export function MoveList({ tree, current, onJump, verdicts = null, result = null, children }) {
   const main = mainLineFrom(tree, tree.root);
   const node = tree.nodes[current] || tree.nodes[tree.root];
 
@@ -160,35 +162,40 @@ export function MoveList({ tree, current, onJump, verdicts = null, result = null
       <div className="movelist__nav">
         <button
           type="button"
-          className="tool"
+          className="movelist__step"
+          aria-label="To the start"
           onClick={() => onJump?.(tree.root)}
           disabled={current === tree.root}>
-          «
+          <ToStart />
         </button>
         <button
           type="button"
-          className="tool"
+          className="movelist__step"
+          aria-label="Back one move"
           onClick={() => onJump?.(node.parent)}
           disabled={!node.parent}>
-          ‹
+          <StepBack />
         </button>
         <button
           type="button"
-          className="tool"
+          className="movelist__step"
+          aria-label="On one move"
           onClick={() => onJump?.(node.children[0])}
           disabled={!node.children.length}>
-          ›
+          <StepOn />
         </button>
         <button
           type="button"
-          className="tool"
+          className="movelist__step"
+          aria-label="To the last move"
           onClick={() => {
             const line = mainLineFrom(tree, current);
             if (line.length) onJump?.(line[line.length - 1].id);
           }}
           disabled={!node.children.length}>
-          »
+          <ToEnd />
         </button>
+        {children}
       </div>
     </div>
   );

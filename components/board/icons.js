@@ -144,6 +144,49 @@ export function BackgammonMark({ size = 20, ...rest }) {
   );
 }
 
+// The move-list walk: to the start, back one, on one, to the end.
+export function ToStart({ size = 18, ...rest }) {
+  return (
+    <svg {...base} width={size} height={size} {...rest}>
+      <path d="M6.5 6v12M17.5 6.5 11 12l6.5 5.5" />
+    </svg>
+  );
+}
+
+export function StepBack({ size = 18, ...rest }) {
+  return (
+    <svg {...base} width={size} height={size} {...rest}>
+      <path d="M14.5 6.5 9 12l5.5 5.5" />
+    </svg>
+  );
+}
+
+export function StepOn({ size = 18, ...rest }) {
+  return (
+    <svg {...base} width={size} height={size} {...rest}>
+      <path d="M9.5 6.5 15 12l-5.5 5.5" />
+    </svg>
+  );
+}
+
+export function ToEnd({ size = 18, ...rest }) {
+  return (
+    <svg {...base} width={size} height={size} {...rest}>
+      <path d="M17.5 6v12M6.5 6.5 13 12l-6.5 5.5" />
+    </svg>
+  );
+}
+
+export function Flip({ size = 18, ...rest }) {
+  // Two arrows passing each other: the board turns round.
+  return (
+    <svg {...base} width={size} height={size} {...rest}>
+      <path d="M8 20V5M4.5 8.5 8 5l3.5 3.5" />
+      <path d="M16 4v15M12.5 15.5 16 19l3.5-3.5" />
+    </svg>
+  );
+}
+
 export function PicrossMark({ size = 20, ...rest }) {
   // Clues down the side and across the top, and the picture they make.
   return (

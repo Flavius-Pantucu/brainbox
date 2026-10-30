@@ -10,7 +10,7 @@ import { useEngine } from "./use-engine";
 import { useRoom } from "../use-room";
 import { Peg } from "../../board/peg";
 import { Tag } from "../../board/tag";
-import { Bulb, Copy, Cpu, Eraser, Pencil, Undo, Users } from "../../board/icons";
+import { Bulb, Copy, Cpu, Eraser, Flip, Pencil, Replay, Undo, Users } from "../../board/icons";
 import { Verdict } from "../../board/verdict";
 import {
   FILES,
@@ -107,14 +107,16 @@ function Clock({ ms, running }) {
   );
 }
 
-// One player's line above or below the board: which colour they are, their
-// name, what they have taken, by how much they are up, and their clock.
-function PlayerRow({ seat, name, material, clock, running }) {
+// One player's strip: which colour they are, their name, what they have taken,
+// by how much they are up, and their clock. It is drawn twice — on the table
+// beside the board on a wide screen, above and below the board on a phone —
+// and CSS shows whichever fits.
+function PlayerRow({ seat, where, name, material, clock, running, toMove }) {
   const types = material.taken[seat];
   const colour = seat === "w" ? "b" : "w";
   const lead = seat === "w" ? material.score : -material.score;
   return (
-    <div className="chess__player">
+    <div className={`chess__player chess__player--${where} ${toMove ? "is-to-move" : ""}`}>
       <img className="chess__swatch" src={pieceImage(seat, "p")} alt="" />
       <span className="chess__who">{name}</span>
       <span className="taken">
@@ -757,26 +759,35 @@ export default function ChessGame({ onResult }) {
   const currentVerdict = verdictsById?.[nodeNow.id] || null;
   const offMainLine = analysis && nodeNow.parent && treeNow.nodes[nodeNow.parent].children[0] !== nodeNow.id;
 
+  const botRunning = mode === "bot" && local.moves.length > 0 && !view.over;
+  const near = orientation;
+
+  const player = (seat, where) => (
+    <PlayerRow
+      seat={seat}
+      where={where}
+      name={view.names[seat]}
+      material={material}
+      clock={remaining(seat)}
+      running={clockBase?.running === seat}
+      toMove={!view.over && !editing && view.turn === seat}
+    />
+  );
+
   return (
     <div className="chess">
       <div className="chess__field">
-        {analysis && (
-          <EvalBar
-            score={score}
-            orientation={orientation}
-            thinking={thinking}
-            hidden={!engineOn || !engine.ready || editing}
-          />
-        )}
+        {player(away, "board")}
 
-        <div className="chess__stack">
-          <PlayerRow
-            seat={away}
-            name={view.names[away]}
-            material={material}
-            clock={remaining(away)}
-            running={clockBase?.running === away}
-          />
+        <div className="chess__boardline">
+          {analysis && (
+            <EvalBar
+              score={score}
+              orientation={orientation}
+              thinking={thinking}
+              hidden={!engineOn || !engine.ready || editing}
+            />
+          )}
 
           <Board
             board={board}
@@ -831,120 +842,82 @@ export default function ChessGame({ onResult }) {
               onClose={() => setDismissed(true)}
             />
           </Board>
-
-          <PlayerRow
-            seat={orientation}
-            name={view.names[orientation]}
-            material={material}
-            clock={remaining(orientation)}
-            running={clockBase?.running === orientation}
-          />
         </div>
+
+        {player(near, "board")}
       </div>
 
       <div className="chess__side">
-        <div className="stack" style={{ gap: 10 }}>
-          <span className="zone-label" style={{ margin: 0 }}>
-            Table
-          </span>
-          <Peg options={MODES} value={mode} onChange={setMode} label="How you are playing" />
-        </div>
+        <Peg options={MODES} value={mode} onChange={setMode} label="How you are playing" />
 
-        <p className="status">
-          {mode === "bot" ? (
-            <Cpu size={16} />
-          ) : mode === "online" ? (
-            <Users size={16} />
-          ) : (
-            <Bulb size={16} />
+        {/* The table: the two players either side of the scoresheet, as tall as
+            the board it sits beside. */}
+        <section className="chess__table" aria-label="Game">
+          {player(away, "table")}
+
+          <p className="chess__status">
+            {mode === "bot" ? (
+              <Cpu size={15} />
+            ) : mode === "online" ? (
+              <Users size={15} />
+            ) : (
+              <Bulb size={15} />
+            )}
+            <span>{statusLine()}</span>
+          </p>
+
+          {engine.failed && (
+            <p className="notice" role="alert">
+              The engine did not load, so the bot and the eval bar are off. Run
+              <code> npm install </code> to fetch it.
+            </p>
           )}
-          <span>{statusLine()}</span>
-        </p>
 
-        {engine.failed && (
-          <p className="notice" role="alert">
-            The engine did not load, so the bot and the eval bar are off. Run
-            <code> npm install </code> to fetch it.
-          </p>
-        )}
+          <MoveList
+            tree={treeNow}
+            current={nodeNow.id}
+            onJump={(id) => id && setNodeId(id)}
+            verdicts={verdictsById}
+            result={view.over ? resultLine(view, view.names) : null}>
+            <button
+              type="button"
+              className="movelist__step"
+              aria-label="Flip the board"
+              title="Flip the board (F)"
+              onClick={() => setOrientation((o) => (o === "w" ? "b" : "w"))}>
+              <Flip />
+            </button>
+            {analysis && (
+              <button
+                type="button"
+                className={`movelist__step ${engineOn ? "is-on" : ""}`}
+                aria-label="Engine"
+                aria-pressed={engineOn}
+                title={engineOn ? "Engine on" : "Engine off"}
+                onClick={() => setEngineOn((on) => !on)}
+                disabled={!engine.ready || editing}>
+                <Bulb />
+              </button>
+            )}
+          </MoveList>
 
-        <MoveList
-          tree={treeNow}
-          current={nodeNow.id}
-          onJump={(id) => id && setNodeId(id)}
-          verdicts={verdictsById}
-          result={view.over ? resultLine(view, view.names) : null}
-        />
+          {currentVerdict?.bestSan && (
+            <p className="chess__best">
+              Best was <b>{currentVerdict.bestSan}</b>.
+            </p>
+          )}
 
-        {currentVerdict?.bestSan && (
-          <p className="chalk chalk--tight">
-            Best was <b>{currentVerdict.bestSan}</b>.
-          </p>
-        )}
+          {player(near, "table")}
+        </section>
 
         {(showReview || review.status === "running") && (
           <ReviewPanel review={review} names={view.names} onClose={() => setShowReview(false)} />
         )}
 
-        <div className="tools">
+        {(view.over || analysis) && canReview && !editing && (
           <button
             type="button"
-            className="tool"
-            onClick={() => setOrientation((o) => (o === "w" ? "b" : "w"))}>
-            <Undo size={16} />
-            <em>Flip</em>
-          </button>
-
-          {analysis && (
-            <button
-              type="button"
-              className={`tool ${engineOn ? "is-on" : ""}`}
-              onClick={() => setEngineOn((on) => !on)}
-              disabled={!engine.ready || editing}>
-              <Bulb size={16} />
-              <em>Engine</em>
-            </button>
-          )}
-
-          {analysis && !editing && (
-            <>
-              <button type="button" className="tool" onClick={openSetup}>
-                <Pencil size={16} />
-                <em>Set up</em>
-              </button>
-              <button type="button" className="tool" onClick={cutLine} disabled={!nodeNow.parent}>
-                <Eraser size={16} />
-                <em>Delete</em>
-              </button>
-              <button
-                type="button"
-                className="tool"
-                onClick={promoteLine}
-                disabled={!offMainLine}>
-                <Undo size={16} />
-                <em>Promote</em>
-              </button>
-            </>
-          )}
-
-          {mode === "bot" && (
-            <button
-              type="button"
-              className="tool"
-              onClick={takeback}
-              disabled={!!clockBase || playedMoves.length < 2}
-              title={clockBase ? "Not with a clock running" : undefined}>
-              <Undo size={16} />
-              <em>Take back</em>
-            </button>
-          )}
-        </div>
-
-        {(view.over || analysis) && canReview && (
-          <button
-            type="button"
-            className="key"
-            style={{ width: "100%" }}
+            className="key key--quiet chess__wide"
             onClick={() => {
               setShowReview(true);
               review.run(line.map((node) => node.move));
@@ -954,8 +927,66 @@ export default function ChessGame({ onResult }) {
           </button>
         )}
 
+        {analysis && !editing && (
+          <div className="stack chess__controls">
+            <div className="tools">
+              <button type="button" className="tool" onClick={openSetup}>
+                <Pencil size={16} />
+                <span>Set up</span>
+              </button>
+              <button type="button" className="tool" onClick={cutLine} disabled={!nodeNow.parent}>
+                <Eraser size={16} />
+                <span>Delete</span>
+              </button>
+              <button type="button" className="tool" onClick={promoteLine} disabled={!offMainLine}>
+                <Undo size={16} />
+                <span>Main line</span>
+              </button>
+              <button type="button" className="tool" onClick={() => copyText(shownFen)}>
+                <Copy size={16} />
+                <span>{copied ? "Copied" : "Copy FEN"}</span>
+              </button>
+            </div>
+
+            <details className="chess__more">
+              <summary>Load or copy a game</summary>
+              <div className="stack" style={{ gap: 10 }}>
+                <label className="field">
+                  <span className="field__label">FEN or PGN</span>
+                  <input
+                    className="field__input"
+                    value={loadText}
+                    placeholder="rnbq… or 1. e4 e5"
+                    onChange={(event) => {
+                      setLoadText(event.target.value);
+                      setLoadError(null);
+                    }}
+                    onKeyDown={(event) => event.key === "Enter" && loadPosition()}
+                  />
+                </label>
+                {loadError && (
+                  <p className="notice" role="alert">
+                    {loadError}
+                  </p>
+                )}
+                <div className="row" style={{ gap: 8 }}>
+                  <button type="button" className="key key--quiet" onClick={loadPosition}>
+                    Load
+                  </button>
+                  <button type="button" className="key key--quiet" onClick={() => copyText(pgnOfLine())}>
+                    <Copy size={14} /> Copy line
+                  </button>
+                </div>
+                <button type="button" className="chess__reset" onClick={() => resetBoards()}>
+                  Reset to the start position
+                </button>
+              </div>
+            </details>
+          </div>
+        )}
+
         {editing && (
-          <div className="stack">
+          <div className="stack chess__controls">
             <span className="zone-label" style={{ margin: 0 }}>
               Pieces
             </span>
@@ -1052,79 +1083,62 @@ export default function ChessGame({ onResult }) {
           </div>
         )}
 
-        {analysis && !editing && (
-          <div className="stack">
-            <label className="field">
-              <span className="field__label">Load a FEN or a PGN</span>
-              <input
-                className="field__input"
-                value={loadText}
-                placeholder="rnbq… or 1. e4 e5"
-                onChange={(event) => {
-                  setLoadText(event.target.value);
-                  setLoadError(null);
-                }}
-              />
-            </label>
-            <div className="row" style={{ gap: 8 }}>
-              <button type="button" className="key key--quiet" onClick={loadPosition}>
-                Load
-              </button>
-              <button type="button" className="key key--quiet" onClick={() => copyText(pgnOfLine())}>
-                <Copy size={14} /> Line
-              </button>
-              <button type="button" className="key key--quiet" onClick={() => copyText(shownFen)}>
-                <Copy size={14} /> FEN
-              </button>
-            </div>
-            {loadError && (
-              <p className="notice" role="alert">
-                {loadError}
-              </p>
-            )}
-            <button
-              type="button"
-              className="key"
-              style={{ width: "100%" }}
-              onClick={() => resetBoards()}>
-              Clear the board
-            </button>
-          </div>
-        )}
-
         {mode === "bot" && (
-          <div className="stack">
-            <div className="stack" style={{ gap: 10 }}>
-              <span className="zone-label" style={{ margin: 0 }}>
-                Machine
-              </span>
-              <Peg options={LEVELS} value={levelId} onChange={setLevelId} label="Machine level" />
-            </div>
-            <div className="stack" style={{ gap: 10 }}>
-              <span className="zone-label" style={{ margin: 0 }}>
-                You play
-              </span>
-              <Peg options={SIDES} value={sideChoice} onChange={setSideChoice} label="Your colour" />
-            </div>
-            <div className="stack" style={{ gap: 10 }}>
-              <span className="zone-label" style={{ margin: 0 }}>
-                Clock
-              </span>
-              <Peg
-                options={TIME_CONTROLS}
-                value={timeId}
-                onChange={setTimeId}
-                label="Time control"
-              />
-            </div>
-            <button type="button" className="key" style={{ width: "100%" }} onClick={startBotGame}>
-              New game
-            </button>
+          <div className="stack chess__controls">
+            {botRunning && (
+              <div className="tools">
+                <button
+                  type="button"
+                  className="tool"
+                  onClick={takeback}
+                  disabled={!!clockBase || playedMoves.length < 2}
+                  title={clockBase ? "Not with a clock running" : undefined}>
+                  <Undo size={16} />
+                  <span>Take back</span>
+                </button>
+                <button type="button" className="tool" onClick={startBotGame}>
+                  <Replay size={16} />
+                  <span>Start again</span>
+                </button>
+              </div>
+            )}
+
+            <details className="chess__more" key={botRunning ? "run" : "idle"} open={!botRunning}>
+              <summary>{botRunning ? "Next game" : "New game"}</summary>
+              <div className="stack" style={{ gap: 12 }}>
+                <div className="stack" style={{ gap: 8 }}>
+                  <span className="zone-label" style={{ margin: 0 }}>
+                    Machine
+                  </span>
+                  <Peg options={LEVELS} value={levelId} onChange={setLevelId} label="Machine level" />
+                </div>
+                <div className="stack" style={{ gap: 8 }}>
+                  <span className="zone-label" style={{ margin: 0 }}>
+                    You play
+                  </span>
+                  <Peg options={SIDES} value={sideChoice} onChange={setSideChoice} label="Your colour" />
+                </div>
+                <div className="stack" style={{ gap: 8 }}>
+                  <span className="zone-label" style={{ margin: 0 }}>
+                    Clock
+                  </span>
+                  <Peg
+                    options={TIME_CONTROLS}
+                    value={timeId}
+                    onChange={setTimeId}
+                    label="Time control"
+                  />
+                </div>
+                <button type="button" className="key chess__wide" onClick={startBotGame}>
+                  Play
+                </button>
+              </div>
+            </details>
           </div>
         )}
 
         {mode === "online" && (
-          <div className="stack">
+          <div className="stack chess__controls">
             {!online ? (
               <>
                 <label className="field">

@@ -2151,65 +2151,238 @@ button {
    CHESS
    ========================================================================= */
 
+/* The board, its gauge and the table are one piece of furniture. .chess is a
+   size container over the whole stage body, so the board can be the largest
+   square that still leaves the table its width, and the table can be exactly
+   as tall as the board beside it. */
 .chess {
-  display: contents;
+  grid-column: 1 / -1;
+  grid-row: 1;
+  container-type: size;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: calc(var(--u) * 2.5);
+  --table-w: clamp(280px, 27cqw, 360px);
+  --gauge: 0px;
+  --board: min(100cqh, 100cqw - var(--table-w) - var(--gauge) - var(--u) * 2.5);
+}
+
+.chess:has(.evalbar) {
+  --gauge: 20px;
 }
 
 .chess__field {
-  grid-column: 1;
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  grid-template-rows: auto minmax(0, 1fr) auto;
-  /* the eval bar reads as part of the board, so it sits against it */
-  gap: var(--u) 6px;
-  align-content: center;
-  justify-content: center;
-  min-height: 0;
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--u);
   min-width: 0;
 }
 
-/* the stack is only there to group the board with its two nameplates; the
-   grid above does the placing */
-.chess__stack {
-  display: contents;
+.chess__boardline {
+  display: flex;
+  gap: 6px;
+  height: var(--board);
 }
 
 .chess__side {
-  grid-column: 2;
+  flex: none;
+  width: var(--table-w);
+  height: var(--board);
   display: flex;
   flex-direction: column;
-  gap: calc(var(--u) * 2);
+  gap: calc(var(--u) * 1.5);
   min-height: 0;
   overflow: auto;
-  padding-bottom: var(--u);
+  /* room for the table's shadow, which the scroller would otherwise clip */
+  padding: 2px 2px var(--u);
+  margin: -2px;
 }
 
-.chess__player {
-  grid-column: 2;
+.chess__side > .peg {
+  flex: none;
+  display: flex;
+}
+
+/* ---------- the table ---------- */
+
+.chess__table {
+  flex: 1 0 auto;
+  min-height: 320px;
+  display: flex;
+  flex-direction: column;
+  background: var(--panel);
+  border: 1px solid var(--keyline);
+  border-radius: var(--radius);
+  box-shadow: var(--lift-1);
+  overflow: hidden;
+}
+
+/* with settings under it, the table gives up its height first: it keeps the
+   players, the status and a few moves, and the settings stay in view */
+.chess__side:has(.chess__controls) .chess__table {
+  flex-basis: 0;
+  min-height: 240px;
+}
+
+.chess__status {
   display: flex;
   align-items: center;
   gap: var(--u);
-  min-height: 30px;
+  margin: 0;
+  padding: calc(var(--u) * 1.1) calc(var(--u) * 1.75);
+  border-bottom: 1px solid var(--keyline);
+  font-size: 0.8rem;
+  line-height: 1.3;
+  color: var(--ink-quiet);
+}
+
+.chess__status svg {
+  flex: none;
+  color: var(--signal-ink);
+}
+
+.chess__best {
+  margin: 0;
+  padding: var(--u) calc(var(--u) * 1.75);
+  border-top: 1px solid var(--keyline);
+  font-size: 0.8rem;
+  color: var(--ink-quiet);
+}
+
+.chess__best b {
+  color: var(--ink);
+}
+
+.chess__wide {
+  width: 100%;
+  justify-content: center;
+}
+
+.chess__controls {
+  flex: none;
+  gap: var(--u);
+}
+
+.chess__more {
+  border: 1px solid var(--keyline);
+  border-radius: var(--radius-sm);
+}
+
+.chess__more > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: calc(var(--u) * 1.1) calc(var(--u) * 1.5);
+  font-family: var(--font-label), ui-sans-serif, sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: 0.64rem;
+  color: var(--ink-quiet);
+  cursor: pointer;
+  list-style: none;
+}
+
+.chess__more > summary::-webkit-details-marker {
+  display: none;
+}
+
+/* a drawn chevron, turned when the drawer is open */
+.chess__more > summary::after {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-right: 1.6px solid currentColor;
+  border-bottom: 1.6px solid currentColor;
+  transform: translateY(-2px) rotate(45deg);
+  transition: transform 160ms var(--swing);
+}
+
+.chess__more[open] > summary::after {
+  transform: translateY(2px) rotate(-135deg);
+}
+
+.chess__more > summary:hover {
+  color: var(--ink);
+}
+
+.chess__more > .stack {
+  padding: 0 calc(var(--u) * 1.5) calc(var(--u) * 1.5);
+}
+
+.chess__reset {
+  align-self: flex-start;
+  padding: 0;
+  border: 0;
+  background: none;
+  font-size: 0.78rem;
+  color: var(--ink-quiet);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.chess__reset:hover {
+  color: var(--ink);
+}
+
+/* ---------- players ---------- */
+
+.chess__player {
+  display: flex;
+  align-items: center;
+  gap: var(--u);
+  min-width: 0;
+}
+
+/* on a wide screen the strips live on the table; on a phone, round the board */
+.chess__player--board {
+  display: none;
+}
+
+.chess__player--table {
+  flex: none;
+  min-height: 56px;
+  padding: var(--u) calc(var(--u) * 1.5);
+  background: color-mix(in srgb, var(--ink) 4%, transparent);
+}
+
+.chess__table > .chess__player--table:first-child {
+  border-bottom: 1px solid var(--keyline);
+}
+
+.chess__table > .chess__player--table:last-child {
+  border-top: 1px solid var(--keyline);
 }
 
 .chess__swatch {
+  flex: none;
   width: 20px;
   height: 20px;
   filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.35));
 }
 
 .chess__who {
-  font-family: var(--font-label);
-  font-size: 0.74rem;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.9rem;
+  font-weight: 600;
   color: var(--ink-quiet);
+}
+
+.chess__player.is-to-move .chess__who {
+  color: var(--ink);
 }
 
 .taken {
   display: inline-flex;
   align-items: center;
   min-height: 16px;
+  min-width: 0;
 }
 
 .taken img {
@@ -2221,45 +2394,43 @@ button {
 
 /* the material lead is the number people actually look for */
 .taken__lead {
-  margin-left: calc(var(--u) * 1.5);
-  padding: 1px calc(var(--u) * 0.9);
-  border-radius: var(--radius-pill);
-  background: color-mix(in srgb, var(--ink) 14%, transparent);
-  font-family: var(--font-label);
+  margin-left: calc(var(--u) * 1.25);
   font-style: normal;
   font-variant-numeric: tabular-nums;
   font-size: 0.78rem;
   font-weight: 700;
-  color: var(--ink);
+  color: var(--ink-quiet);
 }
 
 /* ---------- the board ---------- */
 
 .chessboard__wrap {
-  grid-column: 2;
-  grid-row: 2;
   position: relative;
-  height: 100%;
+  flex: none;
+  width: var(--board);
+  height: var(--board);
   aspect-ratio: 1;
-  max-height: min(100%, 72vh);
-  max-width: 100%;
-  margin: auto;
 }
 
 .chessboard {
-  --sq-light: color-mix(in srgb, var(--paint-bone) 90%, var(--paint-steel));
-  --sq-dark: color-mix(in srgb, var(--paint-steel) 58%, var(--paint-navy));
-  --sq-last: color-mix(in srgb, var(--paint-cobalt) 42%, transparent);
+  /* a light, cool board: the dark squares are steel rather than night, so the
+     pieces read first and the squares second */
+  --sq-light: color-mix(in srgb, var(--paint-bone) 92%, var(--paint-steel));
+  --sq-dark: color-mix(in srgb, var(--paint-steel) 84%, var(--paint-navy));
+  --sq-last: color-mix(in srgb, var(--paint-cobalt) 30%, transparent);
+  --sq-pick: color-mix(in srgb, var(--paint-cobalt) 50%, transparent);
+  --sq-aim: color-mix(in srgb, var(--paint-cobalt) 36%, transparent);
   position: relative;
   width: 100%;
   height: 100%;
   display: grid;
   grid-template-columns: repeat(8, minmax(0, 1fr));
   grid-template-rows: repeat(8, minmax(0, 1fr));
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-xs);
   overflow: hidden;
   box-shadow: var(--lift-2);
   touch-action: none;
+  container-type: size;
 }
 
 .chesssq {
@@ -2277,12 +2448,22 @@ button {
   background: var(--sq-dark);
 }
 
+.chessboard .chesssq {
+  cursor: pointer;
+}
+
+/* tints are laid over the square's own paint, so they read on light and dark */
 .chesssq.is-last {
   background-image: linear-gradient(var(--sq-last), var(--sq-last));
 }
 
 .chesssq.is-selected {
-  box-shadow: inset 0 0 0 3px var(--paint-cobalt);
+  background-image: linear-gradient(var(--sq-pick), var(--sq-pick));
+}
+
+.chesssq.is-over,
+.chesssq.is-target:hover {
+  background-image: linear-gradient(var(--sq-aim), var(--sq-aim));
 }
 
 .chesssq.is-marked {
@@ -2297,25 +2478,35 @@ button {
   opacity: 0.25;
 }
 
+/* coordinates sit in the corners, in the other square's paint */
 .chesssq__rank,
 .chesssq__file {
   position: absolute;
-  font-family: var(--font-label);
-  font-size: 0.56rem;
-  letter-spacing: 0.04em;
-  color: var(--paint-navy);
-  opacity: 0.5;
+  font-family: var(--font-label), ui-sans-serif, sans-serif;
+  font-weight: 700;
+  font-size: max(9px, 2.3cqmin);
+  line-height: 1;
   pointer-events: none;
 }
 
+.chesssq--light .chesssq__rank,
+.chesssq--light .chesssq__file {
+  color: var(--sq-dark);
+}
+
+.chesssq--dark .chesssq__rank,
+.chesssq--dark .chesssq__file {
+  color: var(--sq-light);
+}
+
 .chesssq__rank {
-  top: 2px;
-  left: 3px;
+  top: 0.7cqmin;
+  left: 0.8cqmin;
 }
 
 .chesssq__file {
-  bottom: 1px;
-  right: 4px;
+  bottom: 0.6cqmin;
+  right: 0.9cqmin;
 }
 
 .chesspiece {
@@ -2328,24 +2519,28 @@ button {
 .chesspiece--drag {
   position: fixed;
   z-index: 60;
-  transform: translate(-50%, -50%);
+  transform: translate(-50%, -50%) scale(1.1);
   filter: drop-shadow(0 6px 10px rgba(0, 0, 0, 0.45));
 }
 
 .chessdot {
   position: absolute;
-  width: 28%;
-  height: 28%;
+  width: 27%;
+  height: 27%;
   border-radius: 50%;
-  background: color-mix(in srgb, var(--paint-navy) 34%, transparent);
+  background: color-mix(in srgb, var(--paint-navy) 30%, transparent);
   pointer-events: none;
 }
 
 .chessdot--take {
-  width: 88%;
-  height: 88%;
+  width: 100%;
+  height: 100%;
   background: none;
-  border: 5px solid color-mix(in srgb, var(--paint-navy) 30%, transparent);
+  border: 1.1cqmin solid color-mix(in srgb, var(--paint-navy) 30%, transparent);
+}
+
+.chesssq.is-target:hover .chessdot {
+  opacity: 0;
 }
 
 .chessoverlay {
@@ -2435,17 +2630,31 @@ button {
 /* ---------- eval bar ---------- */
 
 .evalbar {
-  grid-column: 1;
-  grid-row: 2;
   position: relative;
+  flex: none;
   width: 14px;
   height: 100%;
-  max-height: min(100%, 72vh);
-  margin: auto 0;
-  border-radius: var(--radius-pill);
+  border-radius: var(--radius-xs);
   overflow: hidden;
-  background: var(--paint-navy);
-  border: 1px solid var(--keyline-strong);
+  background: color-mix(in srgb, var(--paint-navy) 86%, var(--paint-steel));
+  box-shadow: var(--lift-1);
+}
+
+/* eighths, like a ruler: the middle one is the level line */
+.evalbar__tick {
+  position: absolute;
+  left: 0;
+  right: 0;
+  z-index: 1;
+  height: 1px;
+  background: color-mix(in srgb, var(--paint-steel) 46%, transparent);
+  pointer-events: none;
+}
+
+.evalbar__tick--mid {
+  height: 2px;
+  margin-top: -0.5px;
+  background: color-mix(in srgb, var(--paint-cobalt) 70%, transparent);
 }
 
 .evalbar__white {
@@ -2462,18 +2671,20 @@ button {
   top: 0;
 }
 
-.evalbar.is-thinking {
-  border-color: var(--signal);
+.evalbar.is-thinking .evalbar__white {
+  transition-duration: 160ms;
 }
 
 .evalbar__value {
   position: absolute;
   left: 0;
   right: 0;
+  z-index: 2;
   text-align: center;
   font-family: var(--font-label);
+  font-weight: 700;
   font-size: 0.5rem;
-  letter-spacing: 0.02em;
+  letter-spacing: 0;
 }
 
 .evalbar__value.is-white {
@@ -2499,62 +2710,65 @@ button {
 /* ---------- the scoresheet ---------- */
 
 .movelist {
+  flex: 1 1 auto;
   display: flex;
   flex-direction: column;
-  gap: var(--u);
-  border: 1px solid var(--keyline);
-  border-radius: var(--radius-sm);
-  background: var(--routed);
-  padding: var(--u);
+  min-height: 0;
 }
 
 .movelist__scroll {
-  max-height: 30vh;
+  flex: 1 1 auto;
+  min-height: 0;
   overflow: auto;
+  overscroll-behavior: contain;
 }
 
 .movelist__empty {
   margin: 0;
-  padding: var(--u);
+  padding: calc(var(--u) * 1.5) calc(var(--u) * 1.75);
 }
 
 .movelist__row {
   display: grid;
-  grid-template-columns: 26px minmax(0, 1fr) minmax(0, 1fr);
-  align-items: center;
-  gap: 2px;
+  grid-template-columns: 2.75rem minmax(0, 1fr) minmax(0, 1fr);
+  align-items: stretch;
 }
 
 .movelist__no {
+  display: grid;
+  place-items: center;
+  background: color-mix(in srgb, var(--ink) 6%, transparent);
+  border-right: 1px solid var(--keyline);
   font-family: var(--font-label);
-  font-size: 0.68rem;
+  font-size: 0.72rem;
+  font-variant-numeric: tabular-nums;
   color: var(--ink-faint);
-  text-align: right;
-  padding-right: var(--u);
 }
 
 .movelist__half {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   gap: 3px;
-  min-height: 22px;
-  padding: 2px var(--u);
+  min-height: 30px;
+  padding: 0 calc(var(--u) * 1.25);
   border: 0;
-  border-radius: var(--radius-xs);
+  border-radius: 0;
   background: none;
   color: var(--ink);
-  font-size: 0.82rem;
+  font-size: 0.9rem;
+  font-weight: 500;
   text-align: left;
   cursor: pointer;
+  transition: background-color 90ms ease-out;
 }
 
 button.movelist__half:hover {
-  background: color-mix(in srgb, var(--ink) 10%, transparent);
+  background: color-mix(in srgb, var(--signal) 14%, transparent);
 }
 
 .movelist__half.is-current {
-  background: var(--signal);
-  color: var(--signal-on);
+  background: color-mix(in srgb, var(--signal) 30%, transparent);
+  font-weight: 700;
 }
 
 .movelist__mark {
@@ -2579,20 +2793,50 @@ button.movelist__half:hover {
 
 .movelist__result {
   margin: 0;
-  padding: 0 var(--u);
-  font-size: 0.78rem;
-  color: var(--ink-quiet);
+  padding: var(--u) calc(var(--u) * 1.75);
+  border-top: 1px solid var(--keyline);
+  text-align: center;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--ink);
 }
 
 .movelist__nav {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 4px;
+  flex: none;
+  display: flex;
+  border-top: 1px solid var(--keyline);
 }
 
-.movelist__nav .tool {
-  justify-content: center;
-  padding: 4px;
+.movelist__step {
+  flex: 1 1 0;
+  display: grid;
+  place-items: center;
+  height: 42px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ink-quiet);
+  cursor: pointer;
+  transition: background-color 120ms ease-out, color 120ms ease-out;
+}
+
+.movelist__step:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--ink) 8%, transparent);
+  color: var(--ink);
+}
+
+.movelist__step:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+.movelist__step.is-on {
+  color: var(--signal-ink);
+}
+
+/* the walk buttons and the board buttons are two groups on one bar */
+.movelist__step:nth-child(5) {
+  border-left: 1px solid var(--keyline);
 }
 
 /* ---------- the review ---------- */
@@ -2659,20 +2903,110 @@ button.movelist__half:hover {
 }
 
 @media (max-width: 900px) {
-  .chess__field,
-  .chess__side {
-    grid-column: 1;
+  /* A phone stacks it the way a phone is held: the board edge to edge, a
+     player above and below it, the moves in one running line under that,
+     and the settings last. */
+  .chess {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--u);
+    container-type: inline-size;
+    --board: calc(100cqw + var(--gutter) * 2 - var(--gauge));
   }
 
-  .chessboard__wrap {
-    height: auto;
-    width: min(100%, 62vh);
-    max-height: none;
+  .chess__boardline {
+    margin-inline: calc(var(--gutter) * -1);
+    gap: 0;
+  }
+
+  .chessboard {
+    border-radius: 0;
+    box-shadow: none;
   }
 
   .evalbar {
+    width: 12px;
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  .chess:has(.evalbar) {
+    --gauge: 12px;
+  }
+
+  .chess__player--board {
+    display: flex;
+    min-height: 34px;
+  }
+
+  .chess__player--table {
+    display: none;
+  }
+
+  .chess__side {
+    width: auto;
     height: auto;
-    align-self: stretch;
+    overflow: visible;
+    padding: 0;
+    margin: 0;
+  }
+
+  .chess__side > .peg {
+    order: 1;
+  }
+
+  .chess__side > .chess__table ~ * {
+    order: 2;
+  }
+
+  .chess__table,
+  .chess__side:has(.chess__controls) .chess__table {
+    flex: none;
+    min-height: 0;
+  }
+
+  .movelist__scroll {
+    display: flex;
+    align-items: center;
+    overflow-x: auto;
+    overflow-y: hidden;
+    white-space: nowrap;
+    scrollbar-width: none;
+    padding: 0 var(--u);
+  }
+
+  .movelist__scroll::-webkit-scrollbar {
+    display: none;
+  }
+
+  .movelist__scroll > div,
+  .movelist__row,
+  .movelist__branches {
+    display: contents;
+  }
+
+  .movelist__no {
+    background: none;
+    border: 0;
+    padding: 0 2px 0 6px;
+  }
+
+  .movelist__half {
+    min-height: 40px;
+    padding: 0 8px;
+  }
+
+  .movelist__half--gap,
+  .movelist__row > span.movelist__half:empty {
+    display: none;
+  }
+
+  .movelist__step {
+    height: 48px;
+  }
+
+  .chess__controls .tools {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
@@ -2683,22 +3017,29 @@ span.movelist__half {
 /* ---------- clocks ---------- */
 
 .clock {
+  flex: none;
   margin-left: auto;
   padding: 2px calc(var(--u) * 1.25);
   border-radius: var(--radius-xs);
   background: var(--routed);
-  border: 1px solid var(--keyline);
-  font-family: var(--font-label);
+  font-family: var(--font-display), sans-serif;
+  font-weight: 600;
   font-variant-numeric: tabular-nums;
-  font-size: 1rem;
-  letter-spacing: 0.04em;
+  font-size: 1.1rem;
+  line-height: 1.3;
   color: var(--ink-quiet);
+  box-shadow: var(--cut);
+}
+
+.chess__player--table .clock {
+  padding: 4px calc(var(--u) * 1.5);
+  font-size: 1.75rem;
 }
 
 .clock.is-running {
   background: var(--plate-face);
-  border-color: var(--keyline-strong);
   color: var(--plate-ink);
+  box-shadow: var(--lift-1);
 }
 
 .clock.is-low {
@@ -2961,6 +3302,14 @@ span.movelist__half {
 
 .key.is-on {
   --key-face: var(--signal);
+  color: var(--signal-on);
+}
+
+/* a quiet key paints no face of its own, so switched on it has to take one,
+   or its label goes on-signal over nothing and disappears */
+.key--quiet.is-on {
+  background: var(--signal);
+  border-color: var(--signal);
   color: var(--signal-on);
 }
 

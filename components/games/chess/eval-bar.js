@@ -17,6 +17,13 @@ export function EvalBar({ score, orientation = "w", thinking = false, hidden = f
       role="img"
       aria-label={hidden ? "Evaluation hidden" : `Evaluation ${label}`}>
       <div className="evalbar__white" style={{ height: white }} />
+      {[1, 2, 3, 4, 5, 6, 7].map((eighth) => (
+        <i
+          key={eighth}
+          className={`evalbar__tick ${eighth === 4 ? "evalbar__tick--mid" : ""}`}
+          style={{ top: `${eighth * 12.5}%` }}
+        />
+      ))}
       <span className={`evalbar__value ${share > 0.5 ? "is-white" : "is-black"}`}>{label}</span>
     </div>
   );
