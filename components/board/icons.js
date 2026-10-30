@@ -219,8 +219,34 @@ export function CrossMark({ size = 18, ...rest }) {
   );
 }
 
+export function CodewordMark({ size = 20, ...rest }) {
+  // A row of tiles and its score: a filled dot and a ring.
+  return (
+    <svg {...base} width={size} height={size} {...rest}>
+      <rect x="3" y="5.5" width="5" height="6.5" rx="1" />
+      <rect x="9.5" y="5.5" width="5" height="6.5" rx="1" />
+      <rect x="16" y="5.5" width="5" height="6.5" rx="1" />
+      <circle cx="8.5" cy="17.5" r="1.9" fill="currentColor" stroke="none" />
+      <circle cx="15.5" cy="17.5" r="1.9" />
+    </svg>
+  );
+}
+
+export function HangmanMark({ size = 20, ...rest }) {
+  // The gallows, with the head already hung.
+  return (
+    <svg {...base} width={size} height={size} {...rest}>
+      <path d="M4 20.5h10M7.5 20.5V3.5h9.5v3" />
+      <circle cx="17" cy="9" r="2.4" />
+      <path d="M17 11.4v4.6" />
+    </svg>
+  );
+}
+
 export const GAME_MARKS = {
   picross: PicrossMark,
+  codeword: CodewordMark,
+  hangman: HangmanMark,
   chess: ChessMark,
   sudoku: SudokuMark,
   tictactoe: TicTacToeMark,

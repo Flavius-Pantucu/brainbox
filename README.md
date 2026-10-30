@@ -19,6 +19,8 @@ Games:
 - [x] **Minesweeper** — beginner to expert, with a first click that is always safe
 - [x] **Sudoku** — a fresh puzzle every game, generated in the browser, at four difficulties
 - [x] **PiCross** — nonograms from 5×5 to 15×15 at four difficulties, each a fresh picture that logic alone solves
+- [x] **Codeword** — find a hidden word when each guess is scored with two numbers and nothing more
+- [x] **Hangman** — eight categories, three difficulties, six wrong letters
 - [x] **Go** — 9×9 to 19×19, against the machine, against the next chair, or online by room code
 - [x] **Backgammon** — against the machine, against the next chair, or online by room code
 - [x] **Checkers** — against the machine, against the next chair, or online by room code
@@ -41,6 +43,8 @@ Games:
 | `/play/backgammon` | Backgammon, inside the play frame                                |
 | `/play/sudoku`   | Sudoku, inside the play frame                                      |
 | `/play/picross`  | PiCross, inside the play frame                                     |
+| `/play/codeword` | Codeword, inside the play frame                                    |
+| `/play/hangman`  | Hangman, inside the play frame                                     |
 | `/play/tictactoe`| Tic-Tac-Toe, inside the play frame                                 |
 | `/standings`     | The ladder and your card — recent games, wins, day run             |
 | `/api/health`    | Health check                                                       |
@@ -169,10 +173,32 @@ square as empty. Every mark is checked as it lands: a wrong one counts as a mist
 square is set to what it really is in fault red. There is no undo and no clear — a placed mark
 is final. Keyboard: arrows move, space or `F` fills, `X` crosses, `M` swaps the tool.
 
+## Codeword
+
+A word-deduction game in the family of the old pen-and-paper "bulls and cows", in
+`lib/codeword.js`. Each guess is scored with two numbers: letters in the right place (a filled
+dot) and letters in the word somewhere else (a ring). Which letters earned them is never
+shown. Twelve guesses at 4, 5 or 6 letters. The letter keys double as a notepad — Mark letters,
+or right-click a key, to strike a letter out or ring it in — and a guess that scores nothing,
+or scores every letter, marks its own letters automatically.
+
+Answers are hand-picked common words. Guesses are checked against `public/words/{3..6}.txt`,
+generated from Webster's Second (`/usr/share/dict/web2`, public domain) with
+`grep -E "^[a-z]{N}$" /usr/share/dict/web2 | sort -u`; that list holds base forms only, so a
+plural or past tense of a listed word is accepted too. The files are fetched only when a game
+starts.
+
+## Hangman
+
+`lib/hangman.js`: a word from one of eight categories, shown as its clue, and six wrong letters
+before the figure is finished. Difficulty is word length, and inverted on purpose — a long word
+has many letters to land on, so Easy is 8+ letters and Hard is 3–5.
+
 ## Playing someone
 
-Seven of the nine games take a second player: chess, go, backgammon, checkers, reversi,
-connect four and tic-tac-toe. Sudoku, PiCross and minesweeper are yours alone.
+Seven of the twelve games take a second player: chess, go, backgammon, checkers, reversi,
+connect four and tic-tac-toe. Sudoku, PiCross, Codeword, Hangman and minesweeper are yours
+alone.
 
 Open a private room from the board and you get a four-character code plus an invite link.
 A room holds up to eight people; the game seats two, so the rest watch. Everyone in a chair

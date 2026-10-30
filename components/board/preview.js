@@ -10,12 +10,16 @@ import { MineField } from "../games/minesweeper/grid";
 import { ReversiGrid } from "../games/reversi/grid";
 import { SudokuGrid } from "../games/sudoku/grid";
 import { PicrossGrid } from "../games/picross/grid";
+import { CodewordBoard } from "../games/codeword/board";
+import { HangmanStage } from "../games/hangman/stage";
 import { Board as TicTacToeBoard } from "../games/tictactoe/board";
 import {
   BACKGAMMON_PREVIEW,
   CHECKERS_PREVIEW,
   CHESS_PREVIEW,
+  CODEWORD_PREVIEW,
   CONNECT4_PREVIEW,
+  HANGMAN_PREVIEW,
   GO_PREVIEW,
   MINESWEEPER_PREVIEW,
   PICROSS_PREVIEW,
@@ -154,6 +158,22 @@ export function GamePreview({ gameId }) {
           clues={PICROSS_PREVIEW.clues}
           cells={PICROSS_PREVIEW.cells}
         />
+      </Inert>
+    );
+  }
+
+  if (gameId === "codeword") {
+    return (
+      <Inert>
+        <CodewordBoard {...CODEWORD_PREVIEW} />
+      </Inert>
+    );
+  }
+
+  if (gameId === "hangman") {
+    return (
+      <Inert>
+        <HangmanStage {...HANGMAN_PREVIEW} />
       </Inert>
     );
   }

@@ -1,7 +1,7 @@
 // One runnable check for the parts of the games that are ours rather than a
 // library's: the chess material read, the review maths, the variation tree, the
 // clocks, Connect Four's rules and opponent, Go's rules and scoring, Reversi's
-// turning and passing, draughts' compulsory captures and chains, PiCross's line logic, minesweeper's
+// turning and passing, draughts' compulsory captures and chains, PiCross's line logic, Codeword's scoring, Hangman's word pools, minesweeper's
 // safe first click, backgammon's dice rules, the room's move rules, and a pass over
 // the rules an implementation usually gets wrong.
 //   npm run check
@@ -21,6 +21,8 @@ async function main() {
   const chk = await import("../lib/checkers.js");
   const ms = await import("../lib/minesweeper.js");
   const pic = await import("../lib/picross.js");
+  const cw = await import("../lib/codeword.js");
+  const hm = await import("../lib/hangman.js");
   const bg = await import("../lib/backgammon.js");
   const daily = await import("../lib/daily.js");
   const games = await import("../lib/games.js");
@@ -578,6 +580,37 @@ async function main() {
   }
   const picPreview = (await import("../lib/previews.js")).PICROSS_PREVIEW;
   assert.ok(!pic.solveByLines(picPreview.clues, picPreview.n).includes(-1), "the dashboard picture is a fair puzzle");
+
+  /* codeword -------------------------------------------------------------- */
+  assert.deepEqual(cw.score("plant", "plant"), { inPlace: 5, elsewhere: 0 });
+  assert.deepEqual(cw.score("plant", "stone"), { inPlace: 1, elsewhere: 1 }, "N in place, T elsewhere");
+  // a repeated letter counts only as often as the secret holds it
+  assert.deepEqual(cw.score("crane", "eerie"), { inPlace: 1, elsewhere: 1 });
+  assert.deepEqual(cw.score("speed", "erase"), { inPlace: 0, elsewhere: 3 });
+  const dict = new Set(["tree", "box", "walk"]);
+  assert.ok(cw.isWord("trees", dict), "a plural of a listed word is a word");
+  assert.ok(cw.isWord("boxes", dict) && cw.isWord("walked", dict), "so are -es and -ed");
+  assert.ok(!cw.isWord("treex", dict));
+  assert.deepEqual(cw.deduce("fuzzy", { inPlace: 0, elsewhere: 0 }).out, ["f", "u", "z", "y"]);
+  assert.deepEqual(cw.deduce("lapnt", { inPlace: 1, elsewhere: 4 }).in, ["l", "a", "p", "n", "t"]);
+  for (const level of cw.LEVELS) {
+    const list = cw.ANSWERS[level.length];
+    assert.ok(list.length >= 150, `${level.label} has a deep answer list`);
+    assert.ok(list.every((w) => /^[a-z]+$/.test(w) && w.length === level.length));
+    assert.equal(cw.pick(level.id).length, level.length);
+  }
+
+  /* hangman --------------------------------------------------------------- */
+  for (const level of hm.LEVELS) {
+    const pool = hm.poolFor(level.id);
+    assert.ok(pool.length >= 30, `${level.label} has a pool worth playing`);
+    assert.ok(pool.every(({ word }) => /^[a-z]+$/.test(word)), "single words, letters only");
+    assert.ok(Math.max(...pool.map(({ word }) => word.length)) <= 13, "the longest word fits the slots");
+    assert.notEqual(hm.pick(level.id, pool[0].word).word, pool[0].word, "never the same word twice running");
+  }
+  assert.equal(hm.misses("otter", new Set(["o", "x", "z", "t"])), 2);
+  assert.ok(hm.isWon("otter", new Set(["o", "t", "e", "r"])));
+  assert.ok(!hm.isWon("otter", new Set(["o", "t", "e"])));
 
   /* minesweeper ----------------------------------------------------------- */
   const beginner = ms.levelOf("beginner");
