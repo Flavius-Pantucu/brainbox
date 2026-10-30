@@ -165,8 +165,9 @@ Extreme drops the smoothing and the mirror for thin, broken clues that give way 
 time (13+ sweeps at 15×15). Every clue greys out once its line matches, and the clock runs from the first mark.
 
 Drag paints a run along one row or column; right-click (or the Cross tool on touch) marks a
-square as empty. Keyboard: arrows move, space or `F` fills, `X` crosses, backspace clears,
-`U` undoes, `M` swaps the tool.
+square as empty. Every mark is checked as it lands: a wrong one counts as a mistake, and the
+square is set to what it really is in fault red. There is no undo and no clear — a placed mark
+is final. Keyboard: arrows move, space or `F` fills, `X` crosses, `M` swaps the tool.
 
 ## Playing someone
 

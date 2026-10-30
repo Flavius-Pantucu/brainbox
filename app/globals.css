@@ -1667,6 +1667,33 @@ button {
   transition: opacity 260ms ease-out;
 }
 
+/* A mistake: the square shows what it really is, in fault red, with one short
+   flash so the eye finds it. The red goes once the picture is done. */
+.pic__cell.is-fault {
+  animation: pic-fault 520ms ease-out;
+}
+
+.pic__cell.is-fault.is-crossed::after {
+  background: #b3241a;
+}
+
+.pic__cell.is-fault.is-filled::before {
+  background: color-mix(in srgb, #b3241a 78%, var(--paint-navy));
+}
+
+.pic__wrap.is-solved .pic__cell.is-fault.is-filled::before {
+  background: var(--paint-navy);
+}
+
+@keyframes pic-fault {
+  0% {
+    background-color: color-mix(in srgb, #b3241a 34%, var(--plate-face));
+  }
+  100% {
+    background-color: var(--plate-face);
+  }
+}
+
 /* Solved: the rules lift, the crosses go, and the tiles close up corner to
    corner into one picture — a wave from the top-left. */
 .pic__wrap.is-solved .pic__cell {
@@ -1738,7 +1765,8 @@ button {
     transition: none;
   }
 
-  .pic__wrap.is-solved .pic__cell.is-filled::before {
+  .pic__wrap.is-solved .pic__cell.is-filled::before,
+  .pic__cell.is-fault {
     animation: none;
   }
 }
@@ -1768,8 +1796,8 @@ button {
     order: -1;
   }
 
-  .pic__new {
-    grid-column: span 2;
+  .pic__tools {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .pic__side {

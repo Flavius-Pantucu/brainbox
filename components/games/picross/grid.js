@@ -20,6 +20,7 @@ export function PicrossGrid({
   n,
   clues,
   cells,
+  faults = null,
   cursor = null,
   solved = false,
   gridRef,
@@ -115,6 +116,7 @@ export function PicrossGrid({
                 className={[
                   "pic__cell",
                   cell === FILLED ? "is-filled" : cell === CROSSED ? "is-crossed" : "",
+                  faults?.has(i) ? "is-fault" : "",
                   r === hotRow || c === hotCol ? "is-peer" : "",
                   c === n - 1 ? "end-col" : c % 5 === 4 ? "edge-right" : "",
                   r === n - 1 ? "end-row" : r % 5 === 4 ? "edge-bottom" : "",
@@ -124,7 +126,7 @@ export function PicrossGrid({
                 style={{ "--d": r + c }}
                 aria-label={`Row ${r + 1} column ${c + 1}, ${
                   cell === FILLED ? "filled" : cell === CROSSED ? "crossed out" : "empty"
-                }`}
+                }${faults?.has(i) ? ", a mistake" : ""}`}
               />
             );
           })}

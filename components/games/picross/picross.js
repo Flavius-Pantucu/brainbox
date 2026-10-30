@@ -1,24 +1,21 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   CROSSED,
   DIFFICULTIES,
   EMPTY,
   FILLED,
   SIZES,
-  colAt,
   difficultyOf,
   generate,
   isSolved,
-  lineDone,
-  rowAt,
   sizeOf,
 } from "../../../lib/picross";
 import { PicrossGrid } from "./grid";
 import { Peg } from "../../board/peg";
 import { Verdict } from "../../board/verdict";
-import { CrossMark, Eraser, FillMark, Replay, Undo } from "../../board/icons";
+import { CrossMark, FillMark, Replay } from "../../board/icons";
 
 function clock(seconds) {
   const m = Math.floor(seconds / 60);
@@ -37,8 +34,9 @@ export default function Picross({ onResult }) {
   const [seconds, setSeconds] = useState(0);
   const [started, setStarted] = useState(false);
   const [dismissed, setDismissed] = useState(false);
-  const [undos, setUndos] = useState(0);
-  const history = useRef([]);
+  const [mistakes, setMistakes] = useState(0);
+  // squares a mistake landed on: shown in fault red until the picture is done
+  const [faults, setFaults] = useState(() => new Set());
   const stroke = useRef(null);
   const gridRef = useRef(null);
   const cellRefs = useRef([]);
@@ -49,7 +47,6 @@ export default function Picross({ onResult }) {
   // match between the two renders.
   const newGame = useCallback((id, level) => {
     const next = generate(id, level);
-    history.current = [];
     stroke.current = null;
     cellRefs.current = [];
     setDeal(next);
@@ -58,7 +55,8 @@ export default function Picross({ onResult }) {
     setSeconds(0);
     setStarted(false);
     setDismissed(false);
-    setUndos(0);
+    setMistakes(0);
+    setFaults(new Set());
     setStatus("playing");
   }, []);
 
@@ -84,24 +82,32 @@ export default function Picross({ onResult }) {
     onResult?.({
       outcome: "won",
       durationMs: seconds * 1000,
-      meta: { size: deal.size, difficulty: deal.difficulty, seconds, undos },
+      meta: { size: deal.size, difficulty: deal.difficulty, seconds, mistakes },
     });
-  }, [cells, deal, status, seconds, undos, onResult]);
+  }, [cells, deal, status, seconds, mistakes, onResult]);
 
   // --- marking -------------------------------------------------------------
 
   const playable = status === "playing" && !!deal;
 
-  const remember = (snapshot) => {
-    history.current.push(snapshot);
-    if (history.current.length > 300) history.current.shift();
-    if (!started) setStarted(true);
+  // Every mark is checked against the picture the moment it lands. A right
+  // mark stays put. A wrong one counts a mistake and the square is set to what
+  // it really is — a fill where the picture is blank becomes a cross, a cross
+  // where the picture is filled becomes a fill — both drawn in fault red.
+  const judge = (i, action) => {
+    const truth = deal.solution[i] ? FILLED : CROSSED;
+    return action === truth ? { value: action, wrong: false } : { value: truth, wrong: true };
   };
 
-  // A stroke changes every cell between where it started and where the pointer
-  // is now, along one row or one column, that was in the same state as the
-  // first cell — so a drag fills a run without wiping the crosses beside it,
-  // and pulling back un-paints what it passed.
+  const fault = (i) => {
+    setMistakes((m) => m + 1);
+    setFaults((current) => new Set(current).add(i));
+  };
+
+  // A stroke marks every empty square between where it started and where the
+  // pointer is now, along one row or one column, and stops at the first
+  // mistake — the square is corrected and the rest of the drag does nothing.
+  // Pulling back before then takes the marks it laid back off.
   const paintTo = (to) => {
     const s = stroke.current;
     const n = deal.n;
@@ -116,13 +122,25 @@ export default function Picross({ onResult }) {
     const next = s.base.slice();
     const dr = Math.sign(tr - sr);
     const dc = Math.sign(tc - sc);
+    let wrong = -1;
     for (let r = sr, c = sc; ; r += dr, c += dc) {
       const i = r * n + c;
-      if (s.base[i] === s.from) next[i] = s.value;
+      if (s.base[i] === EMPTY) {
+        const mark = judge(i, s.action);
+        next[i] = mark.value;
+        if (mark.wrong) {
+          wrong = i;
+          break;
+        }
+      }
       if (r === tr && c === tc) break;
     }
     setCells(next);
-    setCursor(tr * n + tc);
+    setCursor(wrong >= 0 ? wrong : tr * n + tc);
+    if (wrong >= 0) {
+      fault(wrong);
+      stroke.current = null;
+    }
   };
 
   const cellFrom = (target) => {
@@ -137,17 +155,14 @@ export default function Picross({ onResult }) {
     if (i < 0) return;
     event.preventDefault();
     gridRef.current.setPointerCapture?.(event.pointerId);
-    const action = event.button === 2 || mode === CROSSED ? CROSSED : FILLED;
-    const from = cells[i];
+    if (!started) setStarted(true);
     stroke.current = {
       base: cells,
       start: i,
       last: i,
-      from,
-      value: from === action ? EMPTY : action,
+      action: event.button === 2 || mode === CROSSED ? CROSSED : FILLED,
       axis: null,
     };
-    remember(cells);
     paintTo(i);
   };
 
@@ -163,25 +178,14 @@ export default function Picross({ onResult }) {
     stroke.current = null;
   };
 
-  const toggle = (i, action) => {
-    if (!playable || i === null) return;
-    remember(cells);
+  const mark = (i, action) => {
+    if (!playable || i === null || cells[i] !== EMPTY) return;
+    if (!started) setStarted(true);
+    const result = judge(i, action);
     const next = cells.slice();
-    next[i] = cells[i] === action ? EMPTY : action;
+    next[i] = result.value;
     setCells(next);
-  };
-
-  const undo = () => {
-    const last = history.current.pop();
-    if (!last || status !== "playing") return;
-    setCells(last);
-    setUndos((u) => u + 1);
-  };
-
-  const clear = () => {
-    if (!playable || !cells.some(Boolean)) return;
-    remember(cells);
-    setCells(new Array(cells.length).fill(EMPTY));
+    if (result.wrong) fault(i);
   };
 
   // --- keyboard: the grid takes it while a cell has focus -------------------
@@ -204,14 +208,9 @@ export default function Picross({ onResult }) {
     const key = event.key.toLowerCase();
     if (key === " " || key === "enter" || key === "f") {
       event.preventDefault();
-      toggle(at, FILLED);
+      mark(at, FILLED);
     } else if (key === "x") {
-      toggle(at, CROSSED);
-    } else if (key === "backspace" || key === "delete") {
-      event.preventDefault();
-      if (cells[at] !== EMPTY) toggle(at, cells[at]);
-    } else if (key === "u" || key === "z") {
-      undo();
+      mark(at, CROSSED);
     } else if (key === "m") {
       setMode((m) => (m === FILLED ? CROSSED : FILLED));
     }
@@ -220,16 +219,6 @@ export default function Picross({ onResult }) {
   // --- derived -------------------------------------------------------------
 
   const n = deal?.n ?? 0;
-  const linesDone = useMemo(() => {
-    if (!deal || !cells.length) return 0;
-    let done = 0;
-    for (let x = 0; x < n; x += 1) {
-      if (lineDone(rowAt(cells, n, x), deal.clues.rows[x])) done += 1;
-      if (lineDone(colAt(cells, n, x), deal.clues.cols[x])) done += 1;
-    }
-    return done;
-  }, [cells, deal, n]);
-
   const filled = cells.filter((c) => c === FILLED).length;
   const target = deal ? deal.solution.filter(Boolean).length : 0;
   const label = `${difficultyOf(difficulty).label} ${sizeOf(sizeId).label}`;
@@ -244,6 +233,7 @@ export default function Picross({ onResult }) {
             n={n}
             clues={deal.clues}
             cells={cells}
+            faults={faults}
             cursor={status === "won" ? null : cursor}
             solved={status === "won"}
             gridRef={gridRef}
@@ -256,8 +246,8 @@ export default function Picross({ onResult }) {
               open={status === "won" && !dismissed}
               tone="won"
               title="Solved"
-              line={`${label} in ${clock(seconds)}${
-                undos ? `, ${undos} undo${undos > 1 ? "s" : ""}` : ", clean"
+              line={`${label} in ${clock(seconds)}, ${
+                mistakes ? `${mistakes} mistake${mistakes > 1 ? "s" : ""}` : "no mistakes"
               }.`}
               actions={[{ label: "New picture", onClick: () => newGame(sizeId, difficulty) }]}
               onClose={() => setDismissed(true)}
@@ -277,14 +267,12 @@ export default function Picross({ onResult }) {
             <span className="readout__value">{clock(seconds)}</span>
           </div>
           <div className="readout__item">
-            <span className="readout__label">Lines</span>
-            <span className="readout__value">
-              {linesDone}/{n * 2}
-            </span>
+            <span className="readout__label">Mistakes</span>
+            <span className={`readout__value ${mistakes ? "is-warn" : ""}`}>{mistakes}</span>
           </div>
           <div className="readout__item">
             <span className="readout__label">Filled</span>
-            <span className={`readout__value ${filled > target ? "is-warn" : ""}`}>
+            <span className="readout__value">
               {filled}/{target}
             </span>
           </div>
@@ -333,22 +321,6 @@ export default function Picross({ onResult }) {
             <CrossMark size={18} />
             <span>Cross</span>
           </button>
-          <button
-            type="button"
-            className="tool"
-            disabled={!playable || !history.current.length}
-            onClick={undo}>
-            <Undo size={18} />
-            <span>Undo</span>
-          </button>
-          <button
-            type="button"
-            className="tool"
-            disabled={!playable || !cells.some(Boolean)}
-            onClick={clear}>
-            <Eraser size={18} />
-            <span>Clear</span>
-          </button>
           <button type="button" className="tool pic__new" onClick={() => newGame(sizeId, difficulty)}>
             <Replay size={18} />
             <span>New picture</span>
@@ -358,8 +330,9 @@ export default function Picross({ onResult }) {
         <p className="chalk chalk--tight">
           Each number is a run of filled squares in that row or column, in order, with at least
           one gap between runs. Drag to paint a run; right-click or <b>Cross</b> marks a square
-          you know is empty. Arrows move, space fills, <b>X</b> crosses, <b>U</b> undoes,{" "}
-          <b>M</b> swaps the tool. Every picture solves by logic alone.
+          you know is empty. Every mark is checked as it lands: a wrong one counts as a mistake
+          and shows what the square really is, in red. Arrows move, space fills, <b>X</b>{" "}
+          crosses, <b>M</b> swaps the tool. Every picture solves by logic alone.
         </p>
       </div>
     </div>
